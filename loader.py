@@ -1,7 +1,6 @@
-from torch.utils.data import Dataset, DataLoader
-from PIL import Image
-
 from pathlib import Path
+from PIL import Image
+from torch.utils.data import Dataset, DataLoader
 
 from transform import TrainingTransform, ValidationTransform
 

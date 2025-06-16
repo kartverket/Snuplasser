@@ -1,21 +1,16 @@
 import lightning as L
-import torch
-import torch.nn.functional as F
-
-from utils import acc_pytorch as acc
-from losses import DiceLoss
-from model import dcswin_tiny, dcswin_small, dcswin_base
-#from newformer import NewFormer
-
-from statistics import mean
-
-from unet import UNet
-
-
-# BEGIN: qe7d5f8g4hj2
-import torch
 import numpy as np
 from PIL import Image
+from statistics import mean
+import torch
+import torch.nn.functional as F
+from utils import acc_pytorch as acc
+
+from losses import DiceLoss
+from model import dcswin_tiny, dcswin_small, dcswin_base
+from unet import UNet
+
+# BEGIN: qe7d5f8g4hj2
 
 def change_values_and_save(tensor, filename, mask=False):
     # Replace values

@@ -9,11 +9,11 @@ from pathlib import Path
 from aiohttp import ClientSession
 from tqdm import tqdm
 
+import config
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Constants for your script, consider moving these to a config file or environment variables
-BASE_IMAGE_URL = "https://wms.geonorge.no/skwms1/wms.nib"
 RETRY_OPTIONS = ExponentialRetry(attempts=5)
 
 def get_url(base_url: str, layers: list, bbox: list, image_size: list, format: str = "image/png", crs: str = "EPSG:25833") -> str:
@@ -176,13 +176,10 @@ async def process_bbox_sequentially(session, bbox, base_image_url, image_folder,
 
 
 async def main():
-    # Setup or example values
-    starting_point = [250000.0000, 6796000.0000]
-    ending_point = [255000.0000, 6799000.0000]
-    #starting_point = [250700.0000, 6796000.0000]
-    #ending_point = [251700.0000, 6797000.0000]
-    preferred_image_size = [500, 500]
-    resolution = 0.2
+    starting_point = config.STARTING_POINT
+    ending_point = config.ENDING_POINT
+    preferred_image_size = [500, 500] # Width, Height in pixels
+    resolution = 0.2 # Resolution in meters per pixel
 
     bbox_size = [preferred_image_size[0] * resolution, preferred_image_size[1] * resolution]
 
@@ -190,11 +187,11 @@ async def main():
     image_folder = data_folder / "images"
     image_folder.mkdir(parents=True, exist_ok=True)
 
-    base_image_url = "https://wms.geonorge.no/skwms1/wms.nib"
+    base_image_url = config.BASE_IMAGE_URL
 
     num_images_x = int((ending_point[0] - starting_point[0]) / bbox_size[0])
     num_images_y = int((ending_point[1] - starting_point[1]) / bbox_size[1])
-    print((ending_point[0] - starting_point[0]) / bbox_size[0], (ending_point[1] - starting_point[1]) / bbox_size[1])
+
     bboxes = [
         [starting_point[0] + x * bbox_size[0], starting_point[1] + y * bbox_size[1],
          starting_point[0] + (x + 1) * bbox_size[0], starting_point[1] + (y + 1) * bbox_size[1]]

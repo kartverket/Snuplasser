@@ -1,8 +1,11 @@
+aiofiles
+aiohttp_retry
+python-dotenv
+geopandas
 lightning
+matplotlib
+opencv-python
 torch
 timm
 torchvision
-geopandas
 shapely
-opencv-python
-matplotlib
