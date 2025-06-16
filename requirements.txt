@@ -1,0 +1,8 @@
+lightning
+torch
+timm
+torchvision
+geopandas
+shapely
+opencv-python
+matplotlib
