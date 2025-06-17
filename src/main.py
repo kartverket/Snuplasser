@@ -1,8 +1,8 @@
 import lightning as L
 
-import config
-from lightning_model import DCSwin
-from loader import get_dataloader
+import src.config as config
+from model.lightning_model import DCSwin
+from dataProcessing.loader import get_dataloader
 
 def parse_args():
     pass
@@ -11,9 +11,9 @@ if __name__ == "__main__":
 
     starting_point = config.STARTING_POINT
     ending_point = config.ENDING_POINT
-    preferred_image_size = [500, 500] # Width, Height in pixels
-    resolution = 0.2 # Resolution in meters per pixel
-    delay = 0.1  # Seconds to wait between each request
+    preferred_image_size = [500, 500] # Bredde, Høyde i piksler
+    resolution = 0.2  # Oppløsning i meter per piksel
+    delay = 0.1  # Sekunder å vente mellom hver forespørsel
 
     bbox_size = [preferred_image_size[0] * resolution, preferred_image_size[1] * resolution]
 

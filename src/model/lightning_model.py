@@ -6,7 +6,7 @@ import torch
 import torch.nn.functional as F
 from utils import acc_pytorch as acc
 
-from losses import DiceLoss
+from dataProcessing.losses import DiceLoss
 from model import dcswin_tiny, dcswin_small, dcswin_base
 from unet import UNet
 

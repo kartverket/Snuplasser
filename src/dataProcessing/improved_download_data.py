@@ -9,7 +9,7 @@ from pathlib import Path
 from aiohttp import ClientSession
 from tqdm import tqdm
 
-import config
+import src.config as config
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -178,8 +178,8 @@ async def process_bbox_sequentially(session, bbox, base_image_url, image_folder,
 async def main():
     starting_point = config.STARTING_POINT
     ending_point = config.ENDING_POINT
-    preferred_image_size = [500, 500] # Width, Height in pixels
-    resolution = 0.2 # Resolution in meters per pixel
+    preferred_image_size = [500, 500] # Bredde, Høyde i piksler
+    resolution = 0.2  # Oppløsning i meter per piksel
 
     bbox_size = [preferred_image_size[0] * resolution, preferred_image_size[1] * resolution]
 
@@ -198,7 +198,7 @@ async def main():
         for x in range(num_images_x) for y in range(num_images_y)
     ]
 
-    # tqdm instance for tracking progress
+    # Prgress bar som viser fremdrift
     pbar = tqdm(total=len(bboxes), desc="Processing BBoxes")
 
     existing_image_filenames = set([x.name for x in image_folder.glob("*.png")])
@@ -206,9 +206,9 @@ async def main():
     async with ClientSession() as session:
         for bbox in bboxes:
             await process_bbox_sequentially(session, bbox, base_image_url, image_folder, preferred_image_size, existing_image_filenames)
-            pbar.update(1)  # Manually update the progress bar
+            pbar.update(1)  # Manuelt oppdatere fremdriften i progress baren
 
-    pbar.close()  # Close the progress bar when done
+    pbar.close()  # Lukk progress baren når ferdig
 
 if __name__ == "__main__":
     asyncio.run(main())
