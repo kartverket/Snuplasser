@@ -1,10 +1,8 @@
+import numpy as np
 from PIL import Image
-
+import random
 import torch
 import torchvision.transforms.functional as TF
-import numpy as np
-
-import random
 
 def resize_and_random_crop(img, mask, target_size, img_interpolation_type=Image.BILINEAR, mask_interpolation_type=Image.NEAREST):
     img_width, img_height = img.size

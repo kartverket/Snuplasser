@@ -1,7 +1,5 @@
 import torch
 
-SMOOTH = 1e-6
-
 def iou_pytorch(outputs: torch.Tensor, labels: torch.Tensor, ignore: int = None):
     SMOOTH = 1e-6
 

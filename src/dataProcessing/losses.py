@@ -1,10 +1,9 @@
-from typing import List
-
+import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import Tensor
 from torch.nn.modules.loss import _Loss
-import numpy as np
+from typing import List
 
 __all__ = ["DiceLoss"]
 
