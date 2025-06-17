@@ -24,8 +24,8 @@ image_folder = "data/250000.0_6796000.0_255000.0_6799000.0_0.2_500_500/images/"
 image_list = os.listdir(image_folder)
 
 # Bounding box for the entire dataset (adjust as needed)
-starting_point = [250000.0000, 6796000.0000]
-ending_point = [255000.0000, 6799000.0000]
+starting_point = [269024.0, 6783025.0]  
+ending_point   = [269126.0, 6783102.0]
 #starting_point = [250700.0000, 6796000.0000]
 #ending_point = [251700.0000, 6797000.0000]
 preferred_image_size = [500, 500]
@@ -85,7 +85,7 @@ async def main():
                     for p in row.geometry.exterior.coords
                 ]], dtype=np.int32)
 
-                cv2.fillPoly(mask, points, 255)  # Fill snuplass polygon as white
+                cv2.fillPoly(mask, [points[0]], (255,))  # Fill snuplass polygon as white
 
         # Save mask
         data_folder = Path("data").joinpath(f"{starting_point[0]}_{starting_point[1]}_{ending_point[0]}_{ending_point[1]}_{resolution}_{preferred_image_size[0]}_{preferred_image_size[1]}")

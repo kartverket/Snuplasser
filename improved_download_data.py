@@ -8,6 +8,7 @@ import numpy as np
 from pathlib import Path
 from aiohttp import ClientSession
 from tqdm import tqdm
+from typing import Optional
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -38,8 +39,7 @@ def get_url(base_url: str, layers: list, bbox: list, image_size: list, format: s
            f"GetFeatureInfo=text/plain&CRS={crs}&Layers={layers_str}&BBox={bbox_str}&"
            f"width={width}&height={height}")
     return url
-
-async def fetch_image(session, url: str, max_retries=5) -> bytes:
+async def fetch_image(session, url: str, max_retries=5) -> Optional[bytes]:
     """
     Asynchronously fetches image data from a URL with retry logic.
     
@@ -49,7 +49,7 @@ async def fetch_image(session, url: str, max_retries=5) -> bytes:
         max_retries (int): Maximum number of retry attempts.
 
     Returns:
-        bytes: The image data if successful, None otherwise.
+        Optional[bytes]: The image data if successful, None otherwise.
     """
     attempt = 0
     while attempt < max_retries:
@@ -175,43 +175,72 @@ async def process_bbox_sequentially(session, bbox, base_image_url, image_folder,
         await save_image(image_bytes, image_path)
 
 
+# async def main():
+#     # Setup or example values
+#     starting_point = [269024.0, 6783025.0]  
+#     ending_point   = [269126.0, 6783102.0]
+#     #starting_point = [250700.0000, 6796000.0000]
+#     #ending_point = [251700.0000, 6797000.0000]
+#     preferred_image_size = [500, 500]
+#     resolution = 0.2
+
+#     bbox_size = [preferred_image_size[0] * resolution, preferred_image_size[1] * resolution]
+
+#     data_folder = Path("data").joinpath(f"{starting_point[0]}_{starting_point[1]}_{ending_point[0]}_{ending_point[1]}_{resolution}_{preferred_image_size[0]}_{preferred_image_size[1]}")
+#     image_folder = data_folder / "images"
+#     image_folder.mkdir(parents=True, exist_ok=True)
+
+#     base_image_url = "https://wms.geonorge.no/skwms1/wms.nib"
+
+#     num_images_x = int((ending_point[0] - starting_point[0]) / bbox_size[0])
+#     num_images_y = int((ending_point[1] - starting_point[1]) / bbox_size[1])
+#     print((ending_point[0] - starting_point[0]) / bbox_size[0], (ending_point[1] - starting_point[1]) / bbox_size[1])
+#     bboxes = [
+#         [starting_point[0] + x * bbox_size[0], starting_point[1] + y * bbox_size[1],
+#          starting_point[0] + (x + 1) * bbox_size[0], starting_point[1] + (y + 1) * bbox_size[1]]
+#         for x in range(num_images_x) for y in range(num_images_y)
+#     ]
+
+#     # tqdm instance for tracking progress
+#     pbar = tqdm(total=len(bboxes), desc="Processing BBoxes")
+
+#     existing_image_filenames = set([x.name for x in image_folder.glob("*.png")])
+
+#     async with ClientSession() as session:
+#         for bbox in bboxes:
+#             await process_bbox_sequentially(session, bbox, base_image_url, image_folder, preferred_image_size, existing_image_filenames)
+#             pbar.update(1)  # Manually update the progress bar
+
+#     pbar.close()  # Close the progress bar when done
+
+
+
 async def main():
-    # Setup or example values
-    starting_point = [250000.0000, 6796000.0000]
-    ending_point = [255000.0000, 6799000.0000]
-    #starting_point = [250700.0000, 6796000.0000]
-    #ending_point = [251700.0000, 6797000.0000]
+    # === 1. DINE KOORDINATER FRA QGIS ===
+    bbox = [269024.0, 6783025.0, 269126.0, 6783102.0]  # minx, miny, maxx, maxy
     preferred_image_size = [500, 500]
-    resolution = 0.2
 
-    bbox_size = [preferred_image_size[0] * resolution, preferred_image_size[1] * resolution]
-
-    data_folder = Path("data").joinpath(f"{starting_point[0]}_{starting_point[1]}_{ending_point[0]}_{ending_point[1]}_{resolution}_{preferred_image_size[0]}_{preferred_image_size[1]}")
-    image_folder = data_folder / "images"
+    # === 2. Hvor skal bildet lagres ===
+    image_folder = Path("data/single_test/images")
     image_folder.mkdir(parents=True, exist_ok=True)
 
+    # === 3. Sett opp WMS-tjeneste
     base_image_url = "https://wms.geonorge.no/skwms1/wms.nib"
 
-    num_images_x = int((ending_point[0] - starting_point[0]) / bbox_size[0])
-    num_images_y = int((ending_point[1] - starting_point[1]) / bbox_size[1])
-    print((ending_point[0] - starting_point[0]) / bbox_size[0], (ending_point[1] - starting_point[1]) / bbox_size[1])
-    bboxes = [
-        [starting_point[0] + x * bbox_size[0], starting_point[1] + y * bbox_size[1],
-         starting_point[0] + (x + 1) * bbox_size[0], starting_point[1] + (y + 1) * bbox_size[1]]
-        for x in range(num_images_x) for y in range(num_images_y)
-    ]
-
-    # tqdm instance for tracking progress
-    pbar = tqdm(total=len(bboxes), desc="Processing BBoxes")
-
-    existing_image_filenames = set([x.name for x in image_folder.glob("*.png")])
+    # === 4. Unngå å laste ned på nytt hvis det finnes
+    existing_image_filenames = set(x.name for x in image_folder.glob("*.png"))
 
     async with ClientSession() as session:
-        for bbox in bboxes:
-            await process_bbox_sequentially(session, bbox, base_image_url, image_folder, preferred_image_size, existing_image_filenames)
-            pbar.update(1)  # Manually update the progress bar
+        await process_bbox_sequentially(
+            session=session,
+            bbox=bbox,
+            base_image_url=base_image_url,
+            image_folder=image_folder,
+            preferred_image_size=preferred_image_size,
+            existing_image_filenames=existing_image_filenames
+        )
 
-    pbar.close()  # Close the progress bar when done
+
 
 if __name__ == "__main__":
     asyncio.run(main())
