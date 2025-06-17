@@ -9,6 +9,39 @@ import numpy as np
 from shapely.geometry import box
 from rasterio.features import rasterize
 from rasterio.transform import from_bounds
+import matplotlib.pyplot as plt
+import os
+
+"""
+Modul: download.py
+
+Denne modulen håndterer automatisert nedlasting av treningsdata til semantisk segmentering av snuplasser.
+
+Datastrøm:
+-----------
+1. Inndata er en GeoJSON-fil generert fra en opprinnelig GDB (geodatabase) med polygoner som representerer snuplasser.
+2. For hvert polygon beregnes en utvidet bounding box som definerer området rundt snuplassen.
+3. For hver bounding box:
+    - Et ortofoto lastes ned via Geonorge sin WMS-tjeneste.
+    - En tilhørende binær maske genereres ved å rasterisere polygonet over bildeområdet.
+4. Bildet og masken lagres som PNG-filer i henholdsvis `data/images/` og `data/masks/`.
+
+Maskene lagres som svart-hvitt-bilder, hvor:
+    - 0 (svart) representerer bakgrunn
+    - 255 (hvit) representerer snuplass (dette tolkes senere som klasse 1 i modellen)
+
+Hensikt:
+--------
+Modulen produserer eksakte bilde- og maskepar for hvert polygon, og gjør det mulig å bygge eksplisitt treningsdata
+basert på eksisterende, manuelt annoterte snuplasser. Dette gir god kontroll over hvilke data modellen trenes på.
+
+Bruksområde:
+------------
+- Forberede treningsdata til segmenteringsmodeller (f.eks. U-Net)
+- Validere samsvar mellom ortofoto og eksisterende infrastruktur
+- Generere dataset automatisk basert på kun geografiske polygoner
+"""
+
 
 # === Konstanter ===
 GEOJSON_PATH = "snuplasser_are_FeaturesToJSO.geojson"
@@ -93,10 +126,59 @@ async def main():
         image_path.parent.mkdir(parents=True, exist_ok=True)
         mask_path.parent.mkdir(parents=True, exist_ok=True)
 
+        # Hopp over hvis begge finnes
+        if image_path.exists() and mask_path.exists():
+            print(f"⏭️  Hopper over {img_name} (allerede lastet og masket)")
+            continue
+
         # Last ned bilde og lag maske
         await download_image(bbox, image_path)
         generate_mask(GEOJSON_PATH, bbox, mask_path)
 
+
+
+def interactive_visualize(image_dir, mask_dir):
+    """
+    Åpner ett vindu der du kan bla i bilde- og maskepar med piltaster.
+    """
+    image_files = sorted([f for f in os.listdir(image_dir) if f.endswith(".png")])
+    fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+    manager = getattr(fig.canvas, "manager", None)
+    if manager is not None and hasattr(manager, "set_window_title"):
+        manager.set_window_title("Trykk ⬅️ eller ➡️ for å bla")
+    idx = [0]
+
+    def show(i):
+        image_path = os.path.join(image_dir, image_files[i])
+        mask_path = os.path.join(mask_dir, image_files[i].replace("image", "mask"))
+        img = Image.open(image_path)
+        mask = Image.open(mask_path)
+
+        ax[0].imshow(img)
+        ax[0].set_title(f"Bilde: {image_files[i]}")
+        ax[1].imshow(mask, cmap="gray")
+        ax[1].set_title("Maske")
+        for a in ax:
+            a.axis("off")
+        fig.canvas.draw_idle()
+
+    def on_key(event):
+        if event.key == "right":
+            idx[0] = (idx[0] + 1) % len(image_files)
+            show(idx[0])
+        elif event.key == "left":
+            idx[0] = (idx[0] - 1) % len(image_files)
+            show(idx[0])
+        elif event.key == "escape":
+            plt.close(fig)
+
+    fig.canvas.mpl_connect("key_press_event", on_key)
+    show(idx[0])
+    plt.tight_layout()
+    plt.show()
+
+
+interactive_visualize("data/images", "data/masks")
 
 # === Kjør
 if __name__ == "__main__":
