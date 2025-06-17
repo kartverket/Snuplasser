@@ -75,9 +75,10 @@ def make_bbox_around_polygon(geojson_path, index, buffer=10):
 # === Main ===
 async def main():
     # === Definer hvilke polygoner du vil bruke:
+    gdf = gpd.read_file(GEOJSON_PATH).to_crs("EPSG:25833")
     bbox_dict = {
-        0: make_bbox_around_polygon(GEOJSON_PATH, 0, buffer=20),
-        1: make_bbox_around_polygon(GEOJSON_PATH, 1, buffer=20)
+        idx: make_bbox_around_polygon(GEOJSON_PATH, idx, buffer=20)
+        for idx in range(len(gdf))
     }
 
     for idx, bbox in bbox_dict.items():
