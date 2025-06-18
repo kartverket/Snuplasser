@@ -3,7 +3,8 @@ name: Black Code Formatter
 on:
   pull_request:
     branches:
-      - main
+      - main 
+      - gitHub_Actions
 
 jobs:
   black-check:
