@@ -4,13 +4,16 @@ import geopandas as gpd
 from pathlib import Path
 from aiohttp import ClientSession
 from PIL import Image
-from io import BytesIO
 import numpy as np
 from shapely.geometry import box
 from rasterio.features import rasterize
 from rasterio.transform import from_bounds
 import matplotlib.pyplot as plt
+import sys
 import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+
+import src.config as config
 
 """
 Modul: download.py
@@ -44,11 +47,10 @@ Bruksområde:
 
 
 # === Konstanter ===
-GEOJSON_PATH = "snuplasser_are_FeaturesToJSO.geojson"
-BASE_IMAGE_URL = "https://wms.geonorge.no/skwms1/wms.nib"
+GEOJSON_PATH = config.GEOJSON_PATH
+BASE_IMAGE_URL = config.BASE_IMAGE_URL
 IMAGE_SIZE = [500, 500]
 RESOLUTION = 0.2
-
 
 # === Hjelpefunksjon for WMS URL ===
 def get_url(bbox):
@@ -128,7 +130,7 @@ async def main():
 
         # Hopp over hvis begge finnes
         if image_path.exists() and mask_path.exists():
-            print(f"⏭️  Hopper over {img_name} (allerede lastet og masket)")
+            print(f"⏭️ Hopper over {img_name} (allerede lastet og masket)")
             continue
 
         # Last ned bilde og lag maske
