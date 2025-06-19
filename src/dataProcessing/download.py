@@ -112,7 +112,7 @@ async def main():
     # === Definer hvilke polygoner du vil bruke:
     gdf = gpd.read_file(GEOJSON_PATH).to_crs("EPSG:25833")
     bbox_dict = {
-        idx: make_bbox_around_polygon(GEOJSON_PATH, idx, buffer=20)
+        idx: make_bbox_around_polygon(GEOJSON_PATH, idx, buffer=20)  # Kan randomisere buffer for variasjon
         for idx in range(len(gdf))
     }
 
@@ -179,8 +179,8 @@ def interactive_visualize(image_dir, mask_dir):
     plt.show()
 
 
-interactive_visualize("data/images", "data/masks")
-
 # === Kjør
 if __name__ == "__main__":
     asyncio.run(main())
+    interactive_visualize("data/images", "data/masks")
+
