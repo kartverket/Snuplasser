@@ -11,10 +11,6 @@ basic_aug = {
     "flip_p": 0.5,
     "rot90_p": 0.5,
     "brightness_p": 0.3,
-    "shift": 0.05,
-    "scale": 0.1,
-    "rotate": 15,
-    "ssr_p": 0.5
 }
 
 strong_aug = {

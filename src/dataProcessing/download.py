@@ -180,8 +180,8 @@ def interactive_visualize(image_dir, mask_dir):
     plt.show()
 
 
-interactive_visualize("data/images", "data/masks")
-
 # === Kjør
 if __name__ == "__main__":
     asyncio.run(main())
+
+interactive_visualize("data/images", "data/masks")
