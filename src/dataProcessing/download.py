@@ -11,7 +11,8 @@ from rasterio.transform import from_bounds
 import matplotlib.pyplot as plt
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 import src.config as config
 
@@ -51,6 +52,7 @@ GEOJSON_PATH = config.GEOJSON_PATH
 BASE_IMAGE_URL = config.BASE_IMAGE_URL
 IMAGE_SIZE = [500, 500]
 RESOLUTION = 0.2
+
 
 # === Hjelpefunksjon for WMS URL ===
 def get_url(bbox):
@@ -112,7 +114,9 @@ async def main():
     # === Definer hvilke polygoner du vil bruke:
     gdf = gpd.read_file(GEOJSON_PATH).to_crs("EPSG:25833")
     bbox_dict = {
-        idx: make_bbox_around_polygon(GEOJSON_PATH, idx, buffer=20)  # Kan randomisere buffer for variasjon
+        idx: make_bbox_around_polygon(
+            GEOJSON_PATH, idx, buffer=20
+        )  # Kan randomisere buffer for variasjon
         for idx in range(len(gdf))
     }
 
@@ -183,4 +187,3 @@ def interactive_visualize(image_dir, mask_dir):
 if __name__ == "__main__":
     asyncio.run(main())
     interactive_visualize("data/images", "data/masks")
-

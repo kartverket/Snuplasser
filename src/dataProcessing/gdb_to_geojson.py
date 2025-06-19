@@ -13,7 +13,9 @@ gdb_path = os.environ.get("GDB_PATH")
 layers = fiona.listlayers(gdb_path)
 
 # Filtrer lag for de som starter med "Snuplasser_areal"
-target_layers = [layer for layer in layers if layer.lower().startswith("snuplasser_areal")]
+target_layers = [
+    layer for layer in layers if layer.lower().startswith("snuplasser_areal")
+]
 
 # Iterer gjennom de filtrerte lagene og lagrer dem som GeoJSON
 for layer in target_layers:

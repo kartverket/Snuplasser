@@ -8,5 +8,4 @@ basic_aug = {
 
 augmentation_profiles = {
     "basic": basic_aug,
-    
 }
