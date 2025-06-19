@@ -11,18 +11,12 @@ def parse_args():
 
 if __name__ == "__main__":
 
-    starting_point = config.STARTING_POINT
-    ending_point = config.ENDING_POINT
+    bbox = config.TEST_BBOX
     preferred_image_size = [500, 500]  # Bredde, Høyde i piksler
     resolution = 0.2  # Oppløsning i meter per piksel
     delay = 0.1  # Sekunder å vente mellom hver forespørsel
 
-    bbox_size = [
-        preferred_image_size[0] * resolution,
-        preferred_image_size[1] * resolution,
-    ]
-
-    data_folder = f"{starting_point[0]}_{starting_point[1]}_{ending_point[0]}_{ending_point[1]}_{resolution}_{preferred_image_size[0]}_{preferred_image_size[1]}"
+    data_folder = f"{bbox[0]}_{bbox[1]}_{bbox[2]}_{bbox[3]}_{resolution}_{preferred_image_size[0]}_{preferred_image_size[1]}"
 
     train_loader, num_classes = get_dataloader(data_folder, "train", 8, 0.8)
     val_loader, num_classes = get_dataloader(data_folder, "val", 1, 0.2)

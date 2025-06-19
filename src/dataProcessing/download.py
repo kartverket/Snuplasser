@@ -50,8 +50,8 @@ Bruksområde:
 # === Konstanter ===
 GEOJSON_PATH = config.GEOJSON_PATH
 BASE_IMAGE_URL = config.BASE_IMAGE_URL
-IMAGE_SIZE = [500, 500]
-RESOLUTION = 0.2
+IMAGE_SIZE = config.IMAGE_SIZE
+RESOLUTION = config.RESOLUTION
 
 
 # === Hjelpefunksjon for WMS URL ===
