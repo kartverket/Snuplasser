@@ -7,7 +7,7 @@ import os
 
 class SnuplassDataset(Dataset):
     def __init__(self, image_dir, mask_dir, file_list, transform=None):
-        with open(file_list, 'r') as f:
+        with open(file_list, "r") as f:
             self.files = [line.strip() for line in f.readlines()]
         self.image_dir = image_dir
         self.mask_dir = mask_dir
@@ -20,7 +20,7 @@ class SnuplassDataset(Dataset):
         file_id = self.files[idx]
         mask_file_id = file_id.replace("image", "mask")
         image_path = os.path.join(self.image_dir, f"{file_id}.png")
-        mask_path = os.path.join(self.mask_dir, f"{mask_file_id}.png")  
+        mask_path = os.path.join(self.mask_dir, f"{mask_file_id}.png")
 
         image = np.array(Image.open(image_path).convert("RGB"))
         mask = np.array(Image.open(mask_path)) // 255  # binær 0/1
