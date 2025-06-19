@@ -182,6 +182,7 @@ def interactive_visualize(image_dir, mask_dir):
     plt.tight_layout()
     plt.show()
 
+
 def check_data_integrity(image_dir, mask_dir):
     """
     Sjekker at alle bilder har en tilhørende maske og vice versa.
@@ -189,16 +190,14 @@ def check_data_integrity(image_dir, mask_dir):
     image_files = sorted([f for f in os.listdir(image_dir) if f.endswith(".png")])
     mask_files = sorted([f for f in os.listdir(mask_dir) if f.endswith(".png")])
 
-    assert len(image_files) == len(mask_files), (
-        f"Antall bilder ({len(image_files)}) og masker ({len(mask_files)}) stemmer ikke overens."
-    )
+    assert len(image_files) == len(
+        mask_files
+    ), f"Antall bilder ({len(image_files)}) og masker ({len(mask_files)}) stemmer ikke overens."
 
     for img, mask in zip(image_files, mask_files):
         img_id = Path(img).stem.replace("image_", "")
         mask_id = Path(mask).stem.replace("mask_", "")
-        assert img_id == mask_id, (
-            f"Bildet {img} har ikke en tilhørende maske {mask}."
-        )
+        assert img_id == mask_id, f"Bildet {img} har ikke en tilhørende maske {mask}."
     print(f"✅ {len(image_files)} bilde-masker-par sjekket og verifisert.")
 
 
