@@ -91,7 +91,7 @@ def generate_mask(geojson_path, bbox, save_path):
             out_shape=(IMAGE_SIZE[1], IMAGE_SIZE[0]),
             transform=transform,
             fill=0,
-            dtype='uint8'
+            dtype="uint8",
         )
     Image.fromarray(mask * 255).save(save_path)
     print(f"✅ Lagret maske: {save_path}")
@@ -134,7 +134,6 @@ async def main():
         # Last ned bilde og lag maske
         await download_image(bbox, image_path)
         generate_mask(GEOJSON_PATH, bbox, mask_path)
-
 
 
 def interactive_visualize(image_dir, mask_dir):
