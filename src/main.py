@@ -5,6 +5,10 @@ from model.lightning_model import DCSwin
 from dataProcessing.loader import get_dataloader
 
 
+def parse_args():
+    pass
+
+
 if __name__ == "__main__":
 
     bbox = config.TEST_BBOX

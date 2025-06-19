@@ -40,7 +40,7 @@ class DiceLoss(_Loss):
 
     def __init__(
         self,
-        mode: str = 'multiclass',
+        mode: str = "multiclass",
         classes: List[int] = None,
         log_loss=False,
         from_logits=True,
@@ -63,7 +63,9 @@ class DiceLoss(_Loss):
         super(DiceLoss, self).__init__()
         self.mode = mode
         if classes is not None:
-            assert mode != BINARY_MODE, "Masking classes is not supported with mode=binary"
+            assert (
+                mode != BINARY_MODE
+            ), "Masking classes is not supported with mode=binary"
             classes = to_tensor(classes, dtype=torch.long)
 
         self.classes = classes
@@ -112,7 +114,9 @@ class DiceLoss(_Loss):
                 mask = y_true != self.ignore_index
                 y_pred = y_pred * mask.unsqueeze(1)
 
-                y_true = F.one_hot((y_true * mask).to(torch.long), num_classes)  # N,H*W -> N,H*W, C
+                y_true = F.one_hot(
+                    (y_true * mask).to(torch.long), num_classes
+                )  # N,H*W -> N,H*W, C
                 y_true = y_true.permute(0, 2, 1) * mask.unsqueeze(1)  # H, C, H*W
             else:
                 y_true = F.one_hot(y_true, num_classes)  # N,H*W -> N,H*W, C
@@ -127,7 +131,9 @@ class DiceLoss(_Loss):
                 y_pred = y_pred * mask
                 y_true = y_true * mask
 
-        scores = soft_dice_score(y_pred, y_true.type_as(y_pred), smooth=self.smooth, eps=self.eps, dims=dims)
+        scores = soft_dice_score(
+            y_pred, y_true.type_as(y_pred), smooth=self.smooth, eps=self.eps, dims=dims
+        )
 
         if self.log_loss:
             loss = -torch.log(scores.clamp_min(self.eps))
@@ -290,7 +296,11 @@ def softmax_focal_loss_with_logits(
 
 
 def soft_jaccard_score(
-    output: torch.Tensor, target: torch.Tensor, smooth: float = 0.0, eps: float = 1e-7, dims=None
+    output: torch.Tensor,
+    target: torch.Tensor,
+    smooth: float = 0.0,
+    eps: float = 1e-7,
+    dims=None,
 ) -> torch.Tensor:
     """
 
@@ -323,7 +333,11 @@ def soft_jaccard_score(
 
 
 def soft_dice_score(
-    output: torch.Tensor, target: torch.Tensor, smooth: float = 0.0, eps: float = 1e-7, dims=None
+    output: torch.Tensor,
+    target: torch.Tensor,
+    smooth: float = 0.0,
+    eps: float = 1e-7,
+    dims=None,
 ) -> torch.Tensor:
     """
 
@@ -351,7 +365,9 @@ def soft_dice_score(
     return dice_score
 
 
-def wing_loss(output: torch.Tensor, target: torch.Tensor, width=5, curvature=0.5, reduction="mean"):
+def wing_loss(
+    output: torch.Tensor, target: torch.Tensor, width=5, curvature=0.5, reduction="mean"
+):
     """
     https://arxiv.org/pdf/1711.06753.pdf
     :param output:
@@ -382,7 +398,12 @@ def wing_loss(output: torch.Tensor, target: torch.Tensor, width=5, curvature=0.5
 
 
 def label_smoothed_nll_loss(
-    lprobs: torch.Tensor, target: torch.Tensor, epsilon: float, ignore_index=None, reduction="mean", dim=-1
+    lprobs: torch.Tensor,
+    target: torch.Tensor,
+    epsilon: float,
+    ignore_index=None,
+    reduction="mean",
+    dim=-1,
 ) -> torch.Tensor:
     """
 
