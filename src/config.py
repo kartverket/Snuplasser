@@ -1,7 +1,9 @@
-# Starting point and ending point for the map view
-STARTING_POINT = [250000.0000, 6796000.0000]
-ENDING_POINT = [255000.0000, 6799000.0000]
+# Denne filen inneholder konfigurasjonsinnstillinger for applikasjonen.
 
-# Base URL for fetching satellite images
+# === Konstanter ===
 BASE_IMAGE_URL = "https://wms.geonorge.no/skwms1/wms.nib"
 GEOJSON_PATH = "turning_spaces.geojson"
+
+TEST_BBOX = [331800, 6753200, 332500, 6754200]
+IMAGE_SIZE = [500, 500]
+RESOLUTION = 0.2

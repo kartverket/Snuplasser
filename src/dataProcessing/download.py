@@ -11,7 +11,8 @@ from rasterio.transform import from_bounds
 import matplotlib.pyplot as plt
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 import src.config as config
 
@@ -49,8 +50,9 @@ Bruksområde:
 # === Konstanter ===
 GEOJSON_PATH = config.GEOJSON_PATH
 BASE_IMAGE_URL = config.BASE_IMAGE_URL
-IMAGE_SIZE = [500, 500]
-RESOLUTION = 0.2
+IMAGE_SIZE = config.IMAGE_SIZE
+RESOLUTION = config.RESOLUTION
+
 
 # === Hjelpefunksjon for WMS URL ===
 def get_url(bbox):
@@ -93,7 +95,7 @@ def generate_mask(geojson_path, bbox, save_path):
             out_shape=(IMAGE_SIZE[1], IMAGE_SIZE[0]),
             transform=transform,
             fill=0,
-            dtype='uint8'
+            dtype="uint8",
         )
     Image.fromarray(mask * 255).save(save_path)
     print(f"✅ Lagret maske: {save_path}")
@@ -138,7 +140,6 @@ async def main():
         generate_mask(GEOJSON_PATH, bbox, mask_path)
 
 
-
 def interactive_visualize(image_dir, mask_dir):
     """
     Åpner ett vindu der du kan bla i bilde- og maskepar med piltaster.
@@ -180,8 +181,7 @@ def interactive_visualize(image_dir, mask_dir):
     plt.show()
 
 
-interactive_visualize("data/images", "data/masks")
-
 # === Kjør
 if __name__ == "__main__":
     asyncio.run(main())
+    interactive_visualize("data/images", "data/masks")
