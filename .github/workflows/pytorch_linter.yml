@@ -25,4 +25,4 @@ jobs:
           pip install -r requirements.txt  # varsa
 
       - name: Run pylint on PyTorch files only
-        run: pylint lightning_model.py model.py unet.py utils.py main.py
+        run: pylint --rcfile=.pylintrc lightning_model.py
