@@ -54,7 +54,6 @@ IMAGE_SIZE = config.IMAGE_SIZE
 RESOLUTION = config.RESOLUTION
 
 
-
 # === Hjelpefunksjon for WMS URL ===
 def get_url(bbox):
     bbox_str = ",".join(map(str, bbox))
