@@ -1,6 +1,11 @@
 name: Black Code Formatter
 
 on:
+  push:
+    branches:
+      - main
+      - gitHub_Actions
+
   pull_request:
     branches:
       - main 
