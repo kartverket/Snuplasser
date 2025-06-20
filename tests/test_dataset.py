@@ -52,7 +52,7 @@ def test_dataset_getitem_shape_and_type(dummy_dataset):
     assert isinstance(mask, torch.Tensor)
     assert image.shape == (256, 256, 3)
     assert mask.shape == (256, 256)
-    assert mask.dtype == torch.long
+    assert mask.dtype == torch.float32
     assert mask.max() <= 1
     assert mask.min() >= 0
 
