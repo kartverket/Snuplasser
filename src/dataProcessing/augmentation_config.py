@@ -1,5 +1,5 @@
 # Augmentation settings
-basic_aug = {
+default_aug = {
     "flip_p": 0.5,
     "rot90_p": 0.5,
     "brightness_p": 0.3,
@@ -7,5 +7,5 @@ basic_aug = {
 
 
 augmentation_profiles = {
-    "basic": basic_aug,
+    "default": default_aug,
 }
