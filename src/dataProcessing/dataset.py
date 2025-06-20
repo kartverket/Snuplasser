@@ -34,7 +34,7 @@ class SnuplassDataset(Dataset):
             mask = augmented["mask"]
 
         return image, torch.from_numpy(mask).long()
-    
+
     @staticmethod
     def create_train_val_split(
         image_dir="data/images",
@@ -44,9 +44,16 @@ class SnuplassDataset(Dataset):
         seed=42,
     ):
         import random
+
         random.seed(seed)
 
-        image_files = sorted([f for f in os.listdir(image_dir) if f.startswith("image_") and f.endswith(".png")])
+        image_files = sorted(
+            [
+                f
+                for f in os.listdir(image_dir)
+                if f.startswith("image_") and f.endswith(".png")
+            ]
+        )
         file_ids = [Path(f).stem for f in image_files]
 
         random.shuffle(file_ids)
@@ -69,7 +76,7 @@ class SnuplassDataset(Dataset):
             "total_files": len(file_ids),
             "train_count": len(train_ids),
             "val_count": len(val_ids),
-            "source_dir": image_dir
+            "source_dir": image_dir,
         }
         meta_path = Path(train_file).parent / "split_meta.json"
         with open(meta_path, "w") as meta_f:
@@ -78,20 +85,21 @@ class SnuplassDataset(Dataset):
         print(f"\n✅ Laget split: {len(train_ids)} train, {len(val_ids)} val")
         print(f"📄 Metadata lagret i: {meta_path}")
 
+
 if __name__ == "__main__":
     # Eksempel på hvordan du kan bruke dataset-klassen
     dataset = SnuplassDataset(
         image_dir="data/images",
         mask_dir="data/masks",
         file_list="data/splits/train.txt",
-        transform=None  # Her kan du legge til eventuelle transformasjoner
+        transform=None,  # Her kan du legge til eventuelle transformasjoner
     )
-    
+
     print(f"Totalt antall bilder i datasettet: {len(dataset)}")
-    
+
     # Eksempel på å hente et bilde og maske
     image, mask = dataset[0]
     print(f"Image shape: {image.shape}, Mask shape: {mask.shape}")
-    
+
     # Lag en trenings- og valideringssplit
     SnuplassDataset.create_train_val_split()
