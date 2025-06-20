@@ -81,8 +81,7 @@ def visualize_multiple_augmentations(image_path, mask_path, cfg_name="basic", n=
 
 if __name__ == "__main__":
     visualize_multiple_augmentations(
-        image_path=Path("data/images/image_249322_6786313_249385_6786382.png"),
-        mask_path=Path("data/masks/mask_249322_6786313_249385_6786382.png"),
-        cfg_name="basic",  # Se augmentation_config.py
-        n=2,
+        image_path="data\images\image_249322_6786313_249385_6786382.png",
+        mask_path="data\masks\mask_249322_6786313_249385_6786382.png",
+        cfg_name="default",  # Se augmentation_config.py
     )
