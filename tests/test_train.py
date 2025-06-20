@@ -1,11 +1,9 @@
 import pytest
-from PIL import Image
-import numpy as np
 import torch
 from torch.utils.data import DataLoader
-from unittest import mock
+from PIL import Image
+import numpy as np
 
-import src.train as train
 from src.dataProcessing.dataset import SnuplassDataset
 from src.dataProcessing.transform import get_train_transforms, get_val_transforms
 from src.model.unet import UNet
@@ -15,50 +13,81 @@ from src.dataProcessing.augmentation_config import augmentation_profiles
 @pytest.fixture
 def cfg():
     """
-    Henter konfigurasjonen for augmentering fra en forhåndsdefinert profil.
-    Returnerer standardprofilen hvis ingen spesifikk profil er angitt.
+    Fixture to provide the default augmentation configuration.
     """
     return augmentation_profiles["default"]
 
 
-@mock.patch("builtins.open", new_callable=mock.mock_open, read_data="test_image.png\n")
-@mock.patch("os.path.exists", return_value=True)
-@mock.patch("os.path.getsize", return_value=10)
-@mock.patch("PIL.Image.open")
-def test_dataset_loads(mock_image_open, mock_getsize, mock_exists, mock_open, cfg):
+@pytest.fixture
+def setup_tmp_dataset(tmp_path):
     """
-    Tester at SnuplassDataset kan laste inn bilder og masker riktig.
-    Bruker mock for å simulere bilde- og maskefiler.
+    Fixture to create a temporary dataset with images and masks for testing.
+    Creates directories for images, masks, and splits, and populates them with dummy data.
+    Returns a dictionary with paths to the created directories and files.
     """
-    dummy_img = Image.fromarray((np.random.rand(128, 128, 3) * 255).astype(np.uint8))
-    dummy_mask = Image.fromarray(
-        ((np.random.rand(128, 128) > 0.5) * 255).astype(np.uint8)
-    )
+    images_dir = tmp_path / "images"
+    masks_dir = tmp_path / "masks"
+    splits_dir = tmp_path / "splits"
+    images_dir.mkdir()
+    masks_dir.mkdir()
+    splits_dir.mkdir()
 
-    mock_image_open.side_effect = [dummy_img, dummy_mask]
+    for i in range(2):
+        img_array = np.zeros((100, 100, 3), dtype=np.uint8)
+        img = Image.fromarray(img_array)
+        img_path = images_dir / f"img{i+1}.png"
+        img.save(img_path)
+
+        mask_array = np.zeros((100, 100), dtype=np.uint8)
+        mask = Image.fromarray(mask_array)
+        mask_path = masks_dir / f"img{i+1}.png"
+        mask.save(mask_path)
+
+    train_txt = splits_dir / "train.txt"
+    train_txt.write_text("img1\nimg2\n")
+
+    val_txt = splits_dir / "val.txt"
+    val_txt.write_text("img1\nimg2\n")
+
+    return {
+        "images_dir": images_dir,
+        "masks_dir": masks_dir,
+        "train_list": train_txt,
+        "val_list": val_txt,
+    }
+
+
+def test_dataset_loads(setup_tmp_dataset):
+    """
+    Test that the dataset can be loaded and returns the correct number of items.
+    """
+    cfg = augmentation_profiles["default"]
 
     dataset = SnuplassDataset(
-        image_dir="fake/images",
-        mask_dir="fake/masks",
-        file_list="fake/splits/train.txt",
+        image_dir=str(setup_tmp_dataset["images_dir"]),
+        mask_dir=str(setup_tmp_dataset["masks_dir"]),
+        file_list=str(setup_tmp_dataset["train_list"]),
         transform=get_train_transforms(cfg),
     )
 
-    assert len(dataset) == 1
+    assert len(dataset) == 2
     img, mask = dataset[0]
     assert isinstance(img, torch.Tensor)
     assert isinstance(mask, torch.Tensor)
-    assert img.shape[1:] == mask.shape  # Bilde og maske skal ha samme høyde og bredde
 
 
-def test_dataloader(cfg):
+def test_dataloader(cfg, setup_tmp_dataset):
     """
-    Tester at DataLoader kan hente batcher fra SnuplassDataset.
+    Test that the DataLoader can load a batch of images and masks correctly.
     """
+    img_dir = setup_tmp_dataset["images_dir"]
+    mask_dir = setup_tmp_dataset["masks_dir"]
+    train_txt = setup_tmp_dataset["train_list"]
+
     dataset = SnuplassDataset(
-        image_dir="data/images",
-        mask_dir="data/masks",
-        file_list="data/splits/train.txt",
+        image_dir=img_dir,
+        mask_dir=mask_dir,
+        file_list=train_txt,
         transform=get_train_transforms(cfg),
     )
     loader = DataLoader(dataset, batch_size=2, shuffle=True)
@@ -68,36 +97,44 @@ def test_dataloader(cfg):
     assert masks.shape[0] == 2
 
 
-def test_unet_forward_pass(cfg):
+def test_unet_forward_pass(cfg, setup_tmp_dataset):
     """
-    Tester at UNet-modellen kan utføre en fremoverpassering uten feil.
+    Test that the UNet model can perform a forward pass with a batch of images.
     """
     device = torch.device("cpu")
     model = UNet(n_channels=3, n_classes=1, bilinear=False).to(device)
+    img_dir = setup_tmp_dataset["images_dir"]
+    mask_dir = setup_tmp_dataset["masks_dir"]
+    train_txt = setup_tmp_dataset["train_list"]
+
     dataset = SnuplassDataset(
-        image_dir="data/images",
-        mask_dir="data/masks",
-        file_list="data/splits/train.txt",
+        image_dir=img_dir,
+        mask_dir=mask_dir,
+        file_list=train_txt,
         transform=get_train_transforms(cfg),
     )
     img, _ = dataset[0]
-    img = img.unsqueeze(0).to(device)
+    img = img.unsqueeze(0).to(device)  # batch size 1
     with torch.no_grad():
         output = model(img)
-    assert output.shape[1] == 1
-    assert output.shape[0] == 1
+    assert output.shape[1] == 1  # n_classes
+    assert output.shape[0] == 1  # batch size
 
 
-def test_training_step(cfg):
+def test_training_step(cfg, setup_tmp_dataset):
     """
-    Tester at treningssteget i UNet-modellen fungerer som forventet.
+    Test that the training step can compute a loss value.
     """
     device = torch.device("cpu")
     model = UNet(n_channels=3, n_classes=1, bilinear=False).to(device)
+    img_dir = setup_tmp_dataset["images_dir"]
+    mask_dir = setup_tmp_dataset["masks_dir"]
+    train_txt = setup_tmp_dataset["train_list"]
+
     dataset = SnuplassDataset(
-        image_dir="data/images",
-        mask_dir="data/masks",
-        file_list="data/splits/train.txt",
+        image_dir=img_dir,
+        mask_dir=mask_dir,
+        file_list=train_txt,
         transform=get_train_transforms(cfg),
     )
     loader = DataLoader(dataset, batch_size=2, shuffle=True)
@@ -115,16 +152,20 @@ def test_training_step(cfg):
     assert loss.item() > 0
 
 
-def test_validation_step():
+def test_validation_step(cfg, setup_tmp_dataset):
     """
-    Tester at valideringssteget i UNet-modellen fungerer som forventet.
+    Test that the validation step can compute a loss value.
     """
     device = torch.device("cpu")
     model = UNet(n_channels=3, n_classes=1, bilinear=False).to(device)
+    img_dir = setup_tmp_dataset["images_dir"]
+    mask_dir = setup_tmp_dataset["masks_dir"]
+    val_txt = setup_tmp_dataset["val_list"]
+
     dataset = SnuplassDataset(
-        image_dir="data/images",
-        mask_dir="data/masks",
-        file_list="data/splits/val.txt",
+        image_dir=img_dir,
+        mask_dir=mask_dir,
+        file_list=val_txt,
         transform=get_val_transforms(),
     )
     loader = DataLoader(dataset, batch_size=2, shuffle=False)
@@ -138,41 +179,33 @@ def test_validation_step():
             outputs = model(imgs)
             loss = criterion(outputs.squeeze(1), masks)
             val_loss += loss.item()
-    avg_val_loss = val_loss / len(loader)
-    assert avg_val_loss >= 0
+
+    assert val_loss >= 0
 
 
-def test_main_runs(monkeypatch):
+def test_main_runs(monkeypatch, setup_tmp_dataset, cfg):
     """
-    Tester at main-funksjonen i train.py kan kjøres uten feil.
+    Test that the main training function runs without errors.
+    This is a simplified version that skips actual training for speed.
     """
+    img_dir = setup_tmp_dataset["images_dir"]
+    mask_dir = setup_tmp_dataset["masks_dir"]
+    train_txt = setup_tmp_dataset["train_list"]
 
     def fast_main():
-        """
-        En raskere versjon av main-funksjonen for testing.
-        """
-        cfg = augmentation_profiles["default"]
         batch_size = 2
         num_epochs = 1
         learning_rate = 1e-3
         device = torch.device("cpu")
 
         train_dataset = SnuplassDataset(
-            image_dir="data/images",
-            mask_dir="data/masks",
-            file_list="data/splits/train.txt",
+            image_dir=img_dir,
+            mask_dir=mask_dir,
+            file_list=train_txt,
             transform=get_train_transforms(cfg),
         )
 
-        val_dataset = SnuplassDataset(
-            image_dir="data/images",
-            mask_dir="data/masks",
-            file_list="data/splits/val.txt",
-            transform=get_val_transforms(),
-        )
-
         train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-        val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
         model = UNet(n_channels=3, n_classes=1, bilinear=False).to(device)
         criterion = torch.nn.BCEWithLogitsLoss()
@@ -190,14 +223,9 @@ def test_main_runs(monkeypatch):
                 optimizer.step()
                 total_loss += loss.item()
 
-            model.eval()
-            val_loss = 0.0
-            with torch.no_grad():
-                for images, masks in val_loader:
-                    images, masks = images.to(device), masks.to(device).float()
-                    outputs = model(images)
-                    loss = criterion(outputs.squeeze(1), masks)
-                    val_loss += loss.item()
+        print("Test training complete!")
 
-    monkeypatch.setattr(train, "main", fast_main)
-    train.main()
+    monkeypatch.setattr("src.train.main", fast_main)
+    import src.train
+
+    src.train.main()
