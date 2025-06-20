@@ -1,5 +1,6 @@
 aiofiles
 aiohttp_retry
+albumentations
 fiona
 geopandas
 lightning
