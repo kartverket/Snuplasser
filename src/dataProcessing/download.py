@@ -8,7 +8,6 @@ import numpy as np
 from shapely.geometry import box
 from rasterio.features import rasterize
 from rasterio.transform import from_bounds
-import matplotlib.pyplot as plt
 import sys
 import os
 
