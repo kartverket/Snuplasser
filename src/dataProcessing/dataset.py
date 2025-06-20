@@ -40,7 +40,9 @@ class SnuplassDataset(Dataset):
             image = augmented["image"]
             mask = augmented["mask"]
 
-        return image, torch.from_numpy(mask).long()
+        if not isinstance(mask, torch.Tensor):
+            mask = torch.from_numpy(mask)
+        return image, mask.float()
 
     @staticmethod
     def create_train_val_split(

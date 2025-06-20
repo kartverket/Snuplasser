@@ -3,10 +3,10 @@ from torch.utils.data import DataLoader
 import torch.nn as nn
 import torch.optim as optim
 
-from src.dataProcessing.dataset import SnuplassDataset
-from src.dataProcessing.transform import get_train_transforms, get_val_transforms
-from src.model.unet import UNet
-from src.dataProcessing.augmentation_config import augmentation_profiles
+from dataProcessing.dataset import SnuplassDataset
+from dataProcessing.transform import get_train_transforms, get_val_transforms
+from model.unet import UNet
+from dataProcessing.augmentation_config import augmentation_profiles
 
 
 def main():
