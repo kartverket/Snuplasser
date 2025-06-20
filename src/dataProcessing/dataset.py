@@ -10,17 +10,24 @@ import os
 
 class SnuplassDataset(Dataset):
     def __init__(self, image_dir, mask_dir, file_list, transform=None):
-        with open(file_list, "r") as f:
-            self.files = [line.strip() for line in f.readlines()]
         self.image_dir = image_dir
         self.mask_dir = mask_dir
         self.transform = transform
 
+        if not os.path.exists(file_list):
+            raise FileNotFoundError(f"Filen {file_list} finnes ikke.")
+
+        if os.path.getsize(file_list) == 0:
+            print(f"⚠️ Advarsel: {file_list} er tom – datasettet vil være tomt.")
+
+        with open(file_list, "r") as f:
+            self.file_names = [line.strip() for line in f.readlines()]
+
     def __len__(self):
-        return len(self.files)
+        return len(self.file_names)
 
     def __getitem__(self, idx):
-        file_id = self.files[idx]
+        file_id = self.file_names[idx]
         mask_file_id = file_id.replace("image", "mask")
         image_path = os.path.join(self.image_dir, f"{file_id}.png")
         mask_path = os.path.join(self.mask_dir, f"{mask_file_id}.png")
@@ -43,9 +50,7 @@ class SnuplassDataset(Dataset):
         split_ratio=0.8,
         seed=42,
     ):
-        import random
-
-        random.seed(seed)
+        np.random.seed(seed)
 
         image_files = sorted(
             [
@@ -56,19 +61,25 @@ class SnuplassDataset(Dataset):
         )
         file_ids = [Path(f).stem for f in image_files]
 
-        random.shuffle(file_ids)
+        np.random.shuffle(file_ids)
         split_index = int(len(file_ids) * split_ratio)
         train_ids = file_ids[:split_index]
         val_ids = file_ids[split_index:]
 
         os.makedirs(os.path.dirname(train_file), exist_ok=True)
+
         with open(train_file, "w") as f:
             f.writelines([id_ + "\n" for id_ in train_ids])
-        with open(val_file, "w") as f:
-            f.writelines([id_ + "\n" for id_ in val_ids])
 
-        print(f"✅ Laget split: {len(train_ids)} train, {len(val_ids)} val")
+        if val_ids:
+            with open(val_file, "w") as f:
+                f.writelines([id_ + "\n" for id_ in val_ids])
+        else:
+            with open(val_file, "w") as f:
+                pass
+            print(f"⚠️ Ingen valideringsdata – opprettet tom {val_file}")
 
+        # Lag metadata-fil
         meta = {
             "created": datetime.now().isoformat(),
             "seed": seed,
@@ -87,19 +98,14 @@ class SnuplassDataset(Dataset):
 
 
 if __name__ == "__main__":
-    # Eksempel på hvordan du kan bruke dataset-klassen
+    SnuplassDataset.create_train_val_split()
+
     dataset = SnuplassDataset(
         image_dir="data/images",
         mask_dir="data/masks",
         file_list="data/splits/train.txt",
-        transform=None,  # Her kan du legge til eventuelle transformasjoner
     )
 
-    print(f"Totalt antall bilder i datasettet: {len(dataset)}")
-
-    # Eksempel på å hente et bilde og maske
-    image, mask = dataset[0]
-    print(f"Image shape: {image.shape}, Mask shape: {mask.shape}")
-
-    # Lag en trenings- og valideringssplit
-    SnuplassDataset.create_train_val_split()
+    for idx, (image, mask) in enumerate(dataset):
+        print(f"Eksempel {idx}: Image shape {image.shape}, Mask shape {mask.shape}")
+        break
