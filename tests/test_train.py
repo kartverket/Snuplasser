@@ -1,6 +1,9 @@
 import pytest
+from PIL import Image
+import numpy as np
 import torch
 from torch.utils.data import DataLoader
+from unittest import mock
 
 import src.train as train
 from src.dataProcessing.dataset import SnuplassDataset
@@ -12,30 +15,45 @@ from src.dataProcessing.augmentation_config import augmentation_profiles
 @pytest.fixture
 def cfg():
     """
-    Gir en standard konfigurasjon for augmentering.
+    Henter konfigurasjonen for augmentering fra en forhåndsdefinert profil.
+    Returnerer standardprofilen hvis ingen spesifikk profil er angitt.
     """
     return augmentation_profiles["default"]
 
 
-def test_dataset_loads(cfg):
+@mock.patch("builtins.open", new_callable=mock.mock_open, read_data="test_image.png\n")
+@mock.patch("os.path.exists", return_value=True)
+@mock.patch("os.path.getsize", return_value=10)
+@mock.patch("PIL.Image.open")
+def test_dataset_loads(mock_image_open, mock_getsize, mock_exists, mock_open, cfg):
     """
-    Tester at SnuplassDataset kan lastes uten feil og returnerer bilder og masker.
+    Tester at SnuplassDataset kan laste inn bilder og masker riktig.
+    Bruker mock for å simulere bilde- og maskefiler.
     """
+    dummy_img = Image.fromarray((np.random.rand(128, 128, 3) * 255).astype(np.uint8))
+    dummy_mask = Image.fromarray(
+        ((np.random.rand(128, 128) > 0.5) * 255).astype(np.uint8)
+    )
+
+    mock_image_open.side_effect = [dummy_img, dummy_mask]
+
     dataset = SnuplassDataset(
-        image_dir="data/images",
-        mask_dir="data/masks",
-        file_list="data/splits/train.txt",
+        image_dir="fake/images",
+        mask_dir="fake/masks",
+        file_list="fake/splits/train.txt",
         transform=get_train_transforms(cfg),
     )
-    assert len(dataset) > 0
+
+    assert len(dataset) == 1
     img, mask = dataset[0]
     assert isinstance(img, torch.Tensor)
     assert isinstance(mask, torch.Tensor)
+    assert img.shape[1:] == mask.shape  # Bilde og maske skal ha samme høyde og bredde
 
 
 def test_dataloader(cfg):
     """
-    Tester at DataLoader kan iterere over SnuplassDataset og returnerer batcher med bilder og masker.
+    Tester at DataLoader kan hente batcher fra SnuplassDataset.
     """
     dataset = SnuplassDataset(
         image_dir="data/images",
@@ -52,7 +70,7 @@ def test_dataloader(cfg):
 
 def test_unet_forward_pass(cfg):
     """
-    Tester at UNet-modellen kan utføre en fremoverpass uten feil.
+    Tester at UNet-modellen kan utføre en fremoverpassering uten feil.
     """
     device = torch.device("cpu")
     model = UNet(n_channels=3, n_classes=1, bilinear=False).to(device)
@@ -63,16 +81,16 @@ def test_unet_forward_pass(cfg):
         transform=get_train_transforms(cfg),
     )
     img, _ = dataset[0]
-    img = img.unsqueeze(0).to(device)  # batch size 1
+    img = img.unsqueeze(0).to(device)
     with torch.no_grad():
         output = model(img)
-    assert output.shape[1] == 1  # n_classes
-    assert output.shape[0] == 1  # batch size
+    assert output.shape[1] == 1
+    assert output.shape[0] == 1
 
 
 def test_training_step(cfg):
     """
-    Tester at treningssteget kan kjøre uten feil og oppdaterer vektene.
+    Tester at treningssteget i UNet-modellen fungerer som forventet.
     """
     device = torch.device("cpu")
     model = UNet(n_channels=3, n_classes=1, bilinear=False).to(device)
@@ -99,7 +117,7 @@ def test_training_step(cfg):
 
 def test_validation_step():
     """
-    Tester at valideringssteget kan kjøre uten feil og returnerer en gyldig tapverdi.
+    Tester at valideringssteget i UNet-modellen fungerer som forventet.
     """
     device = torch.device("cpu")
     model = UNet(n_channels=3, n_classes=1, bilinear=False).to(device)
@@ -126,8 +144,7 @@ def test_validation_step():
 
 def test_main_runs(monkeypatch):
     """
-    Testerer at main-funksjonen i train.py kan kjøres uten feil.
-    Dette er en rask test som ikke trener modellen fullt ut.
+    Tester at main-funksjonen i train.py kan kjøres uten feil.
     """
 
     def fast_main():
