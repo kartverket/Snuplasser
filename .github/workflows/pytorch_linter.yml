@@ -17,12 +17,12 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
       - name: Install dependencies
         run: |
           pip install pylint
-          pip install -r requirements.txt  # varsa
+          pip install -r requirements.txt
 
       - name: Run pylint on PyTorch files only
         run: pylint --rcfile=.pylintrc src/model/lightning_model.py

@@ -6,9 +6,8 @@ geopandas
 lightning
 matplotlib
 opencv-python
-pytest
-pytest-asyncio
 python-dotenv
+rasterio
 torch
 timm
 torchvision
