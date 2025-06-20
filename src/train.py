@@ -2,6 +2,7 @@ import torch
 from torch.utils.data import DataLoader
 import torch.nn as nn
 import torch.optim as optim
+from tqdm import tqdm
 
 from dataProcessing.dataset import SnuplassDataset
 from dataProcessing.transform import get_train_transforms, get_val_transforms
@@ -43,7 +44,7 @@ def main():
     for epoch in range(num_epochs):
         model.train()
         total_loss = 0.0
-        for images, masks in train_loader:
+        for images, masks in tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs}"):
             images, masks = images.to(device), masks.to(device)
 
             optimizer.zero_grad()
