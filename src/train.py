@@ -43,23 +43,38 @@ def main():
 
     for epoch in range(num_epochs):
         model.train()
-        total_loss = 0.0
-        for images, masks in tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs}"):
-            images, masks = images.to(device), masks.to(device)
+        total_loss = 0
 
+        for images, masks in tqdm(
+            train_loader, desc=f"Epoch {epoch+1}/{num_epochs} - Training"
+        ):
+            images, masks = images.to(device), masks.to(device).float()
             optimizer.zero_grad()
             outputs = model(images)
             loss = criterion(outputs.squeeze(1), masks)
             loss.backward()
             optimizer.step()
-
             total_loss += loss.item()
 
-        print(
-            f"Epoch [{epoch+1}/{num_epochs}], Train Loss: {total_loss/len(train_loader):.4f}"
-        )
+        avg_train_loss = total_loss / len(train_loader)
+        print(f"\nTrain loss: {avg_train_loss:.4f}")
 
-    print("Training complete!")
+        # Validering
+        model.eval()
+        val_loss = 0.0
+        with torch.no_grad():
+            for images, masks in tqdm(
+                val_loader, desc=f"Epoch {epoch+1}/{num_epochs} - Validation"
+            ):
+                images, masks = images.to(device), masks.to(device).float()
+                outputs = model(images)
+                loss = criterion(outputs.squeeze(1), masks)
+                val_loss += loss.item()
+
+        avg_val_loss = val_loss / len(val_loader)
+        print(f"Val loss: {avg_val_loss:.4f}")
+
+    print("✅ Trening ferdig")
 
 
 if __name__ == "__main__":
