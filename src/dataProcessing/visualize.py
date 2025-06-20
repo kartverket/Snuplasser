@@ -5,8 +5,8 @@ import sys
 import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from transform import get_train_transforms
-from augmentation_config import augmentation_profiles
+from src.dataProcessing.transform import get_train_transforms
+from src.dataProcessing.augmentation_config import augmentation_profiles
 
 
 def interactive_visualize(image_dir, mask_dir):

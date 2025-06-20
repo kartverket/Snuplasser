@@ -37,11 +37,3 @@ for å validere klassifiseringen.
 * Python 3.10+
 * PyTorch
 * ...
- 
-
-
-
-## Hvordan generere treningsdata
-1. Velg ønsket start- og sluttpunkt i filen config.py
-2. Kjør filen improved_download_data.py
-3. Kjør filen training_data.py

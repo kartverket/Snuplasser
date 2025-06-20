@@ -11,6 +11,10 @@ from src.dataProcessing.download_test_data import main
 @patch("pathlib.Path.exists", return_value=False)
 @patch("pathlib.Path.mkdir")
 async def test_main_downloads_correct_tiles(mock_mkdir, _, mock_download_image):
+    """
+    Tester at main-funksjonen laster ned bilder for riktig antall fliser
+    og at de har forventet størrelse og plassering.
+    """
     test_bbox = [0, 0, 200, 200]
     image_size = [500, 500]  # px
     resolution = 0.2  # m/px → 100x100m tile
