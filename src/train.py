@@ -3,11 +3,14 @@ from torch.utils.data import DataLoader
 import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
+import sys
+import os
 
-from dataProcessing.dataset import SnuplassDataset
-from dataProcessing.transform import get_train_transforms, get_val_transforms
-from model.unet import UNet
-from dataProcessing.augmentation_config import augmentation_profiles
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from src.dataProcessing.dataset import SnuplassDataset
+from src.dataProcessing.transform import get_train_transforms, get_val_transforms
+from src.model.unet import UNet
+from src.dataProcessing.augmentation_config import augmentation_profiles
 
 
 def main():
