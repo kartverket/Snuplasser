@@ -1,7 +1,6 @@
 import pytest
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
-import sys
 
 import src.config as config
 from src.dataProcessing.download_test_data import main
