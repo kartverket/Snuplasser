@@ -34,7 +34,9 @@ class SnuplassDataset(Dataset):
         mask = Image.open(mask_path).convert("L")
 
         if self.transform:
-            augmented = self.transform(image=np.array(image), mask=np.array(mask) // 255)
+            augmented = self.transform(
+                image=np.array(image), mask=np.array(mask) // 255
+            )
             image = augmented["image"]
             mask = augmented["mask"]
 
@@ -50,7 +52,13 @@ class SnuplassDataset(Dataset):
     ):
         random.seed(seed)
 
-        image_files = sorted([f for f in os.listdir(image_dir) if f.startswith("image_") and f.endswith(".png")])
+        image_files = sorted(
+            [
+                f
+                for f in os.listdir(image_dir)
+                if f.startswith("image_") and f.endswith(".png")
+            ]
+        )
         file_ids = [Path(f).stem for f in image_files]
 
         if not file_ids:
@@ -76,17 +84,27 @@ def load_numpy_split_stack(image_dir, mask_dir, holdout_size=5, test_size=0.2, s
     """
     np.random.seed(seed)
 
-    all_files = sorted([f for f in os.listdir(image_dir) if f.startswith("image_") and f.endswith(".png")])
+    all_files = sorted(
+        [
+            f
+            for f in os.listdir(image_dir)
+            if f.startswith("image_") and f.endswith(".png")
+        ]
+    )
     file_ids = [Path(f).stem for f in all_files]
 
     if len(file_ids) < holdout_size + 2:
-        raise ValueError("For få bilder til å gjennomføre splitting med holdout og validering.")
+        raise ValueError(
+            "For få bilder til å gjennomføre splitting med holdout og validering."
+        )
 
     np.random.shuffle(file_ids)
     holdout_ids = file_ids[:holdout_size]
     remaining_ids = file_ids[holdout_size:]
 
-    train_ids, val_ids = train_test_split(remaining_ids, test_size=test_size, random_state=seed)
+    train_ids, val_ids = train_test_split(
+        remaining_ids, test_size=test_size, random_state=seed
+    )
 
     def load_stack(ids):
         images, masks = [], []
@@ -113,7 +131,9 @@ def load_numpy_split_stack(image_dir, mask_dir, holdout_size=5, test_size=0.2, s
     X_val, y_val = load_stack(val_ids)
     X_test, y_test = load_stack(holdout_ids)
 
-    print(f"📦 Treningsdata: {len(X_train)} | Validering: {len(X_val)} | Test (holdout): {len(X_test)}")
+    print(
+        f"📦 Treningsdata: {len(X_train)} | Validering: {len(X_val)} | Test (holdout): {len(X_test)}"
+    )
 
     return (X_train, y_train), (X_val, y_val), (X_test, y_test)
 

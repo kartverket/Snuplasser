@@ -13,7 +13,6 @@ from dataProcessing.loader import get_dataloader
 # (X_train, y_train), (X_val, y_val), (X_test, y_test) = load_numpy_split_stack(image_dir, mask_dir)
 
 
-
 def parse_args():
     pass
 
