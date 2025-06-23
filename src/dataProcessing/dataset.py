@@ -6,6 +6,7 @@ from pathlib import Path
 from datetime import datetime
 import json
 import os
+from sklearn.model_selection import train_test_split
 
 
 class SnuplassDataset(Dataset):
