@@ -4,6 +4,15 @@ import src.config as config
 from model.lightning_model import DCSwin
 from dataProcessing.loader import get_dataloader
 
+# For å splitte datasettet med strukturen fra dataset.py
+# from dataProcessing.dataset import load_numpy_split_stack
+
+# image_dir = "data/images"
+# mask_dir = "data/masks"
+
+# (X_train, y_train), (X_val, y_val), (X_test, y_test) = load_numpy_split_stack(image_dir, mask_dir)
+
+
 
 def parse_args():
     pass
