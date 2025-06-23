@@ -37,3 +37,5 @@ for å validere klassifiseringen.
 * Python 3.10+
 * PyTorch
 * ...
+
+ye
