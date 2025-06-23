@@ -1,3 +1,4 @@
+import geopandas as gpd
 import json
 import numpy as np
 from pathlib import Path
@@ -82,9 +83,12 @@ def test_make_bbox_around_polygon_adds_buffer():
         geojson_path = tmpdir / "dummy.geojson"
         create_dummy_geojson(geojson_path)
 
+        # Load GeoJSON into GeoDataFrame
+        gdf = gpd.read_file(geojson_path)
+
         index = 0
         buffer = 10
-        bbox = make_bbox_around_polygon(geojson_path, index, buffer)
+        bbox = make_bbox_around_polygon(gdf, index, buffer)
 
         assert len(bbox) == 4
         minx, miny, maxx, maxy = bbox
