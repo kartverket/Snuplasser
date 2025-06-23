@@ -101,23 +101,26 @@ def generate_mask(geojson_path, bbox, save_path):
 
 
 # === Hjelpefunksjon for å lage bbox rundt polygon ===
-def make_bbox_around_polygon(geojson_path, index, buffer=10):
-    gdf = gpd.read_file(geojson_path).to_crs("EPSG:25833")
-    poly = gdf.geometry.iloc[index]
+def make_bbox_around_polygon(gdf, index, buffer=10):
+    poly = gdf.geometry.loc[index]
     minx, miny, maxx, maxy = poly.bounds
     return [minx - buffer, miny - buffer, maxx + buffer, maxy + buffer]
 
 
 # === Main ===
-async def main():
+async def main(amount="all"):
     # === Definer hvilke polygoner du vil bruke:
-    gdf = gpd.read_file(GEOJSON_PATH).to_crs("EPSG:25833")
+    if amount == "all":
+        gdf = gpd.read_file(GEOJSON_PATH).to_crs("EPSG:25833")
+    else:
+        gdf = (
+            gpd.read_file(GEOJSON_PATH)
+            .to_crs("EPSG:25833")
+            .sample(n=int(amount), random_state=42)
+        )  # Tilfeldig utvalg av amount polygoner
     bbox_dict = {
-        idx: make_bbox_around_polygon(
-            GEOJSON_PATH, idx, buffer=20
-        )  # Kan randomisere buffer for variasjon
-        for idx in range(len(gdf))
-    }
+        idx: make_bbox_around_polygon(gdf, idx, buffer=20) for idx in gdf.index
+    }  # Buffer på 20 meter rundt polygonet
 
     for idx, bbox in bbox_dict.items():
         # Filnavn
