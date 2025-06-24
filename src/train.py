@@ -53,7 +53,7 @@ def main():
         for images, masks in tqdm(
             train_loader, desc=f"Epoch {epoch+1}/{num_epochs} - Training"
         ):
-            images, masks = images.to(device), masks.to(device).float()
+            images, masks = images.to(device).float(), masks.to(device).float()
             optimizer.zero_grad()
             outputs = model(images)
             loss = criterion(outputs.squeeze(1), masks)
@@ -71,7 +71,7 @@ def main():
             for images, masks in tqdm(
                 val_loader, desc=f"Epoch {epoch+1}/{num_epochs} - Validation"
             ):
-                images, masks = images.to(device), masks.to(device).float()
+                images, masks = images.to(device).float(), masks.to(device).float()
                 outputs = model(images)
                 loss = criterion(outputs.squeeze(1), masks)
                 val_loss += loss.item()
