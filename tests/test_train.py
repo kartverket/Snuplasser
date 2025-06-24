@@ -32,22 +32,32 @@ def setup_tmp_dataset(tmp_path):
     masks_dir.mkdir()
     splits_dir.mkdir()
 
-    for i in range(2):
+    file_ids = []
+
+    for i in range(4):
+        x0, y0 = 249000 + i * 100, 6786000 + i * 100
+        x1, y1 = x0 + 100, y0 + 100
+        filename = f"{x0}_{y0}_{x1}_{y1}"
+        file_ids.append(f"image_{filename}")
+
         img_array = np.zeros((100, 100, 3), dtype=np.uint8)
         img = Image.fromarray(img_array)
-        img_path = images_dir / f"img{i+1}.png"
+        img_path = images_dir / f"image_{filename}.png"
         img.save(img_path)
 
         mask_array = np.zeros((100, 100), dtype=np.uint8)
         mask = Image.fromarray(mask_array)
-        mask_path = masks_dir / f"img{i+1}.png"
+        mask_path = masks_dir / f"mask_{filename}.png"
         mask.save(mask_path)
 
     train_txt = splits_dir / "train.txt"
-    train_txt.write_text("img1\nimg2\n")
-
     val_txt = splits_dir / "val.txt"
-    val_txt.write_text("img1\nimg2\n")
+
+    train_ids = file_ids[:2]
+    val_ids = file_ids[2:]
+
+    train_txt.write_text("\n".join(train_ids) + "\n")
+    val_txt.write_text("\n".join(val_ids) + "\n")
 
     return {
         "images_dir": images_dir,
