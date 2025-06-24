@@ -5,6 +5,7 @@ from torch.utils.data import Dataset
 from PIL import Image
 import numpy as np
 from sklearn.model_selection import train_test_split
+import torch
 import json
 from datetime import datetime
 
@@ -48,6 +49,12 @@ class SnuplassDataset(Dataset):
             )
             image = augmented["image"]
             mask = augmented["mask"]
+
+        if not isinstance(image, torch.Tensor):
+            image = torch.from_numpy(np.array(image)).permute(2, 0, 1)
+
+        if not isinstance(mask, torch.Tensor):
+            mask = torch.from_numpy(np.array(mask) / 255).unsqueeze(0).float()
 
         return image, mask
 
