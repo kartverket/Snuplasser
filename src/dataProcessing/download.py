@@ -49,8 +49,8 @@ Bruksområde:
 # === Konstanter ===
 GEOJSON_PATH = config.GEOJSON_PATH
 BASE_IMAGE_URL = config.BASE_IMAGE_URL
+BASE_DOM_URL = config.BASE_DOM_URL
 IMAGE_SIZE = config.IMAGE_SIZE
-RESOLUTION = config.RESOLUTION
 
 
 # === Hjelpefunksjon for WMS URL ===
@@ -61,6 +61,17 @@ def get_url(bbox):
         f"{BASE_IMAGE_URL}?VERSION=1.3.0&service=WMS&request=GetMap&Format=image/png&"
         f"GetFeatureInfo=text/plain&CRS=EPSG:25833&Layers=ortofoto&BBox={bbox_str}&"
         f"width={width}&height={height}"
+    )
+
+
+# === Hjelpefunksjon for DOM URL ===
+def get_dom_url(bbox):
+    bbox_str = ",".join(map(str, bbox))
+    width, height = IMAGE_SIZE
+    return (
+        f"{BASE_DOM_URL}-dom-nhm-25833?request=GetMap&Format=image/png&"
+        f"GetFeatureInfo=text/plain&CRS=EPSG:25833&Layers=NHM_DOM_25833:skyggerelieff&"
+        f"BBox={bbox_str}&width={width}&height={height}"
     )
 
 
@@ -76,6 +87,20 @@ async def download_image(bbox, save_path):
                     print(f"✅ Lagret bilde: {save_path}")
             else:
                 print(f"❌ Feil ved nedlasting: {response.status}")
+
+
+# === Last ned DOM-bilde fra Geonorge WMS ===
+async def download_dom_image(bbox, save_path):
+    url = get_dom_url(bbox)
+    async with ClientSession() as session:
+        async with session.get(url) as response:
+            if response.status == 200:
+                img_bytes = await response.read()
+                async with aiofiles.open(save_path, "wb") as f:
+                    await f.write(img_bytes)
+                    print(f"✅ Lagret DOM-bilde: {save_path}")
+            else:
+                print(f"❌ Feil ved nedlasting av DOM: {response.status}")
 
 
 # === Lag maske fra geojson og bbox ===
@@ -124,21 +149,27 @@ async def main():
         bbox_str = "_".join(f"{int(c)}" for c in bbox)
         img_name = f"image_{bbox_str}.png"
         mask_name = f"mask_{bbox_str}.png"
+        dom_name = f"dom_{bbox_str}.png"
 
         # Mapper
         image_path = Path("data/images") / img_name
         mask_path = Path("data/masks") / mask_name
+        dom_path = Path("data/doms") / dom_name
+
+        # Opprett mapper hvis de ikke finnes
         image_path.parent.mkdir(parents=True, exist_ok=True)
         mask_path.parent.mkdir(parents=True, exist_ok=True)
+        dom_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Hopp over hvis begge finnes
-        if image_path.exists() and mask_path.exists():
-            print(f"⏭️ Hopper over {img_name} (allerede lastet og masket)")
+        if image_path.exists() and mask_path.exists() and dom_path.exists():
+            print(f"⏭️ Hopper over {img_name} (allerede lastet og masket) med DOM.")
             continue
 
-        # Last ned bilde og lag maske
+        # Last ned bilde og DOM-bilde, og lag maske
         await download_image(bbox, image_path)
         generate_mask(GEOJSON_PATH, bbox, mask_path)
+        await download_dom_image(bbox, dom_path)
 
 
 def check_data_integrity(image_dir, mask_dir):
@@ -162,4 +193,4 @@ def check_data_integrity(image_dir, mask_dir):
 # === Kjør
 if __name__ == "__main__":
     asyncio.run(main())
-    interactive_visualize("data/images", "data/masks")
+    interactive_visualize("data/images", "data/masks", "data/doms")

@@ -2,6 +2,7 @@
 
 # === Konstanter ===
 BASE_IMAGE_URL = "https://wms.geonorge.no/skwms1/wms.nib"
+BASE_DOM_URL = "https://wms.geonorge.no/skwms1/wms.hoyde"
 GEOJSON_PATH = "turning_spaces.geojson"
 
 TEST_BBOX = [331800, 6753200, 332500, 6754200]
