@@ -27,31 +27,49 @@ def setup_tmp_dataset(tmp_path):
     """
     images_dir = tmp_path / "images"
     masks_dir = tmp_path / "masks"
+    doms_dir = tmp_path / "doms"
     splits_dir = tmp_path / "splits"
     images_dir.mkdir()
     masks_dir.mkdir()
+    doms_dir.mkdir()
     splits_dir.mkdir()
 
-    for i in range(2):
+    file_ids = []
+
+    for i in range(4):
+        x0, y0 = 249000 + i * 100, 6786000 + i * 100
+        x1, y1 = x0 + 100, y0 + 100
+        filename = f"{x0}_{y0}_{x1}_{y1}"
+        file_ids.append(f"image_{filename}")
+
         img_array = np.zeros((100, 100, 3), dtype=np.uint8)
         img = Image.fromarray(img_array)
-        img_path = images_dir / f"img{i+1}.png"
+        img_path = images_dir / f"image_{filename}.png"
         img.save(img_path)
 
         mask_array = np.zeros((100, 100), dtype=np.uint8)
         mask = Image.fromarray(mask_array)
-        mask_path = masks_dir / f"img{i+1}.png"
+        mask_path = masks_dir / f"mask_{filename}.png"
         mask.save(mask_path)
 
-    train_txt = splits_dir / "train.txt"
-    train_txt.write_text("img1\nimg2\n")
+        dom_array = np.zeros((100, 100), dtype=np.uint8)
+        dom = Image.fromarray(dom_array)
+        dom_path = images_dir / f"dom_{filename}.png"
+        dom.save(dom_path)
 
+    train_txt = splits_dir / "train.txt"
     val_txt = splits_dir / "val.txt"
-    val_txt.write_text("img1\nimg2\n")
+
+    train_ids = file_ids[:2]
+    val_ids = file_ids[2:]
+
+    train_txt.write_text("\n".join(train_ids) + "\n")
+    val_txt.write_text("\n".join(val_ids) + "\n")
 
     return {
         "images_dir": images_dir,
         "masks_dir": masks_dir,
+        "doms_dir": images_dir,
         "train_list": train_txt,
         "val_list": val_txt,
     }
@@ -66,6 +84,7 @@ def test_dataset_loads(setup_tmp_dataset):
     dataset = SnuplassDataset(
         image_dir=str(setup_tmp_dataset["images_dir"]),
         mask_dir=str(setup_tmp_dataset["masks_dir"]),
+        dom_dir=str(setup_tmp_dataset["images_dir"]),
         file_list=str(setup_tmp_dataset["train_list"]),
         transform=get_train_transforms(cfg),
     )
@@ -82,11 +101,13 @@ def test_dataloader(cfg, setup_tmp_dataset):
     """
     img_dir = setup_tmp_dataset["images_dir"]
     mask_dir = setup_tmp_dataset["masks_dir"]
+    dom_dir = setup_tmp_dataset["doms_dir"]
     train_txt = setup_tmp_dataset["train_list"]
 
     dataset = SnuplassDataset(
         image_dir=img_dir,
         mask_dir=mask_dir,
+        dom_dir=dom_dir,
         file_list=train_txt,
         transform=get_train_transforms(cfg),
     )
@@ -98,25 +119,27 @@ def test_dataloader(cfg, setup_tmp_dataset):
 
 
 def test_unet_forward_pass(cfg, setup_tmp_dataset):
-    """
-    Test that the UNet model can perform a forward pass with a batch of images.
-    """
     device = torch.device("cpu")
-    model = UNet(n_channels=3, n_classes=1, bilinear=False).to(device)
+    model = UNet(n_channels=4, n_classes=1, bilinear=False).to(device)
+
     img_dir = setup_tmp_dataset["images_dir"]
     mask_dir = setup_tmp_dataset["masks_dir"]
+    dom_dir = setup_tmp_dataset["doms_dir"]
     train_txt = setup_tmp_dataset["train_list"]
 
     dataset = SnuplassDataset(
         image_dir=img_dir,
         mask_dir=mask_dir,
+        dom_dir=dom_dir,
         file_list=train_txt,
         transform=get_train_transforms(cfg),
     )
     img, _ = dataset[0]
-    img = img.unsqueeze(0).to(device)  # batch size 1
+    img = img.unsqueeze(0).to(device).float()
+
     with torch.no_grad():
         output = model(img)
+
     assert output.shape[1] == 1  # n_classes
     assert output.shape[0] == 1  # batch size
 
@@ -126,14 +149,16 @@ def test_training_step(cfg, setup_tmp_dataset):
     Test that the training step can compute a loss value.
     """
     device = torch.device("cpu")
-    model = UNet(n_channels=3, n_classes=1, bilinear=False).to(device)
+    model = UNet(n_channels=4, n_classes=1, bilinear=False).to(device)
     img_dir = setup_tmp_dataset["images_dir"]
     mask_dir = setup_tmp_dataset["masks_dir"]
+    dom_dir = setup_tmp_dataset["doms_dir"]
     train_txt = setup_tmp_dataset["train_list"]
 
     dataset = SnuplassDataset(
         image_dir=img_dir,
         mask_dir=mask_dir,
+        dom_dir=dom_dir,
         file_list=train_txt,
         transform=get_train_transforms(cfg),
     )
@@ -143,7 +168,7 @@ def test_training_step(cfg, setup_tmp_dataset):
 
     model.train()
     imgs, masks = next(iter(loader))
-    imgs, masks = imgs.to(device), masks.to(device).float()
+    imgs, masks = imgs.to(device).float(), masks.to(device).float()
     optimizer.zero_grad()
     outputs = model(imgs)
     loss = criterion(outputs.squeeze(1), masks)
@@ -152,19 +177,21 @@ def test_training_step(cfg, setup_tmp_dataset):
     assert loss.item() > 0
 
 
-def test_validation_step(cfg, setup_tmp_dataset):
+def test_validation_step(setup_tmp_dataset):
     """
     Test that the validation step can compute a loss value.
     """
     device = torch.device("cpu")
-    model = UNet(n_channels=3, n_classes=1, bilinear=False).to(device)
+    model = UNet(n_channels=4, n_classes=1, bilinear=False).to(device)
     img_dir = setup_tmp_dataset["images_dir"]
     mask_dir = setup_tmp_dataset["masks_dir"]
+    dom_dir = setup_tmp_dataset["doms_dir"]
     val_txt = setup_tmp_dataset["val_list"]
 
     dataset = SnuplassDataset(
         image_dir=img_dir,
         mask_dir=mask_dir,
+        dom_dir=dom_dir,
         file_list=val_txt,
         transform=get_val_transforms(),
     )
@@ -175,7 +202,7 @@ def test_validation_step(cfg, setup_tmp_dataset):
     val_loss = 0.0
     with torch.no_grad():
         for imgs, masks in loader:
-            imgs, masks = imgs.to(device), masks.to(device).float()
+            imgs, masks = imgs.to(device).float(), masks.to(device).float()
             outputs = model(imgs)
             loss = criterion(outputs.squeeze(1), masks)
             val_loss += loss.item()
@@ -190,6 +217,7 @@ def test_main_runs(monkeypatch, setup_tmp_dataset, cfg):
     """
     img_dir = setup_tmp_dataset["images_dir"]
     mask_dir = setup_tmp_dataset["masks_dir"]
+    dom_dir = setup_tmp_dataset["doms_dir"]
     train_txt = setup_tmp_dataset["train_list"]
 
     def fast_main():
@@ -201,13 +229,14 @@ def test_main_runs(monkeypatch, setup_tmp_dataset, cfg):
         train_dataset = SnuplassDataset(
             image_dir=img_dir,
             mask_dir=mask_dir,
+            dom_dir=dom_dir,
             file_list=train_txt,
             transform=get_train_transforms(cfg),
         )
 
         train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
-        model = UNet(n_channels=3, n_classes=1, bilinear=False).to(device)
+        model = UNet(n_channels=4, n_classes=1, bilinear=False).to(device)
         criterion = torch.nn.BCEWithLogitsLoss()
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
@@ -215,7 +244,7 @@ def test_main_runs(monkeypatch, setup_tmp_dataset, cfg):
             model.train()
             total_loss = 0.0
             for images, masks in train_loader:
-                images, masks = images.to(device), masks.to(device).float()
+                images, masks = images.to(device).float(), masks.to(device).float()
                 optimizer.zero_grad()
                 outputs = model(images)
                 loss = criterion(outputs.squeeze(1), masks)

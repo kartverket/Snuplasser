@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from pathlib import Path
 from PIL import Image
 import sys
 import os
@@ -11,12 +10,12 @@ from src.dataProcessing.transform import get_train_transforms
 from src.dataProcessing.augmentation_config import augmentation_profiles
 
 
-def interactive_visualize(image_dir, mask_dir):
+def interactive_visualize(image_dir, mask_dir, dom_dir):
     """
-    Åpner ett vindu der du kan bla i bilde- og maskepar med piltaster.
+    Åpner et vindu der du kan bla i bilder, masker og DOM ved å trykke på piltastene.
     """
     image_files = sorted([f for f in os.listdir(image_dir) if f.endswith(".png")])
-    fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+    fig, ax = plt.subplots(1, 3, figsize=(10, 5))
     manager = getattr(fig.canvas, "manager", None)
     if manager is not None and hasattr(manager, "set_window_title"):
         manager.set_window_title("Trykk ⬅️ eller ➡️ for å bla")
@@ -25,13 +24,17 @@ def interactive_visualize(image_dir, mask_dir):
     def show(i):
         image_path = os.path.join(image_dir, image_files[i])
         mask_path = os.path.join(mask_dir, image_files[i].replace("image", "mask"))
+        dom_path = os.path.join(dom_dir, image_files[i].replace("image", "dom"))
         img = Image.open(image_path)
         mask = Image.open(mask_path)
+        dom = Image.open(dom_path)
 
         ax[0].imshow(img)
         ax[0].set_title(f"Bilde: {image_files[i]}")
         ax[1].imshow(mask, cmap="gray")
         ax[1].set_title("Maske")
+        ax[2].imshow(dom)
+        ax[2].set_title("DOM")
         for a in ax:
             a.axis("off")
         fig.canvas.draw_idle()
@@ -81,7 +84,7 @@ def visualize_multiple_augmentations(image_path, mask_path, cfg_name="basic", n=
 
 if __name__ == "__main__":
     visualize_multiple_augmentations(
-        image_path="data\images\image_249322_6786313_249385_6786382.png",
-        mask_path="data\masks\mask_249322_6786313_249385_6786382.png",
+        image_path="data/images/image_249322_6786313_249385_6786382.png",
+        mask_path="data/masks/mask_249322_6786313_249385_6786382.png",
         cfg_name="default",  # Se augmentation_config.py
     )

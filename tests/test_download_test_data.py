@@ -6,7 +6,7 @@ import src.config as config
 from src.dataProcessing.download_test_data import main
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 @patch("src.dataProcessing.download_test_data.download_image", new_callable=AsyncMock)
 @patch("pathlib.Path.exists", return_value=False)
 @patch("pathlib.Path.mkdir")

@@ -12,3 +12,5 @@ torch
 timm
 torchvision
 shapely
+scikit-learn
+pytest-asyncio
