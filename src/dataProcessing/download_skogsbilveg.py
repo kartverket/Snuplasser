@@ -2,17 +2,16 @@ import requests
 import pandas as pd
 
 
-def hent_skogbilveier_fra_vegnett(kommune_id: str, antall_per_side: int = 1000) -> pd.DataFrame:
+def hent_skogbilveier_fra_vegnett(
+    kommune_id: str, antall_per_side: int = 1000
+) -> pd.DataFrame:
     url = "https://nvdbapiles-v3.atlas.vegvesen.no/vegnett/veglenkesekvenser"
-    headers = {
-        "Accept": "application/json",
-        "X-Client": "Snuplasser"
-    }
+    headers = {"Accept": "application/json", "X-Client": "Snuplasser"}
 
     params = {
         "kommune": kommune_id,
         "vegsystemreferanse": "S",
-        "antall": antall_per_side
+        "antall": antall_per_side,
     }
 
     alle_objekter = []
@@ -30,11 +29,13 @@ def hent_skogbilveier_fra_vegnett(kommune_id: str, antall_per_side: int = 1000) 
 
     rows = []
     for obj in alle_objekter:
-        rows.append({
-            "veglenkesekvensid": obj.get("veglenkesekvensid"),
-            "href": obj.get("href"),
-            "lengde": obj.get("lengde"),
-            "kommune": kommune_id
-        })
+        rows.append(
+            {
+                "veglenkesekvensid": obj.get("veglenkesekvensid"),
+                "href": obj.get("href"),
+                "lengde": obj.get("lengde"),
+                "kommune": kommune_id,
+            }
+        )
 
     return pd.DataFrame(rows)

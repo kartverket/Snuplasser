@@ -3,7 +3,7 @@ from PIL import Image
 import numpy as np
 import torch
 import json
-import os
+
 
 from src.dataProcessing.dataset import SnuplassDataset
 

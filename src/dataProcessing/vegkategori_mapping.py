@@ -1,10 +1,9 @@
-VegKategori_Til_Objekttype= {
-    "S": {
-        "Skogbilvei": 1230  # Det 1230 er objecttype ID for Skogbilvei
-              }
+VegKategori_Til_Objekttype = {
+    "S": {"Skogbilvei": 1230}  # Det 1230 er objecttype ID for Skogbilvei
 }
 
-def hent_objekttype_id(vegkategori:str, navn:str)->int:
+
+def hent_objekttype_id(vegkategori: str, navn: str) -> int:
     """
     Henter objekttype ID basert på vegkategori og navn.
 
@@ -15,7 +14,7 @@ def hent_objekttype_id(vegkategori:str, navn:str)->int:
     Returns:
         int: Objekttype ID hvis funnet, ellers None.
     """
-    kategori_data= VegKategori_Til_Objekttype.get(vegkategori.upper())
+    kategori_data = VegKategori_Til_Objekttype.get(vegkategori.upper())
     if not kategori_data:
         raise ValueError(f"Ugyldig vegkategori: {vegkategori}")
     objekttype_id = kategori_data.get(navn)
