@@ -1,70 +1,78 @@
-
 import os
+import h5py
 import numpy as np
 from PIL import Image
-import h5py
 from tqdm import tqdm
 
-def export_to_hdf5(image_dir, dom_dir, mask_dir, output_path, image_size=(512, 512)):
+
+def export_to_hdf5(image_dir, dom_dir, mask_dir, output_path):
     """
     Kombinerer RGB-bilder med DOM og tilhørende maskefiler,
     og lagrer dem som HDF5-format for enkel opplasting til f.eks. databricks.
     """
-    inputs, masks = [], []
-    image_files = sorted([f for f in os.listdir(image_dir) if f.startswith("image_") and f.endswith(".png")])
+    image_files = sorted(
+        [
+            f
+            for f in os.listdir(image_dir)
+            if f.startswith("image_") and f.endswith(".png")
+        ]
+    )
+    valid_ids = []
 
-    for file in tqdm(image_files, desc="🔄 Behandler bilder"):
-        stem = file.replace("image_", "").replace(".png", "")
-        image_path = os.path.join(image_dir, file)
-        dom_path = os.path.join(dom_dir, f"dom_{stem}.png")
-        mask_path = os.path.join(mask_dir, f"mask_{stem}.png")
+    for f in image_files:
+        suffix = f[len("image_") :]
+        dom_path = os.path.join(dom_dir, f"dom_{suffix}")
+        mask_path = os.path.join(mask_dir, f"mask_{suffix}")
+        image_path = os.path.join(image_dir, f)
 
-        if not os.path.exists(dom_path) or not os.path.exists(mask_path):
-            print(f"⚠️ Mangler dom eller mask for {stem}")
-            continue
+        if os.path.exists(dom_path) and os.path.exists(mask_path):
+            valid_ids.append(suffix)
+        else:
+            print(f"⚠️ Mangler filer for: {suffix}")
+            if not os.path.exists(image_path):
+                print(f"  - Mangler bilde: {image_path}")
+            if not os.path.exists(dom_path):
+                print(f"  - Mangler DOM: {dom_path}")
+            if not os.path.exists(mask_path):
+                print(f"  - Mangler maske: {mask_path}")
 
-        # Last inn og skaler alle filer til samme størrelse
-        image = Image.open(image_path).resize(image_size)
-        dom = Image.open(dom_path).resize(image_size)
-        mask = Image.open(mask_path).resize(image_size)
+    if not valid_ids:
+        raise ValueError(
+            f"Ingen gyldige bildepar funnet.\n"
+            f"Sjekk at alle tre filer finnes for hvert ID i {image_dir}, {dom_dir} og {mask_dir}."
+        )
 
-        # Konverter til numpy
-        image_np = np.array(image)
-        dom_np = np.array(dom)
-        mask_np = np.array(mask) // 255  # Binariser
+    sample_image = Image.open(os.path.join(image_dir, f"image_{valid_ids[0]}"))
+    width, height = sample_image.size
 
-        # Ekstra sjekk: dom må være énkanals
-        if dom_np.ndim == 3:
-            dom_np = dom_np[:, :, 0]
+    num_samples = len(valid_ids)
+    image_stack = np.zeros((num_samples, height, width, 3), dtype=np.uint8)
+    dom_stack = np.zeros((num_samples, height, width, 1), dtype=np.uint8)
+    mask_stack = np.zeros((num_samples, height, width, 1), dtype=np.uint8)
 
-        # Sjekk samsvar i form
-        if image_np.shape[:2] != dom_np.shape[:2] or image_np.shape[:2] != mask_np.shape[:2]:
-            print(f"⚠️ Ulik størrelse på bilde, dom eller mask for {stem} – hopper over")
-            continue
+    print(f"📦 Eksporterer {num_samples} eksempler til {output_path}")
+    for i, suffix in enumerate(tqdm(valid_ids)):
+        image = np.array(Image.open(os.path.join(image_dir, f"image_{suffix}")))
+        dom = np.array(Image.open(os.path.join(dom_dir, f"dom_{suffix}")))
+        mask = np.array(Image.open(os.path.join(mask_dir, f"mask_{suffix}")))
 
-        # Stack som [H, W, 4]
-        combined = np.dstack((image_np, dom_np))
-        inputs.append(combined)
-        masks.append(mask_np)
+        image_stack[i] = image
+        dom_stack[i, ..., 0] = dom
+        mask_stack[i, ..., 0] = mask // 255  # binariser
 
-    if not inputs:
-        raise ValueError("Ingen gyldige bildepar funnet!")
+    stacked_input = np.concatenate([image_stack, dom_stack], axis=-1)
 
-    inputs = np.stack(inputs)
-    masks = np.stack(masks)
+    with h5py.File(output_path, "w") as hf:
+        hf.create_dataset("images_dom", data=stacked_input, compression="gzip")
+        hf.create_dataset("masks", data=mask_stack, compression="gzip")
 
-    with h5py.File(output_path, "w") as f:
-        f.create_dataset("images", data=inputs, compression="gzip")
-        f.create_dataset("masks", data=masks, compression="gzip")
-
-    print(f"✅ Lagret {inputs.shape[0]} bilder til {output_path}")
-    print(f"📐 Shape: inputs={inputs.shape}, masks={masks.shape}")
+    print(f"✅ HDF5-fil lagret: {output_path}")
 
 
 if __name__ == "__main__":
     export_to_hdf5(
         image_dir="data/images",
-        dom_dir="data/dom",
+        dom_dir="data/doms",
         mask_dir="data/masks",
-        output_path="data/combined_dataset.h5"
+        output_path="data/combined_dataset.h5",
     )
