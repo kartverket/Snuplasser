@@ -5,6 +5,9 @@ from torch.utils.data import Dataset
 from PIL import Image
 import numpy as np
 from sklearn.model_selection import train_test_split
+import torch
+import json 
+from datetime import datetime
 
 
 class SnuplassDataset(Dataset):
@@ -35,10 +38,16 @@ class SnuplassDataset(Dataset):
 
         if self.transform:
             augmented = self.transform(
-                image=np.array(image), mask=np.array(mask) // 255
+                image=np.array(image), mask=np.array(mask) // 255 
             )
             image = augmented["image"]
             mask = augmented["mask"]
+
+        if not isinstance(image, torch.Tensor):
+            image = torch.from_numpy(np.array(image)).permute(2, 0, 1)
+
+        if not isinstance(mask, torch.Tensor):
+            mask = torch.from_numpy(np.array(mask) / 255).unsqueeze(0).float()
 
         return image, mask
 
@@ -56,10 +65,10 @@ class SnuplassDataset(Dataset):
             [
                 f
                 for f in os.listdir(image_dir)
-                if f.startswith("image_") and f.endswith(".png")
+                if f.startswith("image_") and f.endswith(".png") and f.strip()
             ]
         )
-        file_ids = [Path(f).stem for f in image_files]
+        file_ids = [Path(f).stem for f in image_files if f.strip()]
 
         if not file_ids:
             raise ValueError("Ingen bildefiler funnet i angitt mappe.")
@@ -75,7 +84,24 @@ class SnuplassDataset(Dataset):
         with open(val_file, "w") as f:
             f.writelines([id_ + "\n" for id_ in val_ids])
 
+        metadata = {
+            "created": datetime.now().isoformat(),
+            "seed": seed,
+            "split_ratio": split_ratio,
+            "total_files": len(file_ids),
+            "num_train": len(train_ids),
+            "num_val": len(val_ids),
+            "train_file": train_file,
+            "val_file": val_file,
+        }
+
+        meta_path = os.path.join(os.path.dirname(train_file), "split_meta.json")
+        with open(meta_path, "w") as f:
+            json.dump(metadata, f, indent=2)
+
         print(f"✅ Laget split: {len(train_ids)} train, {len(val_ids)} val")
+        print(f"ℹ️ Metadata lagret i {meta_path}")
+
 
 
 def load_numpy_split_stack(image_dir, mask_dir, holdout_size=5, test_size=0.2, seed=42):

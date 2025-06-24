@@ -3,7 +3,9 @@ from PIL import Image
 import numpy as np
 import torch
 import json
-
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from src.dataProcessing.dataset import SnuplassDataset
 
 
@@ -48,10 +50,10 @@ def test_dataset_length(dummy_dataset):
 
 def test_dataset_getitem_shape_and_type(dummy_dataset):
     image, mask = dummy_dataset[0]
-    assert isinstance(image, np.ndarray)
+    assert isinstance(image, torch.Tensor)
     assert isinstance(mask, torch.Tensor)
-    assert image.shape == (256, 256, 3)
-    assert mask.shape == (256, 256)
+    assert image.shape == (3, 256, 256)
+    assert mask.shape == (1, 256, 256)
     assert mask.dtype == torch.float32
     assert mask.max() <= 1
     assert mask.min() >= 0
@@ -92,8 +94,8 @@ def test_create_train_val_split(tmp_path):
     with open(meta_path) as f:
         meta = json.load(f)
     assert meta["total_files"] == 10
-    assert meta["train_count"] == 7
-    assert meta["val_count"] == 3
+    assert meta["num_train"] == 7
+    assert meta["num_val"] == 3
     assert meta["split_ratio"] == 0.7
     assert meta["seed"] == 123
     assert "created" in meta
