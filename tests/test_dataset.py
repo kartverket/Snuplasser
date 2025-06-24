@@ -21,9 +21,11 @@ def dummy_dataset(tmp_path):
     """Opprett et dummy datasett med bilde- og maskefiler."""
     image_dir = tmp_path / "images"
     mask_dir = tmp_path / "masks"
+    dom_dir = tmp_path / "doms"
     split_dir = tmp_path / "splits"
     image_dir.mkdir()
     mask_dir.mkdir()
+    dom_dir.mkdir()
     split_dir.mkdir()
 
     # Opprett bilder og masker
@@ -32,6 +34,7 @@ def dummy_dataset(tmp_path):
         create_dummy_png(
             mask_dir / f"mask_{i}.png", color=(255 if i == 0 else 0), mode="L"
         )
+        create_dummy_png(dom_dir / f"dom_{i}.png", color=50, mode="L")
 
     # Opprett file_list.txt
     file_list = split_dir / "file_list.txt"
@@ -40,7 +43,10 @@ def dummy_dataset(tmp_path):
             f.write(f"image_{i}\n")
 
     dataset = SnuplassDataset(
-        image_dir=str(image_dir), mask_dir=str(mask_dir), file_list=str(file_list)
+        image_dir=str(image_dir),
+        mask_dir=str(mask_dir),
+        dom_dir=str(dom_dir),
+        file_list=str(file_list),
     )
     return dataset
 
@@ -53,7 +59,7 @@ def test_dataset_getitem_shape_and_type(dummy_dataset):
     image, mask = dummy_dataset[0]
     assert isinstance(image, torch.Tensor)
     assert isinstance(mask, torch.Tensor)
-    assert image.shape == (3, 256, 256)
+    assert image.shape == (4, 256, 256)
     assert mask.shape == (1, 256, 256)
     assert mask.dtype == torch.float32
     assert mask.max() <= 1

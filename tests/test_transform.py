@@ -38,8 +38,8 @@ def test_train_transforms_output(dummy_image_and_mask):
     assert isinstance(transformed_mask, torch.Tensor)
     assert transformed_image.shape[0] == 3  # CHW format
     assert transformed_mask.ndim == 2
-    assert transformed_image.dtype == torch.float32
-    assert transformed_mask.dtype in [torch.int64, torch.uint8]
+    assert transformed_image.dtype == torch.uint8
+    assert transformed_mask.dtype == torch.uint8
 
 
 def test_val_transforms_output(dummy_image_and_mask):
@@ -58,4 +58,5 @@ def test_val_transforms_output(dummy_image_and_mask):
     assert isinstance(transformed_mask, torch.Tensor)
     assert transformed_image.shape[0] == 3
     assert transformed_mask.shape == mask.shape
-    assert transformed_image.dtype == torch.float32
+    assert transformed_image.dtype == torch.uint8
+    assert transformed_mask.dtype == torch.uint8
