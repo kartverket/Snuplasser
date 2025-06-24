@@ -39,7 +39,7 @@ def main():
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
-    model = UNet(n_channels=4, n_classes=2, bilinear=False).to(
+    model = UNet(n_channels=4, n_classes=1, bilinear=False).to(
         device
     )  # bare å bytte modell
 
