@@ -12,3 +12,4 @@ torch
 timm
 torchvision
 shapely
+scikit-learn
