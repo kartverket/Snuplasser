@@ -5,15 +5,15 @@ from torch.utils.data import Dataset
 from PIL import Image
 import numpy as np
 from sklearn.model_selection import train_test_split
-import torch
 import json
 from datetime import datetime
 
 
 class SnuplassDataset(Dataset):
-    def __init__(self, image_dir, mask_dir, file_list, transform=None):
+    def __init__(self, image_dir, mask_dir, dom_dir, file_list, transform=None):
         self.image_dir = image_dir
         self.mask_dir = mask_dir
+        self.dom_dir = dom_dir
         self.transform = transform
 
         if not os.path.exists(file_list):
@@ -32,22 +32,22 @@ class SnuplassDataset(Dataset):
         file_id = self.file_names[idx]
         image_path = os.path.join(self.image_dir, f"{file_id}.png")
         mask_path = os.path.join(self.mask_dir, f"mask_{file_id[6:]}.png")
+        dom_path = os.path.join(self.dom_dir, f"dom_{file_id[6:]}.png")
 
         image = Image.open(image_path).convert("RGB")
         mask = Image.open(mask_path).convert("L")
+        dom = Image.open(dom_path).convert("L")
+
+        dom = np.expand_dims(dom, axis=-1)  # (H, W, 1)
+        image = np.concatenate((image, dom), axis=-1)  # (H, W, 4)
 
         if self.transform:
             augmented = self.transform(
-                image=np.array(image), mask=np.array(mask) // 255
+                image=np.array(image),
+                mask=np.array(mask) // 255,
             )
             image = augmented["image"]
             mask = augmented["mask"]
-
-        if not isinstance(image, torch.Tensor):
-            image = torch.from_numpy(np.array(image)).permute(2, 0, 1)
-
-        if not isinstance(mask, torch.Tensor):
-            mask = torch.from_numpy(np.array(mask) / 255).unsqueeze(0).float()
 
         return image, mask
 
@@ -103,7 +103,9 @@ class SnuplassDataset(Dataset):
         print(f"ℹ️ Metadata lagret i {meta_path}")
 
 
-def load_numpy_split_stack(image_dir, mask_dir, holdout_size=5, test_size=0.2, seed=42):
+def load_numpy_split_stack(
+    image_dir, mask_dir, dom_dir, holdout_size=5, test_size=0.2, seed=42
+):
     """
     Laster inn hele datasettet som numpy-arrays, splitter i tren/val/test og returnerer stacks.
     """
@@ -136,6 +138,7 @@ def load_numpy_split_stack(image_dir, mask_dir, holdout_size=5, test_size=0.2, s
         for file_id in ids:
             img_path = os.path.join(image_dir, f"{file_id}.png")
             mask_path = os.path.join(mask_dir, f"mask_{file_id[6:]}.png")
+            dom_path = os.path.join(dom_dir, f"dom_{file_id[6:]}.png")
 
             if not os.path.exists(img_path) or not os.path.exists(mask_path):
                 print(f"⛔️ Fil mangler: {img_path} eller {mask_path} – hoppes over")
@@ -143,6 +146,10 @@ def load_numpy_split_stack(image_dir, mask_dir, holdout_size=5, test_size=0.2, s
 
             image = np.array(Image.open(img_path).convert("RGB"))
             mask = np.array(Image.open(mask_path)) // 255
+            dom = np.array(Image.open(dom_path).convert("L"))
+
+            dom = np.expand_dims(dom, axis=-1)  # (H, W, 1)
+            image = np.concatenate((image, dom), axis=-1)  # (H, W, 4)
 
             images.append(image)
             masks.append(mask)
