@@ -69,6 +69,17 @@ def export_to_hdf5(image_dir, dom_dir, mask_dir, output_path):
     print(f"✅ HDF5-fil lagret: {output_path}")
 
 
+def print_h5_structure(file_path):
+    def recurse(name, obj):
+        if isinstance(obj, h5py.Dataset):
+            print(f"📦 Dataset: {name} | shape: {obj.shape} | dtype: {obj.dtype}")
+        elif isinstance(obj, h5py.Group):
+            print(f"📁 Group: {name}")
+
+    with h5py.File(file_path, "r") as f:
+        f.visititems(recurse)
+
+
 if __name__ == "__main__":
     export_to_hdf5(
         image_dir="data/images",
@@ -76,3 +87,4 @@ if __name__ == "__main__":
         mask_dir="data/masks",
         output_path="data/combined_dataset.h5",
     )
+    print_h5_structure("data/combined_dataset.h5")
