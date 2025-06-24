@@ -39,7 +39,7 @@ def setup_tmp_dataset(tmp_path):
         x1, y1 = x0 + 100, y0 + 100
         filename = f"{x0}_{y0}_{x1}_{y1}"
         file_ids.append(f"image_{filename}")
-        
+
         img_array = np.zeros((100, 100, 3), dtype=np.uint8)
         img = Image.fromarray(img_array)
         img_path = images_dir / f"image_{filename}.png"
@@ -58,7 +58,7 @@ def setup_tmp_dataset(tmp_path):
 
     train_txt.write_text("\n".join(train_ids) + "\n")
     val_txt.write_text("\n".join(val_ids) + "\n")
-        
+
     return {
         "images_dir": images_dir,
         "masks_dir": masks_dir,

@@ -6,7 +6,7 @@ from PIL import Image
 import numpy as np
 from sklearn.model_selection import train_test_split
 import torch
-import json 
+import json
 from datetime import datetime
 
 
@@ -38,7 +38,7 @@ class SnuplassDataset(Dataset):
 
         if self.transform:
             augmented = self.transform(
-                image=np.array(image), mask=np.array(mask) // 255 
+                image=np.array(image), mask=np.array(mask) // 255
             )
             image = augmented["image"]
             mask = augmented["mask"]
@@ -101,7 +101,6 @@ class SnuplassDataset(Dataset):
 
         print(f"✅ Laget split: {len(train_ids)} train, {len(val_ids)} val")
         print(f"ℹ️ Metadata lagret i {meta_path}")
-
 
 
 def load_numpy_split_stack(image_dir, mask_dir, holdout_size=5, test_size=0.2, seed=42):
