@@ -165,6 +165,7 @@ lightning_logs/
 checkpoints/
 predictions/
 pretrain_weights/
+runs/
 *.zip
 nib
 iveland_kommune
