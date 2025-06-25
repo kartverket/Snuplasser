@@ -11,8 +11,14 @@ Valg:
 """
 
 
-def get_train_transforms(cfg):
-    return A.Compose(
+def get_train_transforms(cfg: dict, ratio: float | None = None):
+    if ratio is None:
+        return A.Compose([ToTensorV2()])
+
+    if ratio < 0 or ratio > 1:
+        raise ValueError(f"Ratio must be between 0 and 1. Received: {ratio}")
+
+    base_transform = A.Compose(
         [
             A.HorizontalFlip(p=cfg["flip_p"]),
             A.RandomRotate90(p=cfg["rot90_p"]),
@@ -21,6 +27,14 @@ def get_train_transforms(cfg):
             ),  # Endringer i solforhold, årstid, skygge eller skydetthet
             ToTensorV2(),
         ]
+    )
+
+    return A.OneOf(
+        [
+            base_transform,
+            A.NoOp(),
+        ],
+        p=ratio,
     )
 
 

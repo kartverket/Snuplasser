@@ -29,7 +29,8 @@ def main():
         mask_dir="data/masks",
         dom_dir="data/doms",
         file_list="data/splits/train.txt",
-        transform=get_train_transforms(cfg),
+        transform=get_train_transforms(cfg, ratio=None),  # ratio=None for baseline
+        # For å bruke augmentering, sett ratio til en verdi mellom 0 og 1
     )
 
     val_dataset = SnuplassDataset(
