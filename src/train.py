@@ -25,7 +25,7 @@ def main():
         mask_dir="data/masks",
         dom_dir="data/doms",
         file_list="data/splits/train.txt",
-        transform=get_train_transforms(cfg),
+        transform=None,  # get_train_transforms(cfg),  # baseline først uten augmentering
     )
 
     val_dataset = SnuplassDataset(
@@ -33,7 +33,7 @@ def main():
         mask_dir="data/masks",
         dom_dir="data/doms",
         file_list="data/splits/val.txt",
-        transform=get_val_transforms(),
+        transform=None,  # get_val_transforms(),
     )
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
