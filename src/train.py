@@ -3,6 +3,7 @@ from torch.utils.data import DataLoader
 import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 import sys
 import os
 
@@ -46,7 +47,11 @@ def main():
     criterion = nn.BCEWithLogitsLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
+    train_losses = []
+    val_losses = []
+
     for epoch in range(num_epochs):
+        # Trening
         model.train()
         total_loss = 0
 
@@ -62,6 +67,7 @@ def main():
             total_loss += loss.item()
 
         avg_train_loss = total_loss / len(train_loader)
+        train_losses.append(avg_train_loss)
         print(f"\nTrain loss: {avg_train_loss:.4f}")
 
         # Validering
@@ -77,7 +83,20 @@ def main():
                 val_loss += loss.item()
 
         avg_val_loss = val_loss / len(val_loader)
+        val_losses.append(avg_val_loss)
         print(f"Val loss: {avg_val_loss:.4f}")
+
+    # Plotting etter trening
+    plt.figure(figsize=(10, 5))
+    plt.plot(train_losses, label="Treningstap")
+    plt.plot(val_losses, label="Valideringstap")
+    plt.xlabel("Epoke")
+    plt.ylabel("Tap")
+    plt.title("Trenings- og valideringstap")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
 
     print("✅ Trening ferdig")
 
