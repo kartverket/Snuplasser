@@ -3,6 +3,7 @@ from torch.utils.data import DataLoader
 import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
+from torch.utils.tensorboard import SummaryWriter
 import sys
 import os
 
@@ -19,6 +20,9 @@ def main():
     num_epochs = 10
     learning_rate = 1e-3
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    log_dir = "runs/snuplasser"  # "/dbfs/tmp/tensorboard_logs" for Databricks
+    writer = SummaryWriter(log_dir=log_dir)
 
     train_dataset = SnuplassDataset(
         image_dir="data/images",
@@ -47,6 +51,7 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
     for epoch in range(num_epochs):
+        # Trening
         model.train()
         total_loss = 0
 
@@ -64,6 +69,8 @@ def main():
         avg_train_loss = total_loss / len(train_loader)
         print(f"\nTrain loss: {avg_train_loss:.4f}")
 
+        writer.add_scalar("Tap/Trening", avg_train_loss, epoch)
+
         # Validering
         model.eval()
         val_loss = 0.0
@@ -78,6 +85,10 @@ def main():
 
         avg_val_loss = val_loss / len(val_loader)
         print(f"Val loss: {avg_val_loss:.4f}")
+
+        writer.add_scalar("Tap/Validering", avg_val_loss, epoch)
+
+    writer.close()
 
     print("✅ Trening ferdig")
 
