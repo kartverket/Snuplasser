@@ -23,6 +23,7 @@ def main():
     train_dataset = SnuplassDataset(
         image_dir="data/images",
         mask_dir="data/masks",
+        dom_dir="data/doms",
         file_list="data/splits/train.txt",
         transform=get_train_transforms(cfg),
     )
@@ -30,6 +31,7 @@ def main():
     val_dataset = SnuplassDataset(
         image_dir="data/images",
         mask_dir="data/masks",
+        dom_dir="data/doms",
         file_list="data/splits/val.txt",
         transform=get_val_transforms(),
     )
@@ -37,7 +39,7 @@ def main():
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
-    model = UNet(n_channels=3, n_classes=1, bilinear=False).to(
+    model = UNet(n_channels=4, n_classes=1, bilinear=False).to(
         device
     )  # bare å bytte modell
 
@@ -51,7 +53,7 @@ def main():
         for images, masks in tqdm(
             train_loader, desc=f"Epoch {epoch+1}/{num_epochs} - Training"
         ):
-            images, masks = images.to(device), masks.to(device).float()
+            images, masks = images.to(device).float(), masks.to(device).float()
             optimizer.zero_grad()
             outputs = model(images)
             loss = criterion(outputs.squeeze(1), masks)
@@ -69,7 +71,7 @@ def main():
             for images, masks in tqdm(
                 val_loader, desc=f"Epoch {epoch+1}/{num_epochs} - Validation"
             ):
-                images, masks = images.to(device), masks.to(device).float()
+                images, masks = images.to(device).float(), masks.to(device).float()
                 outputs = model(images)
                 loss = criterion(outputs.squeeze(1), masks)
                 val_loss += loss.item()
