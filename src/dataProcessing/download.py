@@ -11,11 +11,12 @@ import asyncio
 import urllib.request
 import os
 
-from src.config import IMAGE_SIZE, BASE_IMAGE_URL, BASE_DOM_URL, SECRET_TOKEN
+from src.config import IMAGE_SIZE, BASE_IMAGE_URL, BASE_DOM_URL
 GEOJSON_PATH = "/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/raw_geojson/turning_spaces.geojson"
 print("GEOJSON_PATH:", GEOJSON_PATH)
 print("Exists?", Path(GEOJSON_PATH).exists())
-
+SECRET_TOKEN = "" # Hemmelig
+print(SECRET_TOKEN)
 
 # Buckets (Databricks)
 image_path = Path("/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/img/")
@@ -27,12 +28,12 @@ mask_path.mkdir(parents=True, exist_ok=True)
 dom_path.mkdir(parents=True, exist_ok=True)
 
 # === Hjelpefunksjon for URL ===
-def get_url(bbox, token, dom=False):
+def get_url(bbox, token, dom=False):  # Token trengs bare for images
     bbox_str = ",".join(map(str, bbox))
     width, height = IMAGE_SIZE
     if dom:
         return (
-            f"{BASE_DOM_URL}-dom-nhm-25833&TICKET={token}&request=GetMap&Format=image/png&"
+            f"{BASE_DOM_URL}-dom-nhm-25833?&request=GetMap&Format=image/png&"
             f"GetFeatureInfo=text/plain&CRS=EPSG:25833&Layers=NHM_DOM_25833:skyggerelieff&"
             f"BBox={bbox_str}&width={width}&height={height}"
         )
@@ -127,13 +128,13 @@ async def main(token):
             print(f"⏭️ Hopper over {img_file.name} (allerede behandlet)")
             continue
 
-        await download_image(bbox, img_file, token)
+        await download_image(bbox, img_file, SECRET_TOKEN)
         generate_mask(GEOJSON_PATH, bbox, mask_file)
-        await download_dom_image(bbox, dom_file, token)
+        await download_dom_image(bbox, dom_file, SECRET_TOKEN)
 
 # === Kjør ===
 if __name__ == "__main__":
     if asyncio.get_event_loop().is_running():
-        await main(token=SECRET_TOKEN)
+        await main(SECRET_TOKEN)
     else:
-        asyncio.run(main(token=SECRET_TOKEN))
+        asyncio.run(main(SECRET_TOKEN))
