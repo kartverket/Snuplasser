@@ -121,11 +121,8 @@ def filtrer_ekte_endepunkter(df):
 
 
 def main():
-
     df = hent_skogsbilveier_og_noder("0301")
-
     ekte_df = filtrer_ekte_endepunkter(df)
-
     image_dir = Path("images")
     image_dir.mkdir(exist_ok=True)
     image_paths = []
@@ -144,6 +141,4 @@ def main():
 
     ekte_df["image_path"] = image_paths
 
-
-if __name__ == "__main__":
-    main()
+main()
