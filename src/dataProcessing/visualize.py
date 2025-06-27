@@ -4,8 +4,9 @@ from PIL import Image
 import sys
 import os
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-#from src.dataProcessing.transform import get_train_transforms
+from src.dataProcessing.transform import get_train_transforms
 from src.dataProcessing.augmentation_config import augmentation_profiles
 
 
@@ -58,14 +59,14 @@ def visualize_multiple_augmentations(image_path, mask_path, cfg_name="basic", n=
     """Visualiserer flere augmentasjoner av et bilde og tilhørende maske."""
     image = np.array(Image.open(image_path).convert("RGB"))
     mask = np.array(Image.open(mask_path)) // 255
-    #transform = get_train_transforms(augmentation_profiles[cfg_name])
+    transform = get_train_transforms(augmentation_profiles[cfg_name])
 
     fig, axes = plt.subplots(n, 2, figsize=(10, 5 * n))
     if n == 1:
         axes = [axes]
 
     for i in range(n):
-        #augmented = transform(image=image, mask=mask)
+        augmented = transform(image=image, mask=mask)
         image_aug = augmented["image"].permute(1, 2, 0).numpy()
         mask_aug = augmented["mask"].numpy()
 

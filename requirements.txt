@@ -14,4 +14,3 @@ torchvision
 shapely
 scikit-learn
 pytest-asyncio
-tensorboard
