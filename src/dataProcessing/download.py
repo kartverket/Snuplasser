@@ -149,10 +149,17 @@ async def main(token):
         generate_mask(GEOJSON_PATH, bbox, mask_file)
         await download_dom_image(bbox, dom_file, SECRET_TOKEN)
 
-
-# === Kjør ===
-if __name__ == "__main__":
+async def kjormain():
     if asyncio.get_event_loop().is_running():
         await main(SECRET_TOKEN)
     else:
         asyncio.run(main(SECRET_TOKEN))
+
+
+
+
+# === Kjør ===
+if __name__ == "__main__":
+
+    asyncio.run(kjormain())
+    
