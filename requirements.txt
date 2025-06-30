@@ -1,6 +1,5 @@
 aiofiles
 aiohttp_retry
-albumentations
 fiona
 geopandas
 lightning
@@ -9,9 +8,10 @@ opencv-python
 python-dotenv
 rasterio
 torch
-timm
 torchvision
+timm
 shapely
 scikit-learn
 pytest-asyncio
 tensorboard
+tqdm
