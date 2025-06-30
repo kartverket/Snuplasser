@@ -3,8 +3,7 @@ import pandas as pd
 import time
 import src.config as config
 from pathlib import Path
-import sys
-import os
+from tqdm.notebook import tqdm
 from src.dataProcessing.download_skogsbilveg import hent_skogsbilveier_og_noder
 
 """
@@ -105,19 +104,20 @@ def hent_wkt_koordinater(nodeid, srid="utm33"):
 
 def filtrer_ekte_endepunkter(df):
     ekte_rows = []
-
-    for idx, row in df.iterrows():
+    for idx, row in tqdm(df.iterrows(), total=len(df), desc="Henter NVDB noder"):
         nodeid = row["nodeid"]
         er_ekte, wkt, x, y = hent_wkt_koordinater(nodeid)
         if er_ekte:
-            d = {
+            ekte_rows.append({
                 "nodeid": nodeid,
                 "wkt": wkt,
                 "x": x,
                 "y": y,
-            }
-            ekte_rows.append(d)
+            })
+        time.sleep(0.1)
     return pd.DataFrame(ekte_rows, columns=["nodeid", "wkt", "x", "y"])
+
+
 
 
 def main():
