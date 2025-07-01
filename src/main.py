@@ -1,7 +1,7 @@
 import argparse
 import yaml
 import mlflow
-from pytorch_lightning import Trainer
+from lightning import Trainer
 from model_factory import get_model
 from utils.logger import get_logger
 
