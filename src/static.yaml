@@ -15,10 +15,16 @@ model:
     num_classes: 2
 
 data:
-  data_dir: ./data            # Path til datasettet
+  image_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/img/
+  mask_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/lab/
+  dom_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/dom/
   batch_size: 8               # Default (overstyres av Optuna)
   num_workers: 4              # DataLoader workers
   val_split: 0.2              # Valideringsandel (f.eks. 20%)
+  holdout_size: 5
+  seed: 42
+  use_augmentation: false
+  augmentation_ratio: 0.3
 
 training:
   max_epochs: 30              # Antall epoker per kjøring

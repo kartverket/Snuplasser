@@ -2,10 +2,9 @@ import argparse
 import yaml
 import mlflow
 from lightning import Trainer
+from lightning.fabric.utilities.distributed import TorchDistributor
 from model_factory import get_model
 from utils.logger import get_logger
-
-# Midlertidig datamodul-import (kan erstattes når dataoppsett er klart)
 from datamodule import get_datamodule
 
 def run_experiment(model_name, config):
@@ -55,4 +54,5 @@ if __name__ == "__main__":
         help="Path til YAML-konfigurasjon"
         )
     args = parser.parse_args()
-    main(args.config)
+
+    TorchDistributor().run(lamda: main(args.config))
