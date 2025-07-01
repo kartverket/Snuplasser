@@ -11,3 +11,4 @@ aiofiles==23.2.1
 aiohttp_retry==2.8.3
 timm==0.9.16
 lightning==2.2.4
+albumentations==1.4.0
