@@ -1,0 +1,37 @@
+
+model_names:
+  - unet
+  - deeplabv3
+
+model:
+  unet:
+    lr: 0.001
+    encoder: resnet64
+    num_classes: 2
+
+  deeplabv3:
+    lr: 0.0005
+    backbone: mobilenet
+    num_classes: 2
+
+data:
+  data_dir: ./data            # Path til datasettet
+  batch_size: 8               # Default (overstyres av Optuna)
+  num_workers: 4              # DataLoader workers
+  val_split: 0.2              # Valideringsandel (f.eks. 20%)
+
+training:
+  max_epochs: 30              # Antall epoker per kjøring
+  gpus: 1                     # GPU-ressurser
+  precision: 16               # Mixed precision (16 eller 32)
+  early_stopping_patience: 5  # Stopper tidlig om validerings-loss ikke forbedres
+
+logging:
+  use_mlflow: true
+  experiment_name: optuna_unet
+  tracking_uri: file:./mlruns
+
+optuna:
+  direction: maximize         # Hvilken vei metrikken skal optimaliseres
+  metric_name: val_IoU        # Navn på metrikken som returneres fra validate()
+  n_trials: 30                # Antall eksperimenter
