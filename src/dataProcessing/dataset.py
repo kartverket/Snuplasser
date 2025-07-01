@@ -42,7 +42,7 @@ class SnuplassDataset(Dataset):
             mask = augmented["mask"]
 
         if not isinstance(image, torch.Tensor):
-            image = torch.from_numpy(np.array(image)).permute(2, 0, 1)
+            image = torch.from_numpy(np.array(image)).permute(2, 0, 1).float() / 255.0
 
         if not isinstance(mask, torch.Tensor):
             mask = torch.from_numpy(np.array(mask) / 255).unsqueeze(0).float()
