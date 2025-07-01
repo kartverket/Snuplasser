@@ -9,6 +9,7 @@ import torch
 import json
 from datetime import datetime
 
+
 class SnuplassDataset(Dataset):
     def __init__(self, image_dir, mask_dir, dom_dir, file_list, transform=None):
         self.image_dir = image_dir

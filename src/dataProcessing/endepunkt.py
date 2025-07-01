@@ -9,49 +9,24 @@ from src.dataProcessing.download_skogsbilveg import hent_skogsbilveier_og_noder
 import getpass
 import asyncio
 
-"""
-def er_ekte_endepunkt(nodeid):
-    url = f"https://nvdbapiles-v3.atlas.vegvesen.no/vegnett/noder/{nodeid}"
-    headers = {
-        "Accept": "application/vnd.vegvesen.nvdb-v3-rev4+json",
-        "X-Client": "Systemet for vegobjekter",
-    }
-    params = {"srid": "25833"}
-    response = requests.get(url, headers=headers, params=params)
-    response.raise_for_status()
-    data = response.json()
-    porter = data.get("porter", [])
-    # time.sleep(0.2)  # For å unngå for mange forespørsler på kort tid
-    return len(porter) == 1
-
-
-def filtrer_ekte_endepunkter(df):
-    ekte_rows = []
-    for idx, row in df.iterrows():
-        nodeid = row["nodeid"]
-        if er_ekte_endepunkt(nodeid):
-            ekte_rows.append(row)
-    return pd.DataFrame(ekte_rows) 
-"""
-
-
-IMAGE_DIR = Path("/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/endepunkt_images")
+IMAGE_DIR = Path(
+    "/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/endepunkt_images"
+)
 IMAGE_DIR.mkdir(parents=True, exist_ok=True)
 SECRET_TOKEN = ""
 
 SECRET_TOKEN = os.environ.get("WMS_SECRET_TOKEN")
 if not SECRET_TOKEN:
-        SECRET_TOKEN = getpass.getpass("Skriv inn WMS-token: ")
+    SECRET_TOKEN = getpass.getpass("Skriv inn WMS-token: ")
 if not SECRET_TOKEN:
-        raise ValueError("Du må oppgi en WMS-token!")
-
+    raise ValueError("Du må oppgi en WMS-token!")
 
 
 def make_bbox_around_endepunkt(x, y, buffer_x, buffer_y):
     return [x - buffer_x, y - buffer_y, x + buffer_x, y + buffer_y]
 
 
-def get_wms_url(bbox,token):
+def get_wms_url(bbox, token):
     bbox_str = ",".join(map(str, bbox))
 
     width, height = config.IMAGE_SIZE
@@ -87,15 +62,13 @@ def download_image_from_wms(wms_url, save_path):
 
 
 def hent_wkt_koordinater(nodeid, srid="utm33"):
-   
-   
     url = f"https://nvdbapiles-v3.atlas.vegvesen.no/vegnett/noder/{nodeid}"
     headers = {
         "Accept": "application/vnd.vegvesen.nvdb-v3-rev4+json",
         "X-Client": "Systemet for vegobjekter",
     }
     params = {"srid": srid}
-  
+
     try:
         response = requests.get(url, headers=headers, params=params, timeout=10)
         response.raise_for_status()
@@ -120,8 +93,9 @@ def hent_wkt_koordinater(nodeid, srid="utm33"):
         return er_ekte, wkt, x, y
     except Exception as e:
         print(f"[{nodeid}] Feil ved henting av data: {e}")
-        time.sleep(2)  
+        time.sleep(2)
         return False, None, None, None
+
 
 def filtrer_ekte_endepunkter(df):
     ekte_rows = []
@@ -129,7 +103,7 @@ def filtrer_ekte_endepunkter(df):
     for idx, row in df.iterrows():
         nodeid = row["nodeid"]
         er_ekte, wkt, x, y = hent_wkt_koordinater(nodeid)
-       # time.sleep(0.5)
+        # time.sleep(0.5)
         if er_ekte:
             d = {
                 "nodeid": nodeid,
@@ -142,12 +116,9 @@ def filtrer_ekte_endepunkter(df):
 
 
 def main(token):
-
     df = hent_skogsbilveier_og_noder("0301")
-
     ekte_df = filtrer_ekte_endepunkter(df)
 
-   
     image_paths = []
 
     for idx, row in ekte_df.iterrows():
@@ -164,11 +135,12 @@ def main(token):
 
     ekte_df["image_path"] = image_paths
 
+
 if __name__ == "__main__":
- try:
-    if asyncio.get_event_loop().is_running():
-        await main(SECRET_TOKEN)
-    else:
+    try:
+        if asyncio.get_event_loop().is_running():
+            await main(SECRET_TOKEN)
+        else:
+            asyncio.run(main(SECRET_TOKEN))
+    except RuntimeError:
         asyncio.run(main(SECRET_TOKEN))
- except RuntimeError:
-     asyncio.run(main(SECRET_TOKEN))
