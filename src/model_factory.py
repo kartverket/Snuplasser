@@ -1,11 +1,9 @@
 
 
-
 model_registry = {
     "unet": UNetModel,
     #"deeplabv3": DeepLabV3Model,
 }
-
 def get_model(model_name: str, params: dict):
     """
     Henter modeller fra model-mappen.
