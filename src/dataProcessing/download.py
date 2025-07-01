@@ -12,20 +12,25 @@ import urllib.request
 import os
 
 from src.config import IMAGE_SIZE, BASE_IMAGE_URL, BASE_DOM_URL
+
 GEOJSON_PATH = "/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/raw_geojson/turning_spaces.geojson"
-print("GEOJSON_PATH:", GEOJSON_PATH)
-print("Exists?", Path(GEOJSON_PATH).exists())
-SECRET_TOKEN = "" # Hemmelig
-print(SECRET_TOKEN)
+SECRET_TOKEN = ""  # Hemmelig
 
 # Buckets (Databricks)
-image_path = Path("/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/img/")
-mask_path = Path("/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/lab/")
-dom_path = Path("/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/dom/")
+image_path = Path(
+    "/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/img/"
+)
+mask_path = Path(
+    "/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/lab/"
+)
+dom_path = Path(
+    "/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/dom/"
+)
 
 image_path.mkdir(parents=True, exist_ok=True)
 mask_path.mkdir(parents=True, exist_ok=True)
 dom_path.mkdir(parents=True, exist_ok=True)
+
 
 # === Hjelpefunksjon for URL ===
 def get_url(bbox, token, dom=False):  # Token trengs bare for images
@@ -44,10 +49,12 @@ def get_url(bbox, token, dom=False):  # Token trengs bare for images
             f"width={width}&height={height}"
         )
 
+
 # === Last ned bilder ===
-async def download_image(bbox, save_path, token):
-    url = get_url(bbox, token, dom=False)
+async def download_image(bbox, save_path, token, dom=False):
+    url = get_url(bbox, token, dom=dom)
     try:
+
         def fetch_and_save():
             with urllib.request.urlopen(url) as response:
                 if response.status == 200:
@@ -57,27 +64,12 @@ async def download_image(bbox, save_path, token):
                     return True, f"✅ Lagret bilde: {save_path}"
                 else:
                     return False, f"❌ Feil ved nedlasting: {response.status}"
+
         success, message = await asyncio.to_thread(fetch_and_save)
         print(message)
     except Exception as e:
         print(f"❌ Feil ved nedlasting: {e}")
 
-async def download_dom_image(bbox, save_path, token):
-    url = get_url(bbox, token, dom=True)
-    try:
-        def fetch_and_save():
-            with urllib.request.urlopen(url) as response:
-                if response.status == 200:
-                    data = response.read()
-                    with open(save_path, "wb") as f:
-                        f.write(data)
-                    return True, f"✅ Lagret DOM-bilde: {save_path}"
-                else:
-                    return False, f"❌ Feil ved nedlasting av DOM: {response.status}"
-        success, message = await asyncio.to_thread(fetch_and_save)
-        print(message)
-    except Exception as e:
-        print(f"❌ Feil ved nedlasting av DOM: {e}")
 
 # === Lag maske ===
 def generate_mask(geojson_path, bbox, save_path):
@@ -99,12 +91,14 @@ def generate_mask(geojson_path, bbox, save_path):
     Image.fromarray(mask * 255).save(save_path)
     print(f"✅ Lagret maske: {save_path}")
 
+
 # === BBOX rundt polygon ===
 def make_bbox_around_polygon(geojson_path, index, buffer=10):
     gdf = gpd.read_file(geojson_path).to_crs("EPSG:25833")
     poly = gdf.geometry.iloc[index]
     minx, miny, maxx, maxy = poly.bounds
     return [minx - buffer, miny - buffer, maxx + buffer, maxy + buffer]
+
 
 # === Main ===
 async def main(token):
@@ -130,7 +124,8 @@ async def main(token):
 
         await download_image(bbox, img_file, SECRET_TOKEN)
         generate_mask(GEOJSON_PATH, bbox, mask_file)
-        await download_dom_image(bbox, dom_file, SECRET_TOKEN)
+        await download_image(bbox, dom_file, SECRET_TOKEN, dom=True)
+
 
 # === Kjør ===
 if __name__ == "__main__":

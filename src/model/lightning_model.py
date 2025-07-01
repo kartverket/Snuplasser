@@ -10,8 +10,6 @@ from dataProcessing.losses import DiceLoss
 from model import dcswin_tiny, dcswin_small, dcswin_base
 from unet import UNet
 
-# BEGIN: qe7d5f8g4hj2
-
 
 def change_values_and_save(tensor, filename, mask=False):
     # Replace values
@@ -28,9 +26,6 @@ def change_values_and_save(tensor, filename, mask=False):
 
     # Save PIL Image to file
     pil_image.save(filename)
-
-
-# END: qe7d5f8g4hj2
 
 
 class DCSwin(L.LightningModule):
@@ -68,9 +63,6 @@ class DCSwin(L.LightningModule):
                 raise NotImplementedError("Model size not implemented")
         if model_name == "unet":
             self.model = UNet(3, num_classes, bilinear=False)
-
-        # self.model = NewFormer()
-        # self.model = dcswin_tiny(False, num_classes=num_classes, weight_path=f"pretrained_weights/stseg_{model_size}.pth")
 
         self.train_loader = train_loader
         self.val_loader = val_loader
