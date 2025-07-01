@@ -1,7 +1,8 @@
-
+import os
 from torch.utils.data import DataLoader
 from lightning import LightningDataModule
 from dataProcessing.dataset import SnuplassDataset, load_numpy_split_stack
+from dataProcessing.augmentation_config import get_train_transforms, get_val_transforms
 
 
 class SnuplassDataModule(LightningDataModule):
@@ -17,6 +18,17 @@ class SnuplassDataModule(LightningDataModule):
         self.seed = data_config.get("seed", 42)
         self.train_transform = data_config.get("train_transform", None)
         self.val_transform = data_config.get("val_transform", None)
+
+        # Augmentering konfigurasjon
+        use_aug = data_config.get("use_augmentation", False)
+        aug_ratio = data_config.get("augmentation_ratio", None)
+
+        self.train_transform = get_train_transforms(ratio=aug_ratio) if use_aug else None
+        self.val_transform = get_val_transforms()
+
+        for d in [self.image_dir, self.mask_dir, self.dom_dir]:
+            if not os.path.isdir(d):
+                raise FileNotFoundError(f"Data-mappe finnes ikke: {d}")
 
     def setup(self, stage=None):
         train_ids, val_ids, _ = load_numpy_split_stack(
