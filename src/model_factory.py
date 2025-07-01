@@ -1,8 +1,8 @@
-
+from model.unet import UNet
 
 
 model_registry = {
-    "unet": UNetModel,
+    "unet": UNet,
     #"deeplabv3": DeepLabV3Model,
 }
 
