@@ -1,17 +1,14 @@
 
+
+model_registry = {
+    "unet": UNetModel,
+    #"deeplabv3": DeepLabV3Model,
+}
 def get_model(model_name: str, params: dict):
     """
     Henter modeller fra model-mappen.
     """
-    if model_name.lower() == "unet":
-        from model.unet import UNet
-        return UNet(**params)
-
-    # elif model_name.lower() == "deeplabv3":
-    #     from model.deeplabv3 import DeepLabV3
-    #     return DeepLabV3(**params)
-    
-    
-
-    else:
-        raise Exception(f"Model {model_name} not found")
+    model_name = model_name.lower()
+    if model_name not in model_registry:
+        raise ValueError(f"Model {model_name} not found.")
+    return model_registry[model_name](**params)
