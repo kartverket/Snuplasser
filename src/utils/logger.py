@@ -1,4 +1,5 @@
-from lightning.loggers import MLFlowLogger
+from pytorch_lightning.loggers import MLFlowLogger  # MLFlowLogger er ennå ikke i lightning 
+
 
 def get_logger(model_name: str, config: dict) -> MLFlowLogger:
     logging_config = config.get("logging", {})

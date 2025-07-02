@@ -26,14 +26,15 @@ data:
   use_augmentation: false
   augmentation_ratio: 0.3
 
-monitor: val_loss  # val_IoU , Må logges av modellen og oppdateres i utils.callbacks
-monitor_mode: min  # max for IoU
+
 training:
   max_epochs: 30              # Antall epoker per kjøring
   precision: 16               # Mixed precision (16 eller 32)
   accelerator: gpu
   devices: 1                  # GPU-ressurser
   early_stopping_patience: 5  # Stopper tidlig om validerings-loss ikke forbedres
+  monitor: val_loss  # val_IoU , Må logges av modellen og oppdateres i utils.callbacks
+  monitor_mode: min  # max for IoU
 
 logging:
   use_mlflow: true
