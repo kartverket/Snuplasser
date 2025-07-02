@@ -9,12 +9,13 @@ import torch
 import json
 from datetime import datetime
 
+
 class SnuplassDataset(Dataset):
-    def __init__(self, image_dir, mask_dir, dom_dir, file_list, transform=None, percentage=1.0): # dataset_type= kan være train,val,... # percentage man kan bruke bare en dal av data
-        self.image_dir = Path(image_dir)
-        self.mask_dir = Path(mask_dir)
-        self.dom_dir = Path(dom_dir)
-        self.file_list = file_list[:int(len(file_list) * percentage)]
+    def __init__(self, image_dir, mask_dir, dom_dir, file_list, transform=None):
+        self.image_dir = image_dir
+        self.mask_dir = mask_dir
+        self.dom_dir = dom_dir
+        self.file_list = file_list
         self.transform = transform
 
     def __len__(self):
@@ -29,26 +30,23 @@ class SnuplassDataset(Dataset):
         image = Image.open(image_path).convert("RGB")
         mask = Image.open(mask_path).convert("L")
         dom = Image.open(dom_path).convert("L")
-        
-        image = np.array(image) # Bildet må være en korrekt np.array før det konverteres til en tensor
-        dom=np.array(dom).astype(np.float32)
-        dom /= (dom.max() if dom.max()>0 else 1.0) # for å normalisere DOM-kanalen til et område mellom 0 og 1
+
         dom = np.expand_dims(dom, axis=-1)  # (H, W, 1)
         image = np.concatenate((image, dom), axis=-1)  # (H, W, 4)
 
         if self.transform:
             augmented = self.transform(
-                image=image,
+                image=np.array(image),
                 mask=np.array(mask) // 255,
             )
             image = augmented["image"]
             mask = augmented["mask"]
 
         if not isinstance(image, torch.Tensor):
-            image = torch.from_numpy(image).permute(2, 0, 1)
+            image = torch.from_numpy(np.array(image)).permute(2, 0, 1)
 
         if not isinstance(mask, torch.Tensor):
-            mask = torch.from_numpy(mask).unsqueeze(0).float()
+            mask = torch.from_numpy(np.array(mask) / 255).unsqueeze(0).float()
 
         return image, mask
 
