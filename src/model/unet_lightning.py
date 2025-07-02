@@ -2,6 +2,7 @@ import torch
 import pytorch_lightning as pl
 import segmentation_models_pytorch as smp
 import torch.nn.functional as F
+from torchmetrics.classification import MulticlassJaccardIndex
 
 class UNetLightning(pl.LightningModule):
     def __init__(self, config):
@@ -15,7 +16,7 @@ class UNetLightning(pl.LightningModule):
         )
         self.lr = config.get("lr", 1e-3)
         self.loss_fn = smp.losses.DiceLoss(mode="multiclass")
-        self.iou_metric = smp.utils.metrics.IoU(threshold=0.5)
+        self.iou_metric = MulticlassJaccardIndex(num_classes=config.get("num_classes", 2))
 
     def forward(self, x):
         return self.model(x)
@@ -24,7 +25,7 @@ class UNetLightning(pl.LightningModule):
         x, y = batch
         logits = self(x)
         loss = self.loss_fn(logits, y)
-        preds = torch.sigmoid(logits)
+        preds = torch.softmax(logits, dim=1)
         iou = self.iou_metric(preds, y)
         self.log("train_loss", loss)
         self.log("train_iou", iou, prog_bar=True, on_epoch=True)
@@ -34,10 +35,10 @@ class UNetLightning(pl.LightningModule):
         x, y = batch
         logits = self(x)
         loss = self.loss_fn(logits, y)
-        preds = torch.sigmoid(logits)
+        preds = torch.softmax(logits, dim=1)
         iou = self.iou_metric(preds, y)
         self.log("val_loss", loss, prog_bar=True)
-        self.log("val_iou", iou, prog_bar=True)
+        self.log("val_iou", iou, prog_bar=True, on_epoch=True)
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.lr)
