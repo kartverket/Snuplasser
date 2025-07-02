@@ -34,31 +34,18 @@ def get_wms_url(bbox, token, dom=False):
 
     if dom:
         BASE_DOM_URL=config.BASE_DOM_URL
-        return(
-            f"{BASE_DOM_URL}?-dom-nhm-25833?"
-            f"request=GetMap&Format=image/png&"
-            f"GetFeatureInfo=text/plain&CRS=EPSG:25833&"
-            f"Layers=NHM_DOM_25833:skyggerelieff&"
-            f"BBox={bbox_str}&"
-            f"width={width}&"
-            f"height={height}"
+        return (
+            f"{BASE_DOM_URL}-dom-nhm-25833?&request=GetMap&Format=image/png&"
+            f"GetFeatureInfo=text/plain&CRS=EPSG:25833&Layers=NHM_DOM_25833:skyggerelieff&"
+            f"BBox={bbox_str}&width={width}&height={height}"
         )
     
     else:
         BASE_IMAGE_URL = config.BASE_IMAGE_URL
         return (
-        f"{BASE_IMAGE_URL}?"
-        f"SERVICE=WMS&"
-        f"VERSION=1.3.0&"
-        f"TICKET={token}&"
-        f"REQUEST=GetMap&"
-        f"layers=ortofoto&"
-        f"STYLES=Default&"
-        f"CRS=EPSG:25833&"
-        f"BBOX={bbox_str}&"
-        f"width={width}&"
-        f"height={height}&"
-        f"FORMAT=image/png"
+            f"{BASE_IMAGE_URL}?VERSION=1.3.0&TICKET={token}&service=WMS&request=GetMap&Format=image/png&"
+            f"GetFeatureInfo=text/plain&CRS=EPSG:25833&Layers=ortofoto&BBox={bbox_str}&"
+            f"width={width}&height={height}"
         )
 
 
@@ -146,7 +133,7 @@ def main(token):
         success_image=download_image_from_wms(image_url, image_path)
         image_paths.append(str(image_path) if success_image else None)
 
-        dom_url=get_wms_url(bbox,dom=True)
+        dom_url=get_wms_url(bbox,token=token, dom=True)
         dom_path= DOM_DIR / f"endepunkt_{nodeid}.png"
         success_dom=download_image_from_wms(dom_url, dom_path)
         dom_paths.append(str(dom_path) if success_dom else None)
