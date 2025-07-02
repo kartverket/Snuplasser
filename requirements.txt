@@ -12,3 +12,4 @@ aiohttp_retry==2.8.3
 timm==0.9.16
 lightning==2.3.3
 albumentations==1.4.0
+segmentation-models-pytorch==0.3.3

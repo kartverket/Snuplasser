@@ -1,9 +1,8 @@
-from model.unet import UNet
+from model.unet_lightning import get_unet_lightning
 
 
 model_registry = {
-    "unet": UNet,
-    #"deeplabv3": DeepLabV3Model,
+    "unet": get_unet_lightning,
 }
 
 def get_model(model_name: str, params: dict):
