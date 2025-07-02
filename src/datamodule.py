@@ -2,7 +2,7 @@ import os
 from torch.utils.data import DataLoader
 from lightning import LightningDataModule
 from dataProcessing.dataset import SnuplassDataset, load_numpy_split_stack
-from dataProcessing.augmentation_config import get_train_transforms, get_val_transforms
+from dataProcessing.transform import get_train_transforms, get_val_transforms
 
 
 class SnuplassDataModule(LightningDataModule):
