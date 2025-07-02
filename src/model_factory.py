@@ -12,4 +12,4 @@ def get_model(model_name: str, params: dict):
     model_name = model_name.lower()
     if model_name not in model_registry:
         raise ValueError(f"Model {model_name} not found.")
-    return model_registry[model_name](**params)
+    return model_registry[model_name](params)
