@@ -2,10 +2,10 @@ import argparse
 import yaml
 import mlflow
 from lightning import Trainer
-from lightning.fabric.utilities.distributed import TorchDistributor
 from model_factory import get_model
-from logger import get_logger
-from datamodule import get_datamodule
+from utils.logger import get_logger
+from utils.callbacks import get_early_stopping, get_model_checkpoint
+from datamodules.snuplass_datamodule import get_datamodule
 
 def run_experiment(model_name, config):
     print(f"Trener modell: {model_name}")
@@ -23,6 +23,9 @@ def run_experiment(model_name, config):
     # Logger
     logger = get_logger(model_name, config)
 
+    # Callbacks
+    early_stopping = get_early_stopping(config['training'])
+    model_checkpoint = get_model_checkpoint(config['training'])
     # Trainer
     trainer = Trainer(
         logger=logger,
