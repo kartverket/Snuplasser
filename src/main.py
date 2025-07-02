@@ -2,7 +2,6 @@ import argparse
 import yaml
 import mlflow
 from lightning import Trainer
-from lightning.fabric.utilities.distributed import TorchDistributor
 from model_factory import get_model
 from utils.logger import get_logger
 from utils.callbacks import get_early_stopping, get_model_checkpoint
