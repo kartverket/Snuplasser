@@ -14,6 +14,7 @@ IMAGE_DIR = Path(
 )
 IMAGE_DIR.mkdir(parents=True, exist_ok=True)
 DOM_DIR=Path("/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/endepunkt_dom")
+DOM_DIR.mkdir(parents=True, exist_ok=True)
 SECRET_TOKEN = ""
 
 SECRET_TOKEN = os.environ.get("WMS_SECRET_TOKEN")
@@ -128,7 +129,7 @@ def filtrer_ekte_endepunkter(df):
 
 
 def main(token):
-    df = hent_skogsbilveier_og_noder("3422")
+    df = hent_skogsbilveier_og_noder("3405")
     ekte_df = filtrer_ekte_endepunkter(df)
 
     image_paths = []
