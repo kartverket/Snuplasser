@@ -28,8 +28,9 @@ data:
 
 training:
   max_epochs: 30              # Antall epoker per kjøring
-  gpus: 1                     # GPU-ressurser
   precision: 16               # Mixed precision (16 eller 32)
+  accelerator: gpu
+  devices: 1                  # GPU-ressurser
   early_stopping_patience: 5  # Stopper tidlig om validerings-loss ikke forbedres
 
 logging:

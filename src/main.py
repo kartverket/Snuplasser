@@ -4,7 +4,7 @@ import mlflow
 from lightning import Trainer
 from lightning.fabric.utilities.distributed import TorchDistributor
 from model_factory import get_model
-from utils.logger import get_logger
+from logger import get_logger
 from datamodule import get_datamodule
 
 def run_experiment(model_name, config):
@@ -27,11 +27,13 @@ def run_experiment(model_name, config):
     trainer = Trainer(
         logger=logger,
         max_epochs=config['training']['max_epochs'],
-        gpus=config['training'].get('gpus', 1),
-        precision=config['training'].get('precision', 32),
-        log_every_n_steps=10
+        accelerator=config['training'].get('accelerator', 'gpu'),
+        devices=config['training'].get('devices', 1),
+        precision=config['training'].get('precision', 16),
+        callbacks=[model_checkpoint, early_stopping],
+        log_every_n_steps=10,
+        deterministic=True  # Reproduserbarhet for sammenligning av modeller
     )
-
     # Trening og validering
     trainer.fit(model, datamodule=datamodule)
     trainer.validate(model, datamodule=datamodule)
@@ -54,5 +56,4 @@ if __name__ == "__main__":
         help="Path til YAML-konfigurasjon"
         )
     args = parser.parse_args()
-
-    TorchDistributor().run(lamda: main(args.config))
+    main(args.config)
