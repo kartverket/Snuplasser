@@ -2,6 +2,7 @@ import argparse
 import yaml
 import mlflow
 from lightning import Trainer
+import os
 from model_factory import get_model
 from utils.logger import get_logger
 from utils.callbacks import get_early_stopping, get_model_checkpoint
@@ -41,9 +42,12 @@ def run_experiment(model_name, config):
     trainer.fit(model, datamodule=datamodule)
     trainer.validate(model, datamodule=datamodule)
 
+    print("MLflow artifacts:", os.listdir("./src/mlruns/0"))
+
 def main(config_path):
     with open(config_path) as f:
         config = yaml.safe_load(f)
+        
 
     models_to_run = config.get('model_names', [])
     for model_name in models_to_run:
