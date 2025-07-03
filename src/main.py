@@ -47,6 +47,7 @@ def run_experiment(model_name, config):
 def main(config_path):
     with open(config_path) as f:
         config = yaml.safe_load(f)
+        print("Konfig-innhold:", config.keys())
         
 
     models_to_run = config.get('model_names', [])
