@@ -10,7 +10,7 @@ class DeepLabV3Lightning(pl.LightningModule):
         self.save_hyperparameters(config)
 
         self.model = smp.DeepLabV3(
-            encoder_name=self.get("encoder", "resnet50"),
+            encoder_name=self.get("backbone", "resnet50"),
             encoder_weights=self.get("encoder_weights", "imagenet"),
             in_channels=self.get("in_channels", 4),
             classes=self.get("num_classes", 2),
