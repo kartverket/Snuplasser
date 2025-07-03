@@ -1,0 +1,15 @@
+artifact_uri: file:///Workspace/Users/fabian.heflo@kartverket.no/Snuplasser/src/mlruns/665454169583470964/40cd0ff88ff94192a1cc6c76b6f5c223/artifacts
+end_time: 1751533699026
+entry_point_name: ''
+experiment_id: '665454169583470964'
+lifecycle_stage: active
+run_id: 40cd0ff88ff94192a1cc6c76b6f5c223
+run_name: honorable-shrike-474
+run_uuid: 40cd0ff88ff94192a1cc6c76b6f5c223
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1751533679351
+status: 4
+tags: []
+user_id: root

@@ -1,4 +1,4 @@
-from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
+from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
 
 def get_early_stopping(config):
     return EarlyStopping(

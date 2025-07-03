@@ -1,10 +1,10 @@
 import torch
-import pytorch_lightning as pl
+from lightning.pytorch import LightningModule
 import segmentation_models_pytorch as smp
 import torch.nn.functional as F
 from torchmetrics.classification import MulticlassJaccardIndex
 
-class UNetLightning(pl.LightningModule):
+class UNetLightning(LightningModule):
     def __init__(self, config):
         super().__init__()
         self.save_hyperparameters(config)
@@ -19,6 +19,8 @@ class UNetLightning(pl.LightningModule):
         self.iou_metric = MulticlassJaccardIndex(num_classes=config.get("num_classes", 2))
 
     def forward(self, x):
+        if x.dtype == torch.uint8:
+            x = x.float() / 255.0
         return self.model(x)
 
     def training_step(self, batch, batch_idx):
