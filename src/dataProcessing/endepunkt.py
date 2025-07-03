@@ -93,30 +93,58 @@ def hent_wkt_koordinater(nodeid, srid="utm33"):
         return er_ekte, wkt, x, y
     except Exception as e:
         print(f"[{nodeid}] Feil ved henting av data: {e}")
-        time.sleep(2)
+        time.sleep(0.5)
         return False, None, None, None
 
 
-def filtrer_ekte_endepunkter(df):
+def filtrer_ekte_endepunkter(df, retries=2):
     ekte_rows = []
+    feilette_noder = []
 
     for idx, row in df.iterrows():
         nodeid = row["nodeid"]
-        er_ekte, wkt, x, y = hent_wkt_koordinater(nodeid)
-        # time.sleep(0.5)
-        if er_ekte:
-            d = {
-                "nodeid": nodeid,
-                "wkt": wkt,
-                "x": x,
-                "y": y,
-            }
-            ekte_rows.append(d)
+        try:
+            er_ekte, wkt, x, y = hent_wkt_koordinater(nodeid)
+
+            if er_ekte:
+                ekte_rows.append({
+                    "nodeid": nodeid,
+                    "wkt": wkt,
+                    "x": x,
+                    "y": y,
+                })
+            
+        except Exception as e:
+            print(f"[{nodeid}] Feil ved henting av data: {e}")
+            feilette_noder.append(nodeid)
+
+    # Prøv igjen på feilede noder
+    for retry in range(retries):
+        if not feilette_noder:
+            break
+        print(f"🔁 Nytt forsøk på {len(feilette_noder)} feilede noder (runde {retry+1})")
+
+        nye_feilette = []
+        for nodeid in feilette_noder:
+            try:
+                er_ekte, wkt, x, y = hent_wkt_koordinater(nodeid)
+                if er_ekte:
+                    ekte_rows.append({
+                    "nodeid": nodeid,
+                    "wkt": wkt,
+                    "x": x,
+                    "y": y,
+                    })
+            except Exception as e:
+                nye_feilette.append(nodeid)
+
+        feilette_noder = nye_feilette  # Siste runde feilerse, bırak
+
     return pd.DataFrame(ekte_rows, columns=["nodeid", "wkt", "x", "y"])
 
 
 def main(token):
-    df = hent_skogsbilveier_og_noder("3405")
+    df = hent_skogsbilveier_og_noder("0301")
     ekte_df = filtrer_ekte_endepunkter(df)
 
     image_paths = []

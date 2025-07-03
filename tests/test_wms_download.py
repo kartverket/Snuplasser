@@ -26,13 +26,13 @@ def get_wms_url(bbox, token, dom=False):
             f"request=GetMap&Format=image/png&"
             f"GetFeatureInfo=text/plain&CRS=EPSG:25833&"
             f"Layers=NHM_DOM_25833:skyggerelieff&"
-            f"BBox={bbox_str}&width={width}&height={height}"
+            f"BBox={bbox_str}&width=1024&height=1024"
         )
     else:
         return (
             f"{BASE_IMAGE_URL}?"
             f"SERVICE=WMS&VERSION=1.3.0&TICKET={token}&REQUEST=GetMap&layers=ortofoto&"
-            f"STYLES=Default&CRS=EPSG:25833&BBOX={bbox_str}&width={width}&height={height}&FORMAT=image/png"
+            f"STYLES=Default&CRS=EPSG:25833&BBOX={bbox_str}&width=1024&height=1024&FORMAT=image/png"
         )
 
 # === Koordinater ===
