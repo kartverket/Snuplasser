@@ -1,6 +1,0 @@
-artifact_location: file:///Workspace/Users/fabian.heflo@kartverket.no/Snuplasser/src/mlruns/665454169583470964
-creation_time: 1751532557551
-experiment_id: '665454169583470964'
-last_update_time: 1751532557551
-lifecycle_stage: active
-name: optuna_unet
