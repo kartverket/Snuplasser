@@ -1,4 +1,4 @@
-from pytorch_lightning.loggers import MLFlowLogger  # MLFlowLogger er ennå ikke i lightning 
+from lightning.pytorch.loggers import MLFlowLogger  # MLFlowLogger er ennå ikke i lightning 
 import os
 
 
