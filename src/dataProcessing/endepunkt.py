@@ -13,6 +13,8 @@ IMAGE_DIR = Path(
     "/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/endepunkt_images"
 )
 IMAGE_DIR.mkdir(parents=True, exist_ok=True)
+DOM_DIR=Path("/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/endepunkt_dom")
+DOM_DIR.mkdir(parents=True, exist_ok=True)
 SECRET_TOKEN = ""
 
 SECRET_TOKEN = os.environ.get("WMS_SECRET_TOKEN")
@@ -26,27 +28,25 @@ def make_bbox_around_endepunkt(x, y, buffer_x, buffer_y):
     return [x - buffer_x, y - buffer_y, x + buffer_x, y + buffer_y]
 
 
-def get_wms_url(bbox, token):
+def get_wms_url(bbox, token, dom=False):
     bbox_str = ",".join(map(str, bbox))
-
     width, height = config.IMAGE_SIZE
-    BASE_IMAGE_URL = config.BASE_IMAGE_URL
-    layer = "ortofoto"
 
-    return (
-        f"{BASE_IMAGE_URL}?"
-        f"SERVICE=WMS&"
-        f"VERSION=1.3.0&"
-        f"TICKET={token}&"
-        f"REQUEST=GetMap&"
-        f"layers={layer}&"
-        f"STYLES=Default&"
-        f"CRS=EPSG:25833&"
-        f"BBOX={bbox_str}&"
-        f"width={width}&"
-        f"height={height}&"
-        f"FORMAT=image/png"
-    )
+    if dom:
+        BASE_DOM_URL=config.BASE_DOM_URL
+        return (
+            f"{BASE_DOM_URL}-dom-nhm-25833?&request=GetMap&Format=image/png&"
+            f"GetFeatureInfo=text/plain&CRS=EPSG:25833&Layers=NHM_DOM_25833:skyggerelieff&"
+            f"BBox={bbox_str}&width={width}&height={height}"
+        )
+    
+    else:
+        BASE_IMAGE_URL = config.BASE_IMAGE_URL
+        return (
+            f"{BASE_IMAGE_URL}?VERSION=1.3.0&TICKET={token}&service=WMS&request=GetMap&Format=image/png&"
+            f"GetFeatureInfo=text/plain&CRS=EPSG:25833&Layers=ortofoto&BBox={bbox_str}&"
+            f"width={width}&height={height}"
+        )
 
 
 def download_image_from_wms(wms_url, save_path):
@@ -76,7 +76,7 @@ def hent_wkt_koordinater(nodeid, srid="utm33"):
         porter = data.get("porter", [])
         if len(porter) == 1:
             portnummer = porter[0].get("tilkobling", {}).get("portnummer")
-            er_ekte = portnummer == 1
+            er_ekte = portnummer == 1 or portnummer == 2
         else:
             er_ekte = False
 
@@ -93,25 +93,53 @@ def hent_wkt_koordinater(nodeid, srid="utm33"):
         return er_ekte, wkt, x, y
     except Exception as e:
         print(f"[{nodeid}] Feil ved henting av data: {e}")
-        time.sleep(2)
+        time.sleep(0.5)
         return False, None, None, None
 
 
-def filtrer_ekte_endepunkter(df):
+def filtrer_ekte_endepunkter(df, retries=2):
     ekte_rows = []
+    feilette_noder = []
 
     for idx, row in df.iterrows():
         nodeid = row["nodeid"]
-        er_ekte, wkt, x, y = hent_wkt_koordinater(nodeid)
-        # time.sleep(0.5)
-        if er_ekte:
-            d = {
-                "nodeid": nodeid,
-                "wkt": wkt,
-                "x": x,
-                "y": y,
-            }
-            ekte_rows.append(d)
+        try:
+            er_ekte, wkt, x, y = hent_wkt_koordinater(nodeid)
+
+            if er_ekte:
+                ekte_rows.append({
+                    "nodeid": nodeid,
+                    "wkt": wkt,
+                    "x": x,
+                    "y": y,
+                })
+            
+        except Exception as e:
+            print(f"[{nodeid}] Feil ved henting av data: {e}")
+            feilette_noder.append(nodeid)
+
+    # Prøv igjen på feilede noder
+    for retry in range(retries):
+        if not feilette_noder:
+            break
+        print(f"🔁 Nytt forsøk på {len(feilette_noder)} feilede noder (runde {retry+1})")
+
+        nye_feilette = []
+        for nodeid in feilette_noder:
+            try:
+                er_ekte, wkt, x, y = hent_wkt_koordinater(nodeid)
+                if er_ekte:
+                    ekte_rows.append({
+                    "nodeid": nodeid,
+                    "wkt": wkt,
+                    "x": x,
+                    "y": y,
+                    })
+            except Exception as e:
+                nye_feilette.append(nodeid)
+
+        feilette_noder = nye_feilette  # Siste runde feilerse, bırak
+
     return pd.DataFrame(ekte_rows, columns=["nodeid", "wkt", "x", "y"])
 
 
@@ -120,20 +148,29 @@ def main(token):
     ekte_df = filtrer_ekte_endepunkter(df)
 
     image_paths = []
+    dom_paths=[]
 
     for idx, row in ekte_df.iterrows():
         x, y = row["x"], row["y"]
         nodeid = row["nodeid"]
         bbox = make_bbox_around_endepunkt(x, y, buffer_x=50, buffer_y=50)
-        wms_url = get_wms_url(bbox, token)
+
+
+        image_url=get_wms_url(bbox,token=token, dom=False)
         image_path = IMAGE_DIR / f"endepunkt_{nodeid}.png"
-        success = download_image_from_wms(wms_url, image_path)
-        if success:
-            image_paths.append(str(image_path))
-        else:
-            image_paths.append(None)
+        success_image=download_image_from_wms(image_url, image_path)
+        image_paths.append(str(image_path) if success_image else None)
+
+        dom_url=get_wms_url(bbox,token=token, dom=True)
+        dom_path= DOM_DIR / f"endepunkt_{nodeid}.png"
+        success_dom=download_image_from_wms(dom_url, dom_path)
+        dom_paths.append(str(dom_path) if success_dom else None)
+
+        
 
     ekte_df["image_path"] = image_paths
+    ekte_df["dom_path"]=dom_paths
+
 
 
 if __name__ == "__main__":
