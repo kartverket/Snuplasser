@@ -17,7 +17,8 @@ def extract_turning_spaces_layers(gdb_path: str, output_path: str):
         output_path (str): Stien der GeoJSON-filen skal lagres.
     """
     gdf = gpd.read_file(gdb_path, layer="Snuplasser_areal_N50")
-    gdf.to_file(output_path, driver="GeoJSON")
+    gdf_25833 = gdf.to_crs(epsg=25833)
+    gdf_25833.to_file(output_path, driver="GeoJSON")
 
 
 if __name__ == "__main__":
