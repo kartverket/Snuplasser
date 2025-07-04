@@ -1,7 +1,8 @@
 import argparse
+import os
 import yaml
 import mlflow
-from lightning import Trainer
+from lightning.pytorch import Trainer
 from model_factory import get_model
 from utils.logger import get_logger
 from utils.callbacks import get_early_stopping, get_model_checkpoint
@@ -19,6 +20,7 @@ def run_experiment(model_name, config):
     # Forbered modell
     model_config = config['model'].get(model_name, {})
     model = get_model(model_name, model_config)
+
 
     # Logger
     logger = get_logger(model_name, config)
@@ -40,6 +42,8 @@ def run_experiment(model_name, config):
     # Trening og validering
     trainer.fit(model, datamodule=datamodule)
     trainer.validate(model, datamodule=datamodule)
+
+    print("MLflow artifacts:", os.listdir("./src/mlruns/0"))
 
 def main(config_path):
     with open(config_path) as f:

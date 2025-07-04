@@ -76,7 +76,7 @@ def hent_wkt_koordinater(nodeid, srid="utm33"):
         porter = data.get("porter", [])
         if len(porter) == 1:
             portnummer = porter[0].get("tilkobling", {}).get("portnummer")
-            er_ekte = portnummer == 1
+            er_ekte = portnummer == 1 or portnummer == 2
         else:
             er_ekte = False
 
