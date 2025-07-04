@@ -22,7 +22,7 @@ class UNetLightning(LightningModule):
 
     def training_step(self, batch, batch_idx):
         x, y = batch
-        y = y.float().unsqueeze(1)  # nødvendig for BCEWithLogits
+        y = y.float()  # nødvendig for BCEWithLogits
         logits = self(x)
         loss = self.loss_fn(logits, y)
         self.log("train_loss", loss)
