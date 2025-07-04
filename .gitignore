@@ -173,4 +173,4 @@ mlruns/
 mlruns_v2/
 
 # Test filer 
-test_kjøring
+src/test_kjøring.ipynb
