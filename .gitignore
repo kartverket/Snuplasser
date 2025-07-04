@@ -169,3 +169,8 @@ runs/
 *.zip
 nib
 iveland_kommune
+mlruns/
+mlruns_v2/
+
+# Test filer 
+src/test_kjøring.ipynb
