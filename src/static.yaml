@@ -1,18 +1,16 @@
 
 model_names:
   - unet
-  - deeplabv3
+
 
 model:
   unet:
+    encoder: resnet18
+    encoder_weights: imagenet
+    in_channels: 4
+    num_classes: 1
     lr: 0.001
-    encoder: resnet64
-    num_classes: 2
 
-  deeplabv3:
-    lr: 0.0005
-    backbone: mobilenet
-    num_classes: 2
 
 data:
   image_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/img/
@@ -29,7 +27,7 @@ data:
 
 training:
   max_epochs: 1              # Antall epoker per kjøring
-  precision: 16               # Mixed precision (16 eller 32)
+  precision: 16      # Mixed precision (16 eller 32)
   accelerator: gpu
   devices: 1                  # GPU-ressurser
   early_stopping_patience: 5  # Stopper tidlig om validerings-loss ikke forbedres
@@ -38,7 +36,7 @@ training:
 
 logging:
   use_mlflow: true
-  experiment_name: optuna_unet
+  experiment_name: unet_resnet18
   tracking_uri: file:./mlruns
 
 optuna:
