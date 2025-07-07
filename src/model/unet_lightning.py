@@ -2,6 +2,7 @@ import torch
 from torch import nn
 from lightning.pytorch import LightningModule
 import segmentation_models_pytorch as smp
+from torchmetrics.classification import BinaryJaccardIndex
 
 class UNetLightning(LightningModule):
     def __init__(self, config):
@@ -14,6 +15,7 @@ class UNetLightning(LightningModule):
         )
         self.lr = config.get("lr", 1e-3)
         self.loss_fn = nn.BCEWithLogitsLoss()  # passer til én output-kanal og float-target i [0, 1]
+        self.iou_metric = BinaryJaccardIndex()
 
     def forward(self, x):
         if x.dtype == torch.uint8:
@@ -34,6 +36,10 @@ class UNetLightning(LightningModule):
         logits = self(x)
         loss = self.loss_fn(logits, y)
         self.log("val_loss", loss)
+
+        preds = torch.sigmoid(logits)
+        iou = self.iou_metric(preds, y)
+        self.log("val_iou", iou, prog_bar=True)
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.lr)
