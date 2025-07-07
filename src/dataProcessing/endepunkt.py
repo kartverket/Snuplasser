@@ -62,9 +62,9 @@ def download_image_from_wms(wms_url, save_path):
 
 
 def hent_wkt_koordinater(nodeid, srid="utm33"):
-    url = f"https://nvdbapiles-v3.atlas.vegvesen.no/vegnett/noder/{nodeid}"
+    url = f"https://nvdbapiles.atlas.vegvesen.no/vegnett/api/v4/noder/{nodeid}"
     headers = {
-        "Accept": "application/vnd.vegvesen.nvdb-v3-rev4+json",
+        "Accept": "application/json",
         "X-Client": "Systemet for vegobjekter",
     }
     params = {"srid": srid}
@@ -76,7 +76,7 @@ def hent_wkt_koordinater(nodeid, srid="utm33"):
         porter = data.get("porter", [])
         if len(porter) == 1:
             portnummer = porter[0].get("tilkobling", {}).get("portnummer")
-            er_ekte = portnummer == 1
+            er_ekte = portnummer == 1 or portnummer == 2
         else:
             er_ekte = False
 
