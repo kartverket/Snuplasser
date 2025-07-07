@@ -1,4 +1,4 @@
-from model.unet import UNet
+#from model.unet import UNet
 from model.deeplabv3_lightning import get_deeplabv3_lightning
 
 
