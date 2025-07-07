@@ -26,7 +26,7 @@ data:
 
 
 training:
-  max_epochs: 1              # Antall epoker per kjøring
+  max_epochs: 10              # Antall epoker per kjøring
   precision: 16      # Mixed precision (16 eller 32)
   accelerator: gpu
   devices: 1                  # GPU-ressurser
@@ -36,8 +36,7 @@ training:
 
 logging:
   use_mlflow: true
-  experiment_name: unet_resnet18
-  tracking_uri: file:./mlruns
+  experiment_name: /Users/fabian.heflo@kartverket.no/unet_resnet18
 
 optuna:
   direction: maximize         # Hvilken vei metrikken skal optimaliseres
