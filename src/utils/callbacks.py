@@ -1,4 +1,9 @@
-from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
+from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint, Callback
+import os
+import matplotlib.pyplot as plt
+import mlflow
+import torch
+import warnings
 
 def get_early_stopping(config):
     return EarlyStopping(
@@ -18,3 +23,54 @@ def get_model_checkpoint(config):
         save_weights_only=True,
         filename=filename,       
     )
+
+
+class LogPredictionsCallback(Callback):
+    def __init__(self, log_every_n_epochs=5, artifact_dir="val_predictions"):
+        self.log_every_n_epochs = log_every_n_epochs
+        self.artifact_dir = artifact_dir
+        os.makedirs(self.artifact_dir, exist_ok=True)
+
+    def on_validation_epoch_end(self, trainer, pl_module):
+        if (trainer.current_epoch % self.log_every_n_epochs) != 0:
+            return
+
+        dataloader = trainer.datamodule.val_dataloader()
+        batch = next(iter(dataloader))
+        x, y = batch
+        x, y = x.to(pl_module.device), y.to(pl_module.device)
+        logits = pl_module(x)
+        preds = torch.sigmoid(logits) > 0.5
+
+        # Visualiser første bilde
+        image = x[0, :3].detach().cpu()    # RGB
+        dom = x[0, 3].detach().cpu()       # DOM-kanal (må bruke indeks [0, 3])
+        target = y[0].detach().cpu()
+        pred = preds[0].detach().cpu()
+
+        fig, axs = plt.subplots(1, 4, figsize=(14, 4))
+        axs[0].imshow(image.permute(1, 2, 0))
+        axs[0].set_title("Input RGB")
+
+        axs[1].imshow(dom, cmap="gray")
+        axs[1].set_title("Input DOM")
+
+        axs[2].imshow(target.squeeze(), cmap="gray")
+        axs[2].set_title("Target mask")
+
+        axs[3].imshow(pred.squeeze(), cmap="gray")
+        axs[3].set_title("Predicted mask")
+
+        for ax in axs:
+            ax.axis("off")
+
+        fname = os.path.join(self.artifact_dir, f"epoch_{trainer.current_epoch}.png")
+        fig.tight_layout()
+        fig.savefig(fname)
+        plt.close(fig)
+
+        mlflow_client = trainer.logger.experiment
+        run_id = trainer.logger.run_id
+        mlflow_client.log_artifact(run_id, fname, artifact_path=self.artifact_dir)
+
+        os.remove(fname)

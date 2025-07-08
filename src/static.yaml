@@ -37,6 +37,7 @@ training:
 logging:
   use_mlflow: true
   experiment_name: /Users/fabian.heflo@kartverket.no/unet_resnet18
+  artifact_subdir: "val_predictions"
 
 optuna:
   direction: maximize         # Hvilken vei metrikken skal optimaliseres

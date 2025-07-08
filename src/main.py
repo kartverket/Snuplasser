@@ -5,7 +5,7 @@ from lightning.pytorch import Trainer
 import os
 from model_factory import get_model
 from utils.logger import get_logger
-from utils.callbacks import get_early_stopping, get_model_checkpoint
+from utils.callbacks import get_early_stopping, get_model_checkpoint, LogPredictionsCallback
 from datamodules.snuplass_datamodule import get_datamodule
 
 def run_experiment(model_name, config):
@@ -33,7 +33,7 @@ def run_experiment(model_name, config):
         accelerator=config['training'].get('accelerator', 'cpu'),
         devices=config['training'].get('devices', 1),
         precision=config['training'].get('precision', 16),
-        callbacks=[model_checkpoint, early_stopping],
+        callbacks=[model_checkpoint, early_stopping, LogPredictionsCallback(log_every_n_epochs=2)],
         log_every_n_steps=10,
         deterministic=True  # Reproduserbarhet
     )
@@ -42,6 +42,10 @@ def run_experiment(model_name, config):
     trainer.fit(model, datamodule=datamodule)
     trainer.validate(model, datamodule=datamodule)
 
+    if hasattr(model, "logged_images"):
+        for fname in model.logged_images:
+            mlflow.log_artifact(fname, artifact_path="val_predictions")
+            os.remove(fname)
 
         
 def main(config_path):
