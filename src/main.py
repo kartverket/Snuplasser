@@ -22,9 +22,11 @@ def run_experiment(model_name, config):
     logger = get_logger(model_name, config)
 
     # Callbacks
+    log_pred_cfg = config.get("log_predictions_callback", {})
+    log_predictions = LogPredictionsCallback(**log_pred_cfg)
+
     early_stopping = get_early_stopping(config['training'])
     model_checkpoint = get_model_checkpoint(config['training'])
-
 
     # Trainer
     trainer = Trainer(
@@ -33,7 +35,7 @@ def run_experiment(model_name, config):
         accelerator=config['training'].get('accelerator', 'cpu'),
         devices=config['training'].get('devices', 1),
         precision=config['training'].get('precision', 16),
-        callbacks=[model_checkpoint, early_stopping, LogPredictionsCallback(log_every_n_epochs=2)],
+        callbacks=[model_checkpoint, early_stopping, log_predictions],
         log_every_n_steps=10,
         deterministic=True  # Reproduserbarhet
     )

@@ -40,7 +40,7 @@ class UNetLightning(LightningModule):
         return self.model(x)
 
     def training_step(self, batch, batch_idx):
-        x, y = batch
+        x, y, _ = batch
         y = y.float()  # nødvendig for BCEWithLogits
         logits = self(x)
         loss = self.loss_fn(logits, y)
@@ -48,7 +48,7 @@ class UNetLightning(LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        x, y = batch
+        x, y, _ = batch
         y = y.float().unsqueeze(1)
         logits = self(x)
         loss = self.loss_fn(logits, y)
