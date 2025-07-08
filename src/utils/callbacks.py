@@ -29,7 +29,6 @@ class LogPredictionsCallback(Callback):
     def __init__(self, log_every_n_epochs=5, artifact_dir="val_predictions"):
         self.log_every_n_epochs = log_every_n_epochs
         self.artifact_dir = artifact_dir
-        os.makedirs(self.artifact_dir, exist_ok=True)
 
     def on_validation_epoch_end(self, trainer, pl_module):
         if (trainer.current_epoch % self.log_every_n_epochs) != 0:
@@ -42,35 +41,37 @@ class LogPredictionsCallback(Callback):
         logits = pl_module(x)
         preds = torch.sigmoid(logits) > 0.5
 
-        # Visualiser første bilde
-        image = x[0, :3].detach().cpu()    # RGB
-        dom = x[0, 3].detach().cpu()       # DOM-kanal (må bruke indeks [0, 3])
-        target = y[0].detach().cpu()
-        pred = preds[0].detach().cpu()
+        num_images = 20
+        max_images = min(num_images, x.shape[0])
 
-        fig, axs = plt.subplots(1, 4, figsize=(14, 4))
-        axs[0].imshow(image.permute(1, 2, 0))
-        axs[0].set_title("Input RGB")
+        for i in range(max_images):
+            image = x[i, :3].detach().cpu()    # RGB
+            dom = x[i, 3].detach().cpu()       # DOM-kanal (må bruke indeks [0, 3])
+            target = y[i].detach().cpu()
+            pred = preds[i].detach().cpu()
 
-        axs[1].imshow(dom, cmap="gray")
-        axs[1].set_title("Input DOM")
+            fig, axs = plt.subplots(1, 4, figsize=(14, 4))
+            axs[0].imshow(image.permute(1, 2, 0))
+            axs[0].set_title("Input RGB")
+            axs[1].imshow(dom, cmap="gray")
+            axs[1].set_title("Input DOM")
+            axs[2].imshow(target.squeeze(), cmap="gray")
+            axs[2].set_title("Target mask")
+            axs[3].imshow(pred.squeeze(), cmap="gray")
+            axs[3].set_title("Predicted mask")
+            for ax in axs:
+                ax.axis("off")
+            fig.tight_layout()
 
-        axs[2].imshow(target.squeeze(), cmap="gray")
-        axs[2].set_title("Target mask")
+            image_dir = os.path.join(self.artifact_dir, f"image_{i}")
+            os.makedirs(image_dir, exist_ok=True)
 
-        axs[3].imshow(pred.squeeze(), cmap="gray")
-        axs[3].set_title("Predicted mask")
+            fname = os.path.join(image_dir, f"epoch_{trainer.current_epoch}.png")
+            fig.savefig(fname)
+            plt.close(fig)
 
-        for ax in axs:
-            ax.axis("off")
+            mlflow_client = trainer.logger.experiment
+            run_id = trainer.logger.run_id
+            mlflow_client.log_artifact(run_id, fname, artifact_path=image_dir)
 
-        fname = os.path.join(self.artifact_dir, f"epoch_{trainer.current_epoch}.png")
-        fig.tight_layout()
-        fig.savefig(fname)
-        plt.close(fig)
-
-        mlflow_client = trainer.logger.experiment
-        run_id = trainer.logger.run_id
-        mlflow_client.log_artifact(run_id, fname, artifact_path=self.artifact_dir)
-
-        os.remove(fname)
+            os.remove(fname)

@@ -2,7 +2,18 @@ import torch
 from torch import nn
 from lightning.pytorch import LightningModule
 import segmentation_models_pytorch as smp
-from torchmetrics.classification import BinaryJaccardIndex, BinaryDice, BinaryAccuracy
+from torchmetrics.classification import BinaryJaccardIndex, BinaryAccuracy
+from torchmetrics.segmentation import DiceScore
+
+
+class DiceBCELoss(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.dice = smp.losses.DiceLoss(mode="binary", from_logits=True)
+        self.bce = nn.BCEWithLogitsLoss()
+
+    def forward(self, preds, targets):
+        return self.dice(preds, targets) + self.bce(preds, targets)
 
 
 class UNetLightning(LightningModule):
@@ -16,11 +27,11 @@ class UNetLightning(LightningModule):
         )
         self.lr = config.get("lr", 1e-3)
 
-        self.loss_fn = smp.losses.DiceBCELoss(mode="binary")
+        self.loss_fn = DiceBCELoss()
         #self.loss_fn = nn.BCEWithLogitsLoss()
 
         self.iou_metric = BinaryJaccardIndex()
-        self.dice = BinaryDice()
+        self.dice = DiceScore(num_classes=2)
         self.accuracy = BinaryAccuracy()
 
     def forward(self, x):
