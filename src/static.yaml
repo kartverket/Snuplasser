@@ -40,7 +40,7 @@ training:
 logging:
   use_mlflow: true
   experiment_name: optuna_unet
-  tracking_uri: file:./mlruns
+  tracking_uri: file:./src/mlruns
 
 optuna:
   direction: maximize         # Hvilken vei metrikken skal optimaliseres
