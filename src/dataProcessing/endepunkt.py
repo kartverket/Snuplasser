@@ -50,7 +50,9 @@ def get_wms_url(bbox, token, dom=False):
 
 
 def download_image_from_wms(wms_url, save_path):
+    print(f"Henter bilde fra {wms_url}")
     response = requests.get(wms_url)
+    print(f"Statuskode for bilde: {response.status_code}")
     if response.status_code == 200:
         with open(save_path, "wb") as f:
             f.write(response.content)
@@ -61,33 +63,39 @@ def download_image_from_wms(wms_url, save_path):
         return False
 
 
-def hent_wkt_koordinater(nodeid, srid="utm33"):
-    url = f"https://nvdbapiles-v3.atlas.vegvesen.no/vegnett/noder/{nodeid}"
+def hent_wkt_koordinater(nodeid, srid="UTM33"):
+    url = f"https://nvdbapiles.atlas.vegvesen.no/vegnett/api/v4/noder/{nodeid}"
     headers = {
-        "Accept": "application/vnd.vegvesen.nvdb-v3-rev4+json",
+        "Accept": "application/json",
         "X-Client": "Systemet for vegobjekter",
     }
     params = {"srid": srid}
 
+    print(f"Henter node {nodeid} | URL : {url} | Params:{params} ")
+
     try:
         response = requests.get(url, headers=headers, params=params, timeout=10)
+        print(f"Statuskode for node {nodeid}: {response.status_code}")
         response.raise_for_status()
         data = response.json()
+        print(f"Data for node {nodeid}: {data}")
         porter = data.get("porter", [])
         if len(porter) == 1:
             portnummer = porter[0].get("tilkobling", {}).get("portnummer")
-            er_ekte = portnummer == 1
+            er_ekte = portnummer == 1 or portnummer == 2
         else:
             er_ekte = False
 
         wkt = data.get("geometri", {}).get("wkt")
-        if wkt and "Z(" in wkt:
+        if wkt and wkt.startswith("POINT Z"):
             try:
-                coords = wkt.split("Z(")[1].split(")")[0].split()
-                x, y = float(coords[0]), float(coords[1])
-            except Exception:
+               coords = wkt.replace("POINT Z", "").replace("(", "").replace(")", "").split()
+               x, y = float(coords[0]), float(coords[1])
+            except Exception as ex:
+                print(f" Kordinat kan ikke hentes,  {nodeid}, wkt: {wkt}, Error: {ex}")
                 x, y = None, None
         else:
+            print(f"WKT finnes ikke, nodeid: {nodeid}, wkt: {wkt}")
             x, y = None, None
         print(f"[{nodeid}] Tilkobling OK")
         return er_ekte, wkt, x, y
@@ -106,7 +114,7 @@ def filtrer_ekte_endepunkter(df, retries=2):
         try:
             er_ekte, wkt, x, y = hent_wkt_koordinater(nodeid)
 
-            if er_ekte:
+            if er_ekte and x is not None and y is not None:
                 ekte_rows.append({
                     "nodeid": nodeid,
                     "wkt": wkt,
@@ -144,7 +152,7 @@ def filtrer_ekte_endepunkter(df, retries=2):
 
 
 def main(token):
-    df = hent_skogsbilveier_og_noder("0301")
+    df = hent_skogsbilveier_og_noder("3405")
     ekte_df = filtrer_ekte_endepunkter(df)
 
     image_paths = []
@@ -153,6 +161,10 @@ def main(token):
     for idx, row in ekte_df.iterrows():
         x, y = row["x"], row["y"]
         nodeid = row["nodeid"]
+        print(f"[{nodeid}] Koordinater: {x}, {y}")
+        if x is None or y is None:
+            print(f"[{nodeid}] Koordinater mangler")
+            continue
         bbox = make_bbox_around_endepunkt(x, y, buffer_x=50, buffer_y=50)
 
 
@@ -181,3 +193,4 @@ if __name__ == "__main__":
             asyncio.run(main(SECRET_TOKEN))
     except RuntimeError:
         asyncio.run(main(SECRET_TOKEN))
+    
