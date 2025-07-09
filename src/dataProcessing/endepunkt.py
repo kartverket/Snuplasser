@@ -113,8 +113,9 @@ def filtrer_ekte_endepunkter(df, retries=2):
         nodeid = row["nodeid"]
         try:
             er_ekte, wkt, x, y = hent_wkt_koordinater(nodeid)
-
+            
             if er_ekte and x is not None and y is not None:
+
                 ekte_rows.append({
                     "nodeid": nodeid,
                     "wkt": wkt,

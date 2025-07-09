@@ -1,8 +1,8 @@
 import argparse
+import os
 import yaml
 import mlflow
 from lightning.pytorch import Trainer
-import os
 from model_factory import get_model
 from utils.logger import get_logger
 from utils.callbacks import get_early_stopping, get_model_checkpoint, LogPredictionsCallback
@@ -17,6 +17,7 @@ def run_experiment(model_name, config):
     # Forbered modell
     model_config = config['model'].get(model_name, {})
     model = get_model(model_name, model_config)
+
 
     # Logger
     logger = get_logger(model_name, config)
@@ -44,12 +45,7 @@ def run_experiment(model_name, config):
     trainer.fit(model, datamodule=datamodule)
     trainer.validate(model, datamodule=datamodule)
 
-    if hasattr(model, "logged_images"):
-        for fname in model.logged_images:
-            mlflow.log_artifact(fname, artifact_path="val_predictions")
-            os.remove(fname)
 
-        
 def main(config_path):
     with open(config_path) as f:
         config = yaml.safe_load(f)
@@ -71,3 +67,4 @@ if __name__ == "__main__":
     if args.config is None:
         raise ValueError("Du må angi path til en YAML-konfigurasjon med --config")
     main(args.config)
+

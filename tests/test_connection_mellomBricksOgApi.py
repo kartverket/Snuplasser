@@ -16,5 +16,5 @@ for nodeid in nodeids:
         print(f"Node {nodeid}: Status {response.status_code}")
     except Exception as e:
         print(f"Node {nodeid}: ERROR {e}")
-    time.sleep(0.5)  # Burada 0.5 veya daha fazla deneyebilirsin
+    time.sleep(0.5)  
 
