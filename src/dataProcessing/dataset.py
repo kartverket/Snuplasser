@@ -48,7 +48,8 @@ class SnuplassDataset(Dataset):
         if not isinstance(mask, torch.Tensor):
             mask = torch.from_numpy(np.array(mask) / 255).unsqueeze(0).float()
 
-        return image, mask
+        filename = f"{file_id}.png"
+        return image, mask, filename 
 
 
 def load_numpy_split_stack(

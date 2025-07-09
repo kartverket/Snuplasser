@@ -5,7 +5,7 @@ from lightning.pytorch import Trainer
 import os
 from model_factory import get_model
 from utils.logger import get_logger
-from utils.callbacks import get_early_stopping, get_model_checkpoint
+from utils.callbacks import get_early_stopping, get_model_checkpoint, LogPredictionsCallback
 from datamodules.snuplass_datamodule import get_datamodule
 
 def run_experiment(model_name, config):
@@ -22,9 +22,11 @@ def run_experiment(model_name, config):
     logger = get_logger(model_name, config)
 
     # Callbacks
+    log_pred_cfg = config.get("log_predictions_callback", {})
+    log_predictions = LogPredictionsCallback(**log_pred_cfg)
+
     early_stopping = get_early_stopping(config['training'])
     model_checkpoint = get_model_checkpoint(config['training'])
-
 
     # Trainer
     trainer = Trainer(
@@ -33,7 +35,7 @@ def run_experiment(model_name, config):
         accelerator=config['training'].get('accelerator', 'cpu'),
         devices=config['training'].get('devices', 1),
         precision=config['training'].get('precision', 16),
-        callbacks=[model_checkpoint, early_stopping],
+        callbacks=[model_checkpoint, early_stopping, log_predictions],
         log_every_n_steps=10,
         deterministic=True  # Reproduserbarhet
     )
@@ -42,6 +44,10 @@ def run_experiment(model_name, config):
     trainer.fit(model, datamodule=datamodule)
     trainer.validate(model, datamodule=datamodule)
 
+    if hasattr(model, "logged_images"):
+        for fname in model.logged_images:
+            mlflow.log_artifact(fname, artifact_path="val_predictions")
+            os.remove(fname)
 
         
 def main(config_path):
@@ -59,9 +65,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config", 
         type=str, 
-        default="/Workspace/Users/fabian.heflo@kartverket.no/Snuplasser/src/static.yaml", 
-        required=True, 
         help="Path til YAML-konfigurasjon"
         )
     args = parser.parse_args()
+    if args.config is None:
+        raise ValueError("Du må angi path til en YAML-konfigurasjon med --config")
     main(args.config)
