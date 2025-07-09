@@ -5,13 +5,13 @@ import pandas as pd
 def hent_skogsbilveier_og_noder(
     kommune_id: str, antall_per_side: int = 1000
 ) -> pd.DataFrame:
-    url = "https://nvdbapiles-v3.atlas.vegvesen.no/vegnett/veglenkesekvenser"
+    url = "https://nvdbapiles.atlas.vegvesen.no/vegnett/api/v4/veglenkesekvenser"
     headers = {"Accept": "application/json", "X-Client": "Snuplasser"}
     params = {
         "kommune": kommune_id,
         "vegsystemreferanse": "S",
         "antall": antall_per_side,
-        "inkluder": "geometri",
+        "topologiNiva": "alle"
     }
     alle_objekter = []
     while True:

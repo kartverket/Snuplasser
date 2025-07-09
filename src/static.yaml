@@ -1,13 +1,18 @@
 
 model_names:
-  #- unet
+
+  - unet
   - deeplabv3
+
 
 model:
   unet:
+    encoder: resnet18
+    encoder_weights: imagenet
+    in_channels: 4
+    num_classes: 1
     lr: 0.001
-    encoder: resnet64
-    num_classes: 2
+
 
   deeplabv3:
     lr: 0.0005
@@ -29,19 +34,28 @@ data:
 
 
 training:
-  max_epochs: 1              # Antall epoker per kjøring
-  precision: 16               # Mixed precision (16 eller 32)
+  max_epochs: 10              # Antall epoker per kjøring
+  precision: 16      # Mixed precision (16 eller 32)
   accelerator: gpu
   devices: 1                  # GPU-ressurser
   early_stopping_patience: 5  # Stopper tidlig om validerings-loss ikke forbedres
   monitor: val_loss  # val_IoU , Må logges av modellen og oppdateres i utils.callbacks
   monitor_mode: min  # max for IoU
 
+log_predictions_callback:
+  log_every_n_epochs: 2
+  artifact_dir: "val_predictions"
+  always_log_ids:
+    - "image_252063_6774942_252131_6775008.png"
+    - "image_267985_6778930_268055_6779021.png"
+    - "image_270356_6771602_270421_6771665.png"
+
 logging:
   use_mlflow: true
+  #experiment_name: /Users/fabian.heflo@kartverket.no/deeplabv3_resnet50
   experiment_name: /Users/enes.topcu@kartverket.no/deeplabv3_resnet50
   tracking_uri: "val_predictions"
-
+  
 optuna:
   direction: maximize         # Hvilken vei metrikken skal optimaliseres
   metric_name: val_IoU        # Navn på metrikken som returneres fra validate()

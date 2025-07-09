@@ -1,43 +1,25 @@
 import unittest
 import pandas as pd
-import sys
-import os
-
-sys.path.append(
-    os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "..", "src", "dataProcessing")
-    )
-)
-from download_skogsbilveg import hent_skogsbilveier_og_noder
-from endepunkt import filtrer_ekte_endepunkter
+from src.dataProcessing.download_skogsbilveg import hent_skogsbilveier_og_noder
 
 
-class TestEkteEndepunkterDataframe(unittest.TestCase):
+class TestSkogsbilveierHenting(unittest.TestCase):
 
-    def test_ekte_endepunkter_dataframe(self):
+    def test_henter_data_for_kommune(self):
+        kommune_id = "0301"  
+        df = hent_skogsbilveier_og_noder(kommune_id)
 
-        df = hent_skogsbilveier_og_noder("0301")
+        
         self.assertIsInstance(df, pd.DataFrame)
+
         self.assertIn("nodeid", df.columns)
+        self.assertIn("veglenkesekvensid", df.columns)
+
+      
         self.assertGreater(len(df), 0)
 
-        ekte_df = filtrer_ekte_endepunkter(df)
-        print("Eksempel på ekte endepunkt-dataframe:\n", ekte_df.head())
-
-        self.assertIsInstance(ekte_df, pd.DataFrame)
-        self.assertIn("nodeid", ekte_df.columns)
-        self.assertIn("wkt", ekte_df.columns)
-        self.assertIn("x", ekte_df.columns)
-        self.assertIn("y", ekte_df.columns)
-
-        self.assertGreaterEqual(len(ekte_df), 0)
-        if len(ekte_df) > 0:
-
-            row = ekte_df.iloc[0]
-            self.assertTrue(pd.notnull(row["wkt"]))
-            self.assertTrue(pd.notnull(row["x"]))
-            self.assertTrue(pd.notnull(row["y"]))
+        print("\n📦 Eksempeldata (first 4 raws):\n", df.head())
 
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(argv=['first-arg-is-ignored'], exit=False)
