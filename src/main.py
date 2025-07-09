@@ -58,7 +58,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config", 
         type=str, 
-        default="/Workspace/Users/fabian.heflo@kartverket.no/Snuplasser/src/static.yaml", 
+       # default="/Workspace/Users/enes@kartverket.no/Snuplasser/src/static.yaml", 
         required=True, 
         help="Path til YAML-konfigurasjon"
         )

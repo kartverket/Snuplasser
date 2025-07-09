@@ -30,8 +30,8 @@ data:
 
 training:
   max_epochs: 1              # Antall epoker per kjøring
-  precision: 32               # Mixed precision (16 eller 32)
-  accelerator: cpu #gpu
+  precision: 16               # Mixed precision (16 eller 32)
+  accelerator: gpu
   devices: 1                  # GPU-ressurser
   early_stopping_patience: 5  # Stopper tidlig om validerings-loss ikke forbedres
   monitor: val_loss  # val_IoU , Må logges av modellen og oppdateres i utils.callbacks
@@ -39,8 +39,8 @@ training:
 
 logging:
   use_mlflow: true
-  experiment_name: optuna_unet
-  tracking_uri: file:./src/mlruns
+  experiment_name: /Users/enes.topcu@kartverket.no/deeplabv3_resnet50
+  tracking_uri: "val_predictions"
 
 optuna:
   direction: maximize         # Hvilken vei metrikken skal optimaliseres
