@@ -1,7 +1,6 @@
 
 model_names:
-
-  - unet
+  #- unet
   - deeplabv3
 
 
@@ -15,10 +14,10 @@ model:
 
 
   deeplabv3:
-    lr: 0.0005
     backbone: mobilenet_v2
-    num_classes: 2
     in_channels: 4
+    num_classes: 1
+    lr: 0.001
 
 data:
   image_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/img/
@@ -52,8 +51,8 @@ log_predictions_callback:
 
 logging:
   use_mlflow: true
-  #experiment_name: /Users/fabian.heflo@kartverket.no/deeplabv3_resnet50
-  experiment_name: /Users/enes.topcu@kartverket.no/deeplabv3_resnet50
+  experiment_name: /Users/fabian.heflo@kartverket.no/deeplabv3_resnet50
+  #experiment_name: /Users/enes.topcu@kartverket.no/deeplabv3_resnet50
   tracking_uri: "val_predictions"
   
 optuna:
