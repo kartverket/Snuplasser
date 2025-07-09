@@ -65,9 +65,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config", 
         type=str, 
-        default="/Workspace/Users/fabian.heflo@kartverket.no/Snuplasser/src/static.yaml", 
-        required=True, 
         help="Path til YAML-konfigurasjon"
         )
     args = parser.parse_args()
+    if args.config is None:
+        raise ValueError("Du må angi path til en YAML-konfigurasjon med --config")
     main(args.config)

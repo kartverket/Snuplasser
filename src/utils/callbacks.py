@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import mlflow
 import torch
 import warnings
+from pathlib import Path
 
 def get_early_stopping(config):
     return EarlyStopping(
@@ -26,59 +27,66 @@ def get_model_checkpoint(config):
 
 
 class LogPredictionsCallback(Callback):
-    def __init__(self, log_every_n_epochs=5, artifact_dir="val_predictions", extra_artifacts=None):
+    def __init__(self, log_every_n_epochs=1, artifact_dir="val_predictions", always_log_ids=None, max_random_logs=10):
         self.log_every_n_epochs = log_every_n_epochs
         self.artifact_dir = artifact_dir
-        self.extra_artifacts = extra_artifacts or []
+        self.always_log_ids = set(always_log_ids or [])
+        self.max_random_logs = max_random_logs
 
     def on_validation_epoch_end(self, trainer, pl_module):
-        if (trainer.current_epoch % self.log_every_n_epochs) != 0:
-            return
-
         dataloader = trainer.datamodule.val_dataloader()
-        batch = next(iter(dataloader))
-        x, y, filenames = batch
-        x, y = x.to(pl_module.device), y.to(pl_module.device)
-        logits = pl_module(x)
-        preds = torch.sigmoid(logits) > 0.5
+        device = pl_module.device
+        epoch = trainer.current_epoch
+        logged = set()
 
-        num_images = 20
-        max_images = min(num_images, x.shape[0])
+        for batch in dataloader:
+            if len(batch) != 3:
+                continue
+            x, y, fnames = batch
+            x, y = x.to(device), y.to(device)
+            preds = torch.sigmoid(pl_module(x)) > 0.5
 
-        for i in range(max_images):
-            filename = filenames[i]
-            display_always = filename in self.extra_artifacts
-            display_default = i < num_images
+            for i, fname in enumerate(fnames):
+                name = Path(fname).name
+                log_this = (
+                    name in self.always_log_ids or
+                    (epoch % self.log_every_n_epochs == 0 and len(logged) < self.max_random_logs)
+                )
+                if log_this and name not in logged:
+                    self._log_prediction(x[i], y[i], preds[i], name, epoch, trainer)
+                    logged.add(name)
 
-            if display_default or display_always:
-                
-                image = x[i, :3].detach().cpu()    # RGB
-                dom = x[i, 3].detach().cpu()       # DOM-kanal (må bruke indeks [0, 3])
-                target = y[i].detach().cpu()
-                pred = preds[i].detach().cpu()
+            if len(logged) >= self.max_random_logs and not (self.always_log_ids - logged):
+                break
 
-                fig, axs = plt.subplots(1, 4, figsize=(14, 4))
-                axs[0].imshow(image.permute(1, 2, 0))
-                axs[0].set_title("Input RGB")
-                axs[1].imshow(dom, cmap="gray")
-                axs[1].set_title("Input DOM")
-                axs[2].imshow(target.squeeze(), cmap="gray")
-                axs[2].set_title("Target mask")
-                axs[3].imshow(pred.squeeze(), cmap="gray")
-                axs[3].set_title("Predicted mask")
-                for ax in axs:
-                    ax.axis("off")
-                fig.tight_layout()
+    def _log_prediction(self, x, y, pred, name, epoch, trainer):
+        img, dom = x[:3], x[3:]
+    
+        # Sørg for 2D-tensorer til visning
+        img_np = img.permute(1, 2, 0).cpu().numpy()
+        dom_np = dom.squeeze().cpu().numpy()
+        y_np = y.squeeze().cpu().numpy()
+        pred_np = pred.squeeze().cpu().numpy()
 
-                image_id = os.path.splitext(os.path.basename(filename))[0]
-                image_dir = os.path.join(self.artifact_dir, image_id)
-                os.makedirs(image_dir, exist_ok=True)
+        fig, axs = plt.subplots(1, 4, figsize=(12, 3))
+        axs[0].imshow(img_np)
+        axs[1].imshow(dom_np, cmap="gray")
+        axs[2].imshow(y_np, cmap="gray")
+        axs[3].imshow(pred_np, cmap="gray")
 
-                fname = os.path.join(image_dir, f"epoch_{trainer.current_epoch}.png")
-                fig.savefig(fname)
-                plt.close(fig)
+        for ax in axs:
+            ax.axis("off")
 
-                mlflow_client = trainer.logger.experiment
-                run_id = trainer.logger.run_id
-                mlflow_client.log_artifact(run_id, fname, artifact_path=image_dir)
-                os.remove(fname)
+        axs[0].set_title("Input RGB")
+        axs[1].set_title("Input DOM")
+        axs[2].set_title("Target mask")
+        axs[3].set_title("Predicted mask")
+
+        plt.tight_layout()
+        artifact_path = f"{self.artifact_dir}/image_{name}/epoch_{epoch}.png"
+        trainer.logger.experiment.log_figure(
+            run_id=trainer.logger.run_id,
+            figure=fig,
+            artifact_file=artifact_path
+        )
+        plt.close(fig)

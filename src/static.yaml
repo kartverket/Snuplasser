@@ -37,7 +37,7 @@ training:
 log_predictions_callback:
   log_every_n_epochs: 2
   artifact_dir: "val_predictions"
-  extra_artifacts:
+  always_log_ids:
     - "image_252063_6774942_252131_6775008.png"
     - "image_267985_6778930_268055_6779021.png"
     - "image_270356_6771602_270421_6771665.png"
