@@ -24,4 +24,4 @@ predict:
 logging:
   use_mlflow: true
   experiment_name: /Users/fabian.heflo@kartverket.no/unlabeled_test_unet
-  tracking_uri: "val_predictions"
+  #tracking_uri: "val_predictions"
