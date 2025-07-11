@@ -19,6 +19,7 @@ class DiceBCELoss(nn.Module):
 class UNetLightning(LightningModule):
     def __init__(self, config):
         super().__init__()
+        self.save_hyperparameters(config)
         self.model = smp.Unet(
             encoder_name=config.get("encoder", "resnet18"),
             encoder_weights=None,

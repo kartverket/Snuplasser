@@ -18,6 +18,7 @@ class DiceBCELoss(nn.Module):
 class DeepLabV3Lightning(LightningModule):
     def __init__(self,config):
         super().__init__()
+        self.save_hyperparameters(config)
 
         self.model = smp.DeepLabV3(
             encoder_name=config.get("backbone", "mobilenet_v2"),

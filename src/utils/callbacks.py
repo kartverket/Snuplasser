@@ -90,3 +90,60 @@ class LogPredictionsCallback(Callback):
             artifact_file=artifact_path
         )
         plt.close(fig)
+
+
+
+
+
+
+def log_test_predictions(model, dataloader, logger, artifact_dir, threshold=0.5, max_logs=20):
+    if not hasattr(logger, "run_id") or logger.run_id is None:
+        raise RuntimeError("MLFlowLogger må ha en aktiv run_id for å logge artifacts.")
+
+    model.eval().to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+    logged = 0
+
+    for x, fnames in dataloader:
+        x = x.to(model.device)
+        with torch.no_grad():
+            preds = torch.sigmoid(model(x)) > threshold
+
+        for i in range(len(fnames)):
+            if logged >= max_logs:
+                return
+            _log_prediction_artifact(
+                rgb_tensor=x[i, :3],
+                dom_tensor=x[i, 3],
+                pred_tensor=preds[i],
+                fname=fnames[i],
+                logger=logger,
+                artifact_dir=artifact_dir
+            )
+            logged += 1
+
+
+def _log_prediction_artifact(rgb_tensor, dom_tensor, pred_tensor, fname, logger, artifact_dir):
+    rgb_np = rgb_tensor.permute(1, 2, 0).cpu().numpy()
+    dom_np = dom_tensor.cpu().numpy()
+    pred_np = pred_tensor.squeeze().cpu().numpy()
+
+    fig, axs = plt.subplots(1, 3, figsize=(9, 3))
+    axs[0].imshow(rgb_np)
+    axs[0].set_title("RGB")
+    axs[1].imshow(dom_np, cmap="gray")
+    axs[1].set_title("DOM")
+    axs[2].imshow(pred_np, cmap="gray")
+    axs[2].set_title("Prediction")
+
+    for ax in axs:
+        ax.axis("off")
+
+    plt.tight_layout()
+    artifact_path = f"{artifact_dir}/image_{Path(fname).stem}.png"
+    logger.experiment.log_figure(
+        run_id=logger.run_id,
+        figure=fig,
+        artifact_file=artifact_path
+    )
+    plt.close(fig)
+
