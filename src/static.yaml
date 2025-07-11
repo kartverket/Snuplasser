@@ -1,7 +1,7 @@
 
 model_names:
-  #- unet
-  - deeplabv3
+  - unet
+  #- deeplabv3
 
 
 model:
