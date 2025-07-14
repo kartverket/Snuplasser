@@ -4,32 +4,36 @@ from lightning.pytorch import LightningModule
 import segmentation_models_pytorch as smp
 from torchmetrics.classification import BinaryJaccardIndex, BinaryAccuracy
 from torchmetrics.segmentation import DiceScore
-
-
-class DiceBCELoss(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.dice = smp.losses.DiceLoss(mode="binary", from_logits=True)
-        self.bce = nn.BCEWithLogitsLoss()
-
-    def forward(self, preds, targets):
-        return self.dice(preds, targets) + self.bce(preds, targets)
+from src.utils.losses import DiceBCELoss
+from src.utils.loss_utils import compute_loss_weights 
 
 
 class UNetLightning(LightningModule):
     def __init__(self, config):
         super().__init__()
         self.save_hyperparameters(config)
+
         self.model = smp.Unet(
             encoder_name=config.get("encoder", "resnet18"),
             encoder_weights=None,
             in_channels=config.get("in_channels", 4),
-            classes=1,  # én kanal for binær segmentering
+            classes=1,
         )
+
         self.lr = config.get("lr", 1e-3)
 
-        self.loss_fn = DiceBCELoss()
-        #self.loss_fn = nn.BCEWithLogitsLoss()
+        mask_dir = config.get("data", {}).get("mask_dir") 
+
+        if mask_dir:
+            dice_w, bce_w, pos_w = compute_loss_weights(mask_dir)
+        else:
+            dice_w, bce_w, pos_w = 0.5, 0.5, 1.0
+
+        self.loss_fn = DiceBCELoss(
+            dice_weight=dice_w,
+            bce_weight=bce_w,
+            pos_weight=pos_w,
+        )
 
         self.iou_metric = BinaryJaccardIndex()
         self.dice = DiceScore(num_classes=2)
