@@ -36,13 +36,13 @@ class DeepLabV3Lightning(LightningModule):
 
 
     def forward(self, x):
-        print("➡️ Forward pass called")
+        #print("➡️ Forward pass called")
         if x.dtype == torch.uint8:
             x = x.float() / 255.0
         return self.model(x)
     
     def training_step(self, batch, batch_idx):
-        print(f"🟢 Training step {batch_idx}")
+        #print(f"🟢 Training step {batch_idx}")
         x, y, _ = batch
         y = y.float()  
         logits = self(x)
@@ -51,7 +51,7 @@ class DeepLabV3Lightning(LightningModule):
         return loss
     
     def validation_step(self, batch, batch_idx):
-        print(f"🔵 Validation step {batch_idx}")
+        #print(f"🔵 Validation step {batch_idx}")
         x, y, _ = batch
         y = y.float().unsqueeze(1)
         logits = self(x)

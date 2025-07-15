@@ -51,9 +51,10 @@ log_predictions_callback:
 
 logging:
   use_mlflow: true
-  experiment_name: /Users/fabian.heflo@kartverket.no/deeplabv3_resnet50
-  #experiment_name: /Users/enes.topcu@kartverket.no/deeplabv3_resnet50
-  tracking_uri: "val_predictions"
+  #experiment_name: /Users/fabian.heflo@kartverket.no/deeplabv3_resnet50
+  experiment_name: /Users/enes.topcu@kartverket.no/deeplabv3_resnet50_runs
+  tracking_uri: "databricks" # Slik at eksperimenter og modeller kan lagres og sammenlignes sentralt
+
   
 optuna:
   direction: maximize         # Hvilken vei metrikken skal optimaliseres

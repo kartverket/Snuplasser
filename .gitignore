@@ -171,6 +171,7 @@ nib
 iveland_kommune
 mlruns/
 mlruns_v2/
+*.ckpt
 
 # Test filer 
 src/test_kjøring.ipynb
