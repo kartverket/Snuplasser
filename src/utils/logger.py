@@ -1,5 +1,6 @@
 
 from lightning.pytorch.loggers import MLFlowLogger  # MLFlowLogger er ennå ikke i lightning 
+import mlflow
 import os
 from datetime import datetime
 
@@ -23,9 +24,11 @@ def generate_run_name(model_name:str, config:dict)-> str:
 def get_logger(model_name: str, config: dict) -> MLFlowLogger:
     experiment_name = config.get("logging", {}).get("experiment_name", "default_experiment")
     run_name = generate_run_name(model_name, config)
-    #logging_config = config.get("logging", {})
-    #experiment_name = logging_config.get("experiment_name", "default_experiment")
 
+    mlflow.set_tracking_uri(tracking_uri)
+
+    if not mlflow.get_experiment_by_name(experiment_name):
+        mlflow.create_experiment(experiment_name)
 
     return MLFlowLogger(
         experiment_name=experiment_name,

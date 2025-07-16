@@ -4,20 +4,14 @@ import torch.nn as nn
 import segmentation_models_pytorch as smp
 from torchmetrics.classification import BinaryJaccardIndex, BinaryAccuracy
 from torchmetrics.segmentation import DiceScore
-
-class DiceBCELoss(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.dice = smp.losses.DiceLoss(mode="binary", from_logits=True)
-        self.bce = nn.BCEWithLogitsLoss()
-
-    def forward(self, preds, targets):
-        return self.dice(preds, targets) + self.bce(preds, targets)
+from src.utils.losses import DiceBCELoss
+from src.utils.loss_utils import compute_loss_weights 
     
 
 class DeepLabV3Lightning(LightningModule):
     def __init__(self,config):
         super().__init__()
+        self.save_hyperparameters(config)
 
         self.model = smp.DeepLabV3(
             encoder_name=config.get("backbone", "mobilenet_v2"),
@@ -27,8 +21,18 @@ class DeepLabV3Lightning(LightningModule):
         )
 
         self.lr= config.get("lr", 1e-3)
-        #self.loss_fn=nn.BCEWithLogitsLoss()
-        self.loss_fn = DiceBCELoss()
+
+        mask_dir = config.get("data", {}).get("mask_dir") 
+        if mask_dir:
+            dice_w, bce_w, pos_w = compute_loss_weights(mask_dir)
+        else:
+            dice_w, bce_w, pos_w = 0.5, 0.5, 1.0
+
+        self.loss_fn = DiceBCELoss(
+            dice_weight=dice_w,
+            bce_weight=bce_w,
+            pos_weight=pos_w,
+        )
 
         self.iou_metric = BinaryJaccardIndex()
         self.dice = DiceScore(num_classes=2)
@@ -36,13 +40,11 @@ class DeepLabV3Lightning(LightningModule):
 
 
     def forward(self, x):
-        #print("➡️ Forward pass called")
         if x.dtype == torch.uint8:
             x = x.float() / 255.0
         return self.model(x)
     
     def training_step(self, batch, batch_idx):
-        #print(f"🟢 Training step {batch_idx}")
         x, y, _ = batch
         y = y.float()  
         logits = self(x)
@@ -51,7 +53,6 @@ class DeepLabV3Lightning(LightningModule):
         return loss
     
     def validation_step(self, batch, batch_idx):
-        #print(f"🔵 Validation step {batch_idx}")
         x, y, _ = batch
         y = y.float().unsqueeze(1)
         logits = self(x)
