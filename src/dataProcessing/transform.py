@@ -12,9 +12,11 @@ def get_train_transforms(cfg: dict, ratio: float | None = None):
     base_transform = A.Compose(
         [
             A.HorizontalFlip(p=cfg["flip_p"]),
-            A.RandomRotate90(degrees=90),
+            A.RandomRotate90(p=0.5), #  Sannsynlighet for å rotere bildet 90 grader
             A.RandomBrightnessContrast(
-                brightness=cfg["brightness_p"]
+                brightness_limit=cfg["brightness_limit"],
+                contrast_limit=cfg["contrast_limit"],
+                p=0.5,
             ),  # Endringer i solforhold, årstid, skygge eller skydetthet
             ToTensorV2(),
         ]

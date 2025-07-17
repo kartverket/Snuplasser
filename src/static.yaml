@@ -1,7 +1,9 @@
 
 model_names:
-  - unet
-  #- deeplabv3
+  #- unet
+  - deeplabv3
+  #- deeplabv3plus
+  
 
 
 model:
@@ -19,6 +21,13 @@ model:
     num_classes: 1
     lr: 0.001
 
+
+  deeplabv3plus:
+    backbone: resnet18
+    in_channels: 4
+    num_classes: 1
+    lr: 0.001
+
 data:
   image_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/img/
   mask_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/lab/
@@ -28,8 +37,11 @@ data:
   val_split: 0.2              # Valideringsandel (f.eks. 20%)
   holdout_size: 5
   seed: 42
-  use_augmentation: false
+  use_augmentation: true
   augmentation_ratio: 0.3
+  flip_p: 0.5
+  brightness_limit: 0.2
+  contrast_limit: 0.2
 
 
 training:
@@ -51,8 +63,8 @@ log_predictions_callback:
 
 logging:
   use_mlflow: true
-  experiment_name: /Users/fabian.heflo@kartverket.no/deeplabv3_resnet50
-  #experiment_name: /Users/enes.topcu@kartverket.no/deeplabv3_resnet50
+  #experiment_name: /Users/fabian.heflo@kartverket.no/deeplabv3_resnet50
+  experiment_name: /Users/enes.topcu@kartverket.no/deeplabv3_resnet50_retrain
   tracking_uri: "val_predictions"
   
 optuna:
