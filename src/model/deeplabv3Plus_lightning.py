@@ -7,6 +7,7 @@ from torchmetrics.segmentation import DiceScore
 from src.utils.losses import DiceBCELoss
 from src.utils.loss_utils import compute_loss_weights
 
+
 class DeepLabV3Plus(LightningModule):
     def __init__(self, config):
         super().__init__()
@@ -35,7 +36,7 @@ class DeepLabV3Plus(LightningModule):
             )
         
         self.iou_metric= BinaryJaccardIndex()
-        self.dice_metric= DiceScore(num_classes=2)
+        self.dice_metric= DiceScore(num_classes=1)
         self.accuracy_metric= BinaryAccuracy()
 
     def forward(self, x):
@@ -52,6 +53,7 @@ class DeepLabV3Plus(LightningModule):
             return loss
         
     def validation_step(self, batch, batch_idx):
+        with torch.no_grad():
             x, y, _ = batch
             y= y.float()
             logts=self(x)
@@ -60,8 +62,8 @@ class DeepLabV3Plus(LightningModule):
             
             preds= torch.sigmoid(logts)
             pred_bin= (preds>0.5).float()
-            iou= self.iou_metric(preds, y)
-            dice= self.dice_metric(preds, y)
+            iou= self.iou_metric(pred_bin, y)
+            dice= self.dice_metric(pred_bin, y)
             acc= self.accuracy_metric(pred_bin, y)
 
             self.log("val_iou", iou, prog_bar=True)

@@ -11,5 +11,5 @@ aiofiles==23.2.1
 aiohttp_retry==2.8.3
 timm
 lightning==2.3.3
-albumentations==1.4.0
+albumentationsx==2.0.9
 segmentation-models-pytorch==0.3.3

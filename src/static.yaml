@@ -1,8 +1,8 @@
 
 model_names:
   #- unet
-  - deeplabv3
-  #- deeplabv3plus
+  #- deeplabv3
+  - deeplabv3plus
   
 
 
@@ -23,7 +23,7 @@ model:
 
 
   deeplabv3plus:
-    backbone: resnet18
+    backbone: resnet34
     in_channels: 4
     num_classes: 1
     lr: 0.001
@@ -38,10 +38,19 @@ data:
   holdout_size: 5
   seed: 42
   use_augmentation: true
-  augmentation_ratio: 0.3
-  flip_p: 0.5
-  brightness_limit: 0.2
-  contrast_limit: 0.2
+  augmentation_ratio: 0.4
+  flip_p: 0.3
+  brightness_limit: 0.05
+  contrast_limit: 0.05
+  rotate_limit: 10
+  scale_limit: 0.05
+  gaussian_blur_p: 0.1
+  elastic_transform_p: 0.1
+
+  normalize:
+    mean: [0.485, 0.456, 0.406, 0.5]
+    std: [0.229, 0.224, 0.225, 0.25]
+  
 
 
 training:
