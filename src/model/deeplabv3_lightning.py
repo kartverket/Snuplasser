@@ -54,7 +54,7 @@ class DeepLabV3Lightning(LightningModule):
     
     def validation_step(self, batch, batch_idx):
         x, y, _ = batch
-        y = y.float().unsqueeze(1)
+        y = y.float()
         logits = self(x)
         loss = self.loss_fn(logits, y)
         self.log("val_loss", loss, prog_bar=True)

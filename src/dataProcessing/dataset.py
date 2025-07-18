@@ -46,7 +46,11 @@ class SnuplassDataset(Dataset):
             image = torch.from_numpy(np.array(image)).permute(2, 0, 1)
 
         if not isinstance(mask, torch.Tensor):
-            mask = torch.from_numpy(np.array(mask) / 255).unsqueeze(0).float()
+            mask = torch.from_numpy(np.array(mask)).float()
+        if mask.max() > 1:
+            mask = mask / 255.0
+        if mask.ndim==2:
+            mask = mask.unsqueeze(0)
 
         filename = f"{file_id}.png"
         return image, mask, filename 
