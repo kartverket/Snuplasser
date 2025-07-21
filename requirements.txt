@@ -9,7 +9,7 @@ tensorboard==2.16.2
 python-dotenv==1.0.1
 aiofiles==23.2.1
 aiohttp_retry==2.8.3
-timm==0.9.16
+timm
 lightning==2.3.3
 albumentations==1.4.0
 tensordict==0.6.0
@@ -19,3 +19,5 @@ fvcore==0.1.5.post20221221
 submitit>=1.5.1
 pycocotools>=2.0.8
 dataclasses-json>=0.6.7
+segmentation-models-pytorch==0.3.3
+

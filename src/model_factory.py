@@ -1,16 +1,34 @@
-from model.unet import UNet
+from lightning.pytorch import LightningModule
+from model.deeplabv3_lightning import get_deeplabv3_lightning
+from model.unet_lightning import get_unet_lightning
 
 
 model_registry = {
-    "unet": UNet,
-    #"deeplabv3": DeepLabV3Model,
+    "unet": get_unet_lightning,
+    "deeplabv3": get_deeplabv3_lightning,
 }
 
-def get_model(model_name: str, params: dict):
+
+def get_model(model_name: str, config: dict, checkpoint_path: str = None) -> LightningModule:
     """
-    Henter modeller fra model-mappen.
+    Returnerer modell instansiert fra config, og eventuelt lastet fra checkpoint.
+    
+    Args:
+        model_name (str): Navn på modellen (f.eks. 'unet').
+        config (dict): Modellkonfigurasjon fra YAML.
+        checkpoint_path (str, optional): Sti til checkpoint-fil.
+    
+    Returns:
+        LightningModule: Modell klar til trening eller inferens.
     """
     model_name = model_name.lower()
     if model_name not in model_registry:
-        raise ValueError(f"Model {model_name} not found.")
-    return model_registry[model_name](**params)
+        raise ValueError(f"Model '{model_name}' not found in registry.")
+
+    model = model_registry[model_name](config)
+
+    if checkpoint_path:
+        model_class = model.__class__
+        return model_class.load_from_checkpoint(checkpoint_path)
+
+    return model

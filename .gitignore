@@ -169,4 +169,13 @@ runs/
 *.zip
 nib
 iveland_kommune
+
 sam2_logs/
+=======
+mlruns/
+mlruns_v2/
+meta.yaml
+
+# Test filer 
+src/test_kjøring.ipynb
+

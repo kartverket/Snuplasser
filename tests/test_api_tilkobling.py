@@ -2,13 +2,13 @@ import requests
 
 
 def test_api_tilkobling():
-    nodeid = 1399118
-    url = f"https://nvdbapiles-v3.atlas.vegvesen.no/vegnett/noder/{nodeid}"
+    id = 1399118
+    url = f"https://nvdbapiles.atlas.vegvesen.no/vegnett/api/v4/noder/{id}"
     headers = {
-        "Accept": "application/vnd.vegvesen.nvdb-v3-rev4+json",
+        "Accept": "application/json",
         "X-Client": "Systemet for vegobjekter",
     }
-    params = {"srid": "5973"}
+    params = {"srid": "UTM33"}
 
     response = requests.get(url, headers=headers, params=params)
     print("Status code:", response.status_code)
