@@ -8,7 +8,7 @@ model_names:
 
 model:
   unet:
-    encoder: resnet18
+    encoder: mobilenet_v2
     encoder_weights: imagenet
     in_channels: 4
     num_classes: 1
@@ -16,7 +16,7 @@ model:
 
 
   deeplabv3:
-    backbone: mobilenet_v2
+    backbone: resnet18 #mobilenet_v2
     in_channels: 4
     num_classes: 1
     lr: 0.001
@@ -74,8 +74,8 @@ logging:
   use_mlflow: true
   #experiment_name: /Users/fabian.heflo@kartverket.no/deeplabv3_resnet50
   experiment_name: /Users/enes.topcu@kartverket.no/deeplabv3_resnet50_retrain
-  tracking_uri: "val_predictions"
-  
+  tracking_uri: "databricks" # Slik at eksperimenter og modeller kan lagres og sammenlignes sentralt
+
 optuna:
   direction: maximize         # Hvilken vei metrikken skal optimaliseres
   metric_name: val_IoU        # Navn på metrikken som returneres fra validate()

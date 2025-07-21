@@ -1,4 +1,5 @@
 import argparse
+import torch
 import os
 import yaml
 import mlflow
@@ -7,6 +8,11 @@ from model_factory import get_model
 from utils.logger import get_logger
 from utils.callbacks import get_early_stopping, get_model_checkpoint, LogPredictionsCallback
 from datamodules.snuplass_datamodule import get_datamodule
+from utils.checkpointing import save_best_checkpoint
+from mlflow.models.signature import infer_signature
+
+
+
 
 def run_experiment(model_name, config):
     print(f"Trener modell: {model_name}")
@@ -44,6 +50,41 @@ def run_experiment(model_name, config):
     # Trening og validering
     trainer.fit(model, datamodule=datamodule)
     trainer.validate(model, datamodule=datamodule)
+
+    #Laster den beste checkpoint etter trening
+    ckpt_path= save_best_checkpoint(model_checkpoint, model_name)
+    #print(f"modelname: {model_name}")
+
+    # Laster modellen fra checkpoint for å kunne validere og logge den
+    mlflow.set_registry_uri("databricks")
+    with mlflow.start_run(run_id=trainer.logger.run_id):
+
+        trained_model= model.__class__.load_from_checkpoint(
+            str(ckpt_path), 
+            config= model_config)
+        
+        trainer.validate(trained_model, datamodule=datamodule)
+    # Logger valideringsmetrikker til MLflow
+        val_metrics= trainer.callback_metrics
+        mlflow.log_metrics({
+            "val_acc": val_metrics["val_acc"].item(),
+            "val_dice": val_metrics["val_dice"].item(),
+            "val_iou": val_metrics["val_iou"].item(),
+            "val_loss": val_metrics["val_loss"].item()
+
+        })
+    # Lagrer beste checkpoint som en artefakt
+        mlflow.log_artifact(str(ckpt_path), artifact_path="best_checkpoint")
+
+        backbone_or_encoder= model_config.get("backbone") or model_config.get("encoder") or "noarch"
+        registered_model_name= f"{model_name}_{backbone_or_encoder}"
+        
+    # Logger hele den trente modellen til MLflow
+        mlflow.pytorch.log_model(
+            pytorch_model=trained_model,
+            artifact_path="model",
+            registered_model_name=registered_model_name
+        )
 
 
 def main(config_path):
