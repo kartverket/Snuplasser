@@ -11,7 +11,7 @@ aiofiles==23.2.1
 aiohttp_retry==2.8.3
 timm
 lightning==2.3.3
-albumentations==1.4.0
+albumentationsx==2.0.9
 tensordict==0.6.0
 hydra-core==1.3.2
 omegaconf==2.3.0
