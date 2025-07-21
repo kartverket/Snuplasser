@@ -23,8 +23,13 @@ class SnuplassDataModule(LightningDataModule):
         use_aug = data_config.get("use_augmentation", False)
         aug_ratio = data_config.get("augmentation_ratio", None)
 
-        self.train_transform = get_train_transforms(ratio=aug_ratio) if use_aug else None
+        self.train_transform = get_train_transforms(cfg=data_config, ratio=aug_ratio) if use_aug else None
         self.val_transform = get_val_transforms()
+
+        if self.train_transform is not None:
+            print(f"Augmentation aktivert: {self.train_transform}")
+        else:
+            print("Augmentation deaktivert")
 
         for d in [self.image_dir, self.mask_dir, self.dom_dir]:
             if not os.path.isdir(d):
