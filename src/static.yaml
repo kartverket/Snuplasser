@@ -1,18 +1,18 @@
 
 model_names:
-  #- unet
+  - unet
   #- deeplabv3
-  - deeplabv3plus
+  #- deeplabv3plus
   
 
 
 model:
   unet:
-    encoder: mobilenet_v2
+    encoder: resnet34
     encoder_weights: imagenet
     in_channels: 4
     num_classes: 1
-    lr: 0.001
+    lr: 0.0005
 
 
   deeplabv3:
@@ -26,18 +26,18 @@ model:
     backbone: resnet34
     in_channels: 4
     num_classes: 1
-    lr: 0.001
+    lr: 0.0005
 
 data:
   image_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/img/
   mask_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/lab/
   dom_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/dom/
-  batch_size: 8               # Default (overstyres av Optuna)
+  batch_size: 4               # Default (overstyres av Optuna)
   num_workers: 4              # DataLoader workers
   val_split: 0.2              # Valideringsandel (f.eks. 20%)
   holdout_size: 5
   seed: 42
-  use_augmentation: true
+  use_augmentation: false
   augmentation_ratio: 0.4
   flip_p: 0.3
   brightness_limit: 0.05
@@ -48,17 +48,17 @@ data:
   elastic_transform_p: 0.1
 
   normalize:
-    mean: [0.485, 0.456, 0.406, 0.5]
-    std: [0.229, 0.224, 0.225, 0.25]
+    mean: [0.485, 0.456, 0.406, 0.5, 0.0]
+    std: [0.229, 0.224, 0.225, 0.25, 1.0]
   
 
 
 training:
-  max_epochs: 10              # Antall epoker per kjøring
+  max_epochs: 30             # Antall epoker per kjøring
   precision: 16      # Mixed precision (16 eller 32)
   accelerator: gpu
   devices: 1                  # GPU-ressurser
-  early_stopping_patience: 5  # Stopper tidlig om validerings-loss ikke forbedres
+  #early_stopping_patience: 5   Stopper tidlig om validerings-loss ikke forbedres
   monitor: val_loss  # val_IoU , Må logges av modellen og oppdateres i utils.callbacks
   monitor_mode: min  # max for IoU
 
@@ -66,14 +66,27 @@ log_predictions_callback:
   log_every_n_epochs: 2
   artifact_dir: "val_predictions"
   always_log_ids:
-    - "image_252063_6774942_252131_6775008.png"
-    - "image_267985_6778930_268055_6779021.png"
-    - "image_270356_6771602_270421_6771665.png"
+    image_116504_6600834_116569_6600901.png
+    image_126058_6609728_126128_6609800.png
+    image_133147_6591529_133214_6591605.png
+    image_143137_6588163_143207_6588224.png
+    image_145962_6575996_146031_6576084.png
+    image_147671_6575306_147768_6575376.png
+    image_155673_6583675_155745_6583785.png
+    image_213804_6577375_213907_6577478.png
+    image_163131_6560003_163202_6560065.png
+    image_164094_6571942_164168_6572045.png
+    image_250563_6786700_250633_6786772.png
+    image_213804_6577785_213907_6577887.png
+    image_256186_6775286_256259_6775358.png
+    image_265194_6795483_265276_6795575.png
+    image_267985_6778930_268055_6779021.png
+    image_168650_6608981_168716_6609057.png
 
 logging:
   use_mlflow: true
   #experiment_name: /Users/fabian.heflo@kartverket.no/deeplabv3_resnet50
-  experiment_name: /Users/enes.topcu@kartverket.no/deeplabv3_resnet50_retrain
+  experiment_name: /Users/enes.topcu@kartverket.no/deeplabv3plus_examples
   tracking_uri: "databricks" # Slik at eksperimenter og modeller kan lagres og sammenlignes sentralt
 
 optuna:

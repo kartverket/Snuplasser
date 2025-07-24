@@ -61,10 +61,13 @@ class LogPredictionsCallback(Callback):
 
     def _log_prediction(self, x, y, pred, name, epoch, trainer):
         img, dom = x[:3], x[3:]
+        #img= x[:3]
+        #dom = x[3]
     
         # Sørg for 2D-tensorer til visning
         img_np = img.permute(1, 2, 0).cpu().numpy()
         dom_np = dom.squeeze().cpu().numpy()
+        #dom_np = dom.cpu().numpy()
         y_np = y.squeeze().cpu().numpy()
         pred_np = pred.squeeze().cpu().numpy()
 
