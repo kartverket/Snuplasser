@@ -22,8 +22,6 @@ class SnuplassDataModule(LightningDataModule):
         self.val_split = data_config.get("val_split", 0.2)
         self.holdout_size = data_config.get("holdout_size", 5)
         self.seed = data_config.get("seed", 42)
-        self.train_transform = data_config.get("train_transform", None)
-        self.val_transform = data_config.get("val_transform", None)
 
         # Augmentering konfigurasjon
         use_aug = data_config.get("use_augmentation", False)
@@ -32,7 +30,7 @@ class SnuplassDataModule(LightningDataModule):
         self.train_transform = (
             get_train_transforms(cfg=data_config, ratio=aug_ratio) if use_aug else None
         )
-        self.val_transform = get_val_transforms()
+        self.val_transform = get_val_transforms(cfg=data_config)
 
         if self.train_transform is not None:
             print(f"Augmentation aktivert: {self.train_transform}")
@@ -72,6 +70,7 @@ class SnuplassDataModule(LightningDataModule):
         self.test_dataset = SnuplassPredictDataset(
             self.endepunkt_image_dir,
             self.endepunkt_dom_dir,
+            self.val_transform, # Bruker samme transformering som val_dataset
         )
 
     def train_dataloader(self):
