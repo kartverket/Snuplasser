@@ -1,7 +1,11 @@
 import os
 from torch.utils.data import DataLoader
 from lightning.pytorch import LightningDataModule
-from dataProcessing.dataset import SnuplassDataset, load_numpy_split_stack
+from dataProcessing.dataset import (
+    SnuplassDataset,
+    SnuplassPredictDataset,
+    load_numpy_split_stack,
+)
 from dataProcessing.transform import get_train_transforms, get_val_transforms
 
 
@@ -11,6 +15,8 @@ class SnuplassDataModule(LightningDataModule):
         self.image_dir = data_config["image_dir"]
         self.mask_dir = data_config["mask_dir"]
         self.dom_dir = data_config["dom_dir"]
+        self.endepunkt_image_dir = data_config["endepunkt_image_dir"]
+        self.endepunkt_dom_dir = data_config["endepunkt_dom_dir"]
         self.batch_size = data_config["batch_size"]
         self.num_workers = data_config.get("num_workers", 4)
         self.val_split = data_config.get("val_split", 0.2)
@@ -23,7 +29,9 @@ class SnuplassDataModule(LightningDataModule):
         use_aug = data_config.get("use_augmentation", False)
         aug_ratio = data_config.get("augmentation_ratio", None)
 
-        self.train_transform = get_train_transforms(cfg=data_config, ratio=aug_ratio) if use_aug else None
+        self.train_transform = (
+            get_train_transforms(cfg=data_config, ratio=aug_ratio) if use_aug else None
+        )
         self.val_transform = get_val_transforms()
 
         if self.train_transform is not None:
@@ -37,20 +45,33 @@ class SnuplassDataModule(LightningDataModule):
 
     def setup(self, stage=None):
         train_ids, val_ids, _ = load_numpy_split_stack(
-            self.image_dir, self.mask_dir, self.dom_dir,
+            self.image_dir,
+            self.mask_dir,
+            self.dom_dir,
             holdout_size=self.holdout_size,
             test_size=self.val_split,
             seed=self.seed,
         )
 
         self.train_dataset = SnuplassDataset(
-            self.image_dir, self.mask_dir, self.dom_dir,
-            train_ids, transform=self.train_transform,
+            self.image_dir,
+            self.mask_dir,
+            self.dom_dir,
+            train_ids,
+            transform=self.train_transform,
         )
 
         self.val_dataset = SnuplassDataset(
-            self.image_dir, self.mask_dir, self.dom_dir,
-            val_ids, transform=self.val_transform,
+            self.image_dir,
+            self.mask_dir,
+            self.dom_dir,
+            val_ids,
+            transform=self.val_transform,
+        )
+
+        self.test_dataset = SnuplassPredictDataset(
+            self.endepunkt_image_dir,
+            self.endepunkt_dom_dir,
         )
 
     def train_dataloader(self):
@@ -58,7 +79,7 @@ class SnuplassDataModule(LightningDataModule):
             self.train_dataset,
             batch_size=self.batch_size,
             shuffle=True,
-            num_workers=self.num_workers
+            num_workers=self.num_workers,
         )
 
     def val_dataloader(self):
@@ -66,7 +87,15 @@ class SnuplassDataModule(LightningDataModule):
             self.val_dataset,
             batch_size=self.batch_size,
             shuffle=False,
-            num_workers=self.num_workers
+            num_workers=self.num_workers,
+        )
+
+    def predict_dataloader(self):
+        return DataLoader(
+            self.test_dataset,
+            batch_size=self.batch_size,
+            shuffle=False,
+            num_workers=self.num_workers,
         )
 
 

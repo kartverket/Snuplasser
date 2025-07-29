@@ -56,6 +56,40 @@ class SnuplassDataset(Dataset):
         return image, mask, filename 
 
 
+class SnuplassPredictDataset(Dataset):
+    def __init__(self, image_dir, dom_dir):
+        self.image_dir = image_dir
+        self.dom_dir = dom_dir
+
+        files = sorted(
+            [
+                f
+                for f in os.listdir(image_dir)
+                if f.startswith("image_") and f.endswith(".png")
+            ]
+        )
+        self.file_list = [Path(f).stem for f in files]
+
+    def __len__(self):
+        return len(self.file_list)
+
+    def __getitem__(self, idx):
+        file_id = self.file_list[idx]
+        img_path = os.path.join(self.image_dir, f"{file_id}.png")
+        dom_path = os.path.join(self.dom_dir, f"dom_{file_id[6:]}.png")
+
+        img = np.array(Image.open(img_path).convert("RGB"))
+        dom = np.array(Image.open(dom_path).convert("L"))
+        dom = np.expand_dims(dom, axis=-1) # (H,W,1)
+        image = np.concatenate((img, dom), axis=-1) # (H,W,4)
+
+        if not isinstance(image, torch.Tensor):
+            image = torch.from_numpy(np.array(image)).permute(2, 0, 1)
+
+        filename = f"{file_id}.png"
+        return image, filename
+
+
 def load_numpy_split_stack(
     image_dir, mask_dir, dom_dir, holdout_size=5, test_size=0.2, seed=42
 ):

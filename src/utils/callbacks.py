@@ -92,10 +92,6 @@ class LogPredictionsCallback(Callback):
         plt.close(fig)
 
 
-
-
-
-
 def log_test_predictions(model, dataloader, logger, artifact_dir, threshold=0.5, max_logs=20):
     if not hasattr(logger, "run_id") or logger.run_id is None:
         raise RuntimeError("MLFlowLogger må ha en aktiv run_id for å logge artifacts.")
@@ -120,6 +116,32 @@ def log_test_predictions(model, dataloader, logger, artifact_dir, threshold=0.5,
                 artifact_dir=artifact_dir
             )
             logged += 1
+
+
+def log_predictions_from_preds(preds, logger, artifact_dir="predictions", max_logs=20):
+    if not hasattr(logger, "run_id") or logger.run_id is None:
+        raise RuntimeError("MLFlowLogger must have an active run_id to log artifacts.")
+
+    for batch in preds:
+        filenames = batch.get("filename")
+        masks = batch.get("mask")
+        images = batch.get("image")
+
+        for i in range(len(filenames)):
+            if logged >= max_logs:
+                return
+
+            rgb_tensor = images[i, :3] if images is not None else None
+            dom_tensor = images[i, 3] if images is not None else None
+
+            _log_prediction_artifact(
+                rgb_tensor=rgb_tensor,
+                dom_tensor=dom_tensor,
+                pred_tensor=masks[i],
+                fname=filenames[i],
+                logger=logger,
+                artifact_dir=artifact_dir
+            )
 
 
 def _log_prediction_artifact(rgb_tensor, dom_tensor, pred_tensor, fname, logger, artifact_dir):
