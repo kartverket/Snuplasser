@@ -69,6 +69,16 @@ class DeepLabV3Plus(LightningModule):
             self.log("val_iou", iou, prog_bar=True)
             self.log("val_dice", dice, prog_bar=True)
             self.log("val_acc", acc, prog_bar=True)
+
+            # if batch_idx == 0:
+            #     rgb_image = x[0, 0:3, :, :].detach().cpu()
+            #     mask_gt = y[0].detach().cpu()
+            #     mask_pred = pred_bin[0].detach().cpu()
+            #
+            #     self.logger.experiment.add_image("val/input_rgb", rgb_image, self.global_step)
+            #     self.logger.experiment.add_image("val/mask_gt", mask_gt, self.global_step)
+            #     self.logger.experiment.add_image("val/mask_pred", mask_pred, self.global_step)
+
         
     def configure_optimizers(self):
             optimizer= torch.optim.Adam(self.parameters(), lr=self.lr)

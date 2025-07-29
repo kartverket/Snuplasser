@@ -11,7 +11,9 @@ def get_train_transforms(cfg: dict, ratio: float | None = None):
 
     normalize_cfg=cfg.get("normalize", {} )
     mean= normalize_cfg.get("mean",[0.485, 0.456, 0.406, 0.5])
-    std= normalize_cfg.get("std", [0.229, 0.224, 0.225, 0.25])
+-   std= normalize_cfg.get("std", [0.229, 0.224, 0.225, 0.25])
+    #mean= normalize_cfg.get("mean",[0.485, 0.456, 0.406, 0.5, 0.5])
+    #std= normalize_cfg.get("std", [0.229, 0.224, 0.225, 0.25, 0.25])
 
     base_transform = A.Compose(
         [

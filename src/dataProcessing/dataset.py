@@ -8,6 +8,7 @@ from sklearn.model_selection import train_test_split
 import torch
 import json
 from datetime import datetime
+#import cv2
 
 
 class SnuplassDataset(Dataset):
@@ -34,6 +35,23 @@ class SnuplassDataset(Dataset):
         dom = np.expand_dims(dom, axis=-1)  # (H, W, 1)
         image = np.concatenate((image, dom), axis=-1)  # (H, W, 4)
 
+       # image_np = np.array(image).astype(np.float32) / 255.0
+       # dom_np = np.array(dom).astype(np.float32) / 255.0
+
+       # brightness = image_np.mean(axis=2)
+       # dom_smooth = dom_np - cv2.GaussianBlur(dom_np, (3, 3), 0)
+       # dom_flat = np.abs(dom_smooth) < 0.05
+       # shadow_mask = (brightness < 0.25) & dom_flat
+       # shadow_mask = shadow_mask.astype(np.float32)
+
+       
+       # corrected_rgb = np.copy(image_np)
+        
+
+       # dom_np = np.expand_dims(dom_np, axis=-1)
+       # shadow_mask = np.expand_dims(shadow_mask, axis=-1)
+       # image_5ch = np.concatenate((corrected_rgb, dom_np, shadow_mask), axis=-1)
+
         if self.transform:
             augmented = self.transform(
                 image=np.array(image),
@@ -41,7 +59,6 @@ class SnuplassDataset(Dataset):
             )
             image = augmented["image"]
             mask = augmented["mask"]
-
         if not isinstance(image, torch.Tensor):
             image = torch.from_numpy(np.array(image)).permute(2, 0, 1)
 
