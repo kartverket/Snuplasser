@@ -29,9 +29,9 @@ model:
     lr: 0.001
 
 data:
-  image_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/img/
-  mask_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/lab/
-  dom_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/dom/
+  image_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/images/
+  mask_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/labels/
+  dom_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/doms/
   batch_size: 8               # Default (overstyres av Optuna)
   num_workers: 4              # DataLoader workers
   val_split: 0.2              # Valideringsandel (f.eks. 20%)
@@ -55,7 +55,7 @@ data:
   mode: "train"                                                    # 'train' eller 'inference'
 
 training:
-  max_epochs: 10              # Antall epoker per kjøring
+  max_epochs: 70              # Antall epoker per kjøring
   precision: 16      # Mixed precision (16 eller 32)
   accelerator: gpu
   devices: 1                  # GPU-ressurser

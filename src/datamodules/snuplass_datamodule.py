@@ -4,6 +4,7 @@ from lightning.pytorch import LightningDataModule
 from dataProcessing.dataset import SnuplassDataset
 from dataProcessing.transform import get_train_transforms, get_val_transforms
 from utils.get_from_silver import get_file_list_from_silver, get_split_from_silver
+from pyspark.sql import SparkSession
 
 
 class SnuplassDataModule(LightningDataModule):
@@ -21,7 +22,12 @@ class SnuplassDataModule(LightningDataModule):
         self.val_transform = data_config.get("val_transform", None)
         self.silver_table = data_config["silver_table"]
         self.mode = data_config.get("mode", "train")
-
+        self.spark = SparkSession.builder \
+            .appName("snuplass_training") \
+            .config("spark.sql.catalogImplementation", "in-memory") \
+            .config("spark.hadoop.hive.metastore.uris", "") \
+            .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.catalog.InMemoryCatalog") \
+            .getOrCreate()
 
         # Augmentering konfigurasjon
         use_aug = data_config.get("use_augmentation", False)
@@ -40,10 +46,11 @@ class SnuplassDataModule(LightningDataModule):
                 raise FileNotFoundError(f"Data-mappe finnes ikke: {d}")
 
     def setup(self, stage=None):
-        all_ids = get_file_list_from_silver(silver_table=self.silver_table, mode=self.mode)
+        all_ids = get_file_list_from_silver(spark=self.spark, silver_table=self.silver_table, mode=self.mode)
 
         if self.mode == "train":
             train_ids, val_ids, holdout_ids = get_split_from_silver(
+                spark=self.spark,
                 silver_table=self.silver_table,
                 val_size=self.val_split,
                 holdout_size=self.holdout_size,

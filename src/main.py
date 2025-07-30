@@ -12,8 +12,6 @@ from utils.checkpointing import save_best_checkpoint
 from mlflow.models.signature import infer_signature
 
 
-
-
 def run_experiment(model_name, config):
     print(f"Trener modell: {model_name}")
 
