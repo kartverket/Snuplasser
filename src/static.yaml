@@ -51,7 +51,8 @@ data:
     mean: [0.485, 0.456, 0.406, 0.5]
     std: [0.229, 0.224, 0.225, 0.25]
   
-
+  silver_table: "land_topografisk-gdb_dev.ai2025.polygons_silver"  # Tilpass etter din Databricks-tabell
+  mode: "train"                                                    # 'train' eller 'inference'
 
 training:
   max_epochs: 10              # Antall epoker per kjøring

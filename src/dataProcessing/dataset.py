@@ -23,9 +23,11 @@ class SnuplassDataset(Dataset):
 
     def __getitem__(self, idx):
         file_id = self.file_list[idx]
-        image_path = os.path.join(self.image_dir, f"{file_id}.png")
-        mask_path = os.path.join(self.mask_dir, f"mask_{file_id[6:]}.png")
-        dom_path = os.path.join(self.dom_dir, f"dom_{file_id[6:]}.png")
+        
+        image_path = os.path.join(self.image_dir, f"image_{file_id}.png")
+        dom_path = os.path.join(self.dom_dir, f"dom_{file_id}.png")
+        mask_path = os.path.join(self.mask_dir, f"mask_{file_id}.png")
+
 
         image = Image.open(image_path).convert("RGB")
         mask = Image.open(mask_path).convert("L")
@@ -54,36 +56,3 @@ class SnuplassDataset(Dataset):
 
         filename = f"{file_id}.png"
         return image, mask, filename 
-
-
-def load_numpy_split_stack(
-    image_dir, mask_dir, dom_dir, holdout_size=5, test_size=0.2, seed=42
-):
-    """
-    Laster inn hele datasettet som numpy-arrays, splitter i tren/val/test og returnerer stacks.
-    """
-    np.random.seed(seed)
-
-    all_files = sorted(
-        [
-            f
-            for f in os.listdir(image_dir)
-            if f.startswith("image_") and f.endswith(".png")
-        ]
-    )
-    file_ids = [Path(f).stem for f in all_files]
-
-    if len(file_ids) < holdout_size + 2:
-        raise ValueError(
-            "For få bilder til å gjennomføre splitting med holdout og validering."
-        )
-
-    np.random.shuffle(file_ids)
-    holdout_ids = file_ids[:holdout_size]
-    remaining_ids = file_ids[holdout_size:]
-
-    train_ids, val_ids = train_test_split(
-        remaining_ids, test_size=test_size, random_state=seed
-    )
-
-    return train_ids, val_ids, holdout_ids

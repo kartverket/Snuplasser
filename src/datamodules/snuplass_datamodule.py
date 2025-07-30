@@ -1,8 +1,9 @@
 import os
 from torch.utils.data import DataLoader
 from lightning.pytorch import LightningDataModule
-from dataProcessing.dataset import SnuplassDataset, load_numpy_split_stack
+from dataProcessing.dataset import SnuplassDataset
 from dataProcessing.transform import get_train_transforms, get_val_transforms
+from utils.get_from_silver import get_file_list_from_silver, get_split_from_silver
 
 
 class SnuplassDataModule(LightningDataModule):
@@ -18,6 +19,9 @@ class SnuplassDataModule(LightningDataModule):
         self.seed = data_config.get("seed", 42)
         self.train_transform = data_config.get("train_transform", None)
         self.val_transform = data_config.get("val_transform", None)
+        self.silver_table = data_config["silver_table"]
+        self.mode = data_config.get("mode", "train")
+
 
         # Augmentering konfigurasjon
         use_aug = data_config.get("use_augmentation", False)
@@ -31,27 +35,38 @@ class SnuplassDataModule(LightningDataModule):
         else:
             print("Augmentation deaktivert")
 
-        for d in [self.image_dir, self.mask_dir, self.dom_dir]:
-            if not os.path.isdir(d):
+        for d in [self.image_dir, self.dom_dir] + ([self.mask_dir] if self.mode == "train" and self.mask_dir else []):
+            if d and not os.path.isdir(d):
                 raise FileNotFoundError(f"Data-mappe finnes ikke: {d}")
 
     def setup(self, stage=None):
-        train_ids, val_ids, _ = load_numpy_split_stack(
-            self.image_dir, self.mask_dir, self.dom_dir,
-            holdout_size=self.holdout_size,
-            test_size=self.val_split,
-            seed=self.seed,
-        )
+        all_ids = get_file_list_from_silver(silver_table=self.silver_table, mode=self.mode)
 
-        self.train_dataset = SnuplassDataset(
-            self.image_dir, self.mask_dir, self.dom_dir,
-            train_ids, transform=self.train_transform,
-        )
+        if self.mode == "train":
+            train_ids, val_ids, holdout_ids = get_split_from_silver(
+                silver_table=self.silver_table,
+                val_size=self.val_split,
+                holdout_size=self.holdout_size,
+                seed=self.seed
+            )
 
-        self.val_dataset = SnuplassDataset(
-            self.image_dir, self.mask_dir, self.dom_dir,
-            val_ids, transform=self.val_transform,
-        )
+            self.train_dataset = SnuplassDataset(
+                self.image_dir, self.mask_dir, self.dom_dir,
+                train_ids, transform=self.train_transform,
+            )
+
+            self.val_dataset = SnuplassDataset(
+                self.image_dir, self.mask_dir, self.dom_dir,
+                val_ids, transform=self.val_transform,
+            )
+        elif self.mode == "inference":
+            self.inference_dataset = SnuplassDataset(
+                image_dir=self.image_dir,
+                mask_dir=None,
+                dom_dir=self.dom_dir,
+                file_list=all_ids,
+                transform=self.val_transform,
+            )
 
     def train_dataloader(self):
         return DataLoader(
@@ -64,6 +79,14 @@ class SnuplassDataModule(LightningDataModule):
     def val_dataloader(self):
         return DataLoader(
             self.val_dataset,
+            batch_size=self.batch_size,
+            shuffle=False,
+            num_workers=self.num_workers
+        )
+    
+    def inference_dataloader(self):
+        return DataLoader(
+            self.inference_dataset,
             batch_size=self.batch_size,
             shuffle=False,
             num_workers=self.num_workers
