@@ -92,7 +92,7 @@ class LogPredictionsCallback(Callback):
         plt.close(fig)
 
 
-def log_predictions_from_preds(preds, logger, artifact_dir="predictions", max_logs=20):
+def log_predictions_from_preds(preds, logger, artifact_dir="predictions", local_save_dir="/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/predicted_masks", max_logs=20):
     if not hasattr(logger, "run_id") or logger.run_id is None:
         raise RuntimeError("MLFlowLogger must have an active run_id to log artifacts.")
 
@@ -111,11 +111,13 @@ def log_predictions_from_preds(preds, logger, artifact_dir="predictions", max_lo
                 pred_tensor=masks[i],
                 fname=filenames[i],
                 logger=logger,
-                artifact_dir=artifact_dir
+                artifact_dir=artifact_dir,
+                local_save_dir=local_save_dir
             )
 
 
-def _log_prediction_artifact(rgb_tensor, dom_tensor, pred_tensor, fname, logger, artifact_dir):
+
+def _log_prediction_artifact(rgb_tensor, dom_tensor, pred_tensor, fname, logger, artifact_dir, local_save_dir):
     rgb_np = rgb_tensor.permute(1, 2, 0).cpu().numpy()
     dom_np = dom_tensor.cpu().numpy()
     pred_np = pred_tensor.squeeze().cpu().numpy()
@@ -138,4 +140,9 @@ def _log_prediction_artifact(rgb_tensor, dom_tensor, pred_tensor, fname, logger,
         figure=fig,
         artifact_file=artifact_path
     )
+
+    os.makedirs(local_save_dir, exist_ok=True)
+    local_path = os.path.join(local_save_dir, f"image_{Path(fname).stem}.png")
+    fig.savefig(local_path, bbox_inches="tight", pad_inches=0)
+
     plt.close(fig)
