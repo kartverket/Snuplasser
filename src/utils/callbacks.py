@@ -136,17 +136,22 @@ def _log_prediction_artifact(rgb_tensor, dom_tensor, pred_tensor, fname, logger,
         ax.axis("off")
 
     plt.tight_layout()
-    artifact_path = f"{artifact_dir}/image_{Path(fname).stem}.png"
+    artifact_path = f"{artifact_dir}/{Path(fname).stem}.png"
     logger.experiment.log_figure(
         run_id=logger.run_id,
         figure=fig,
         artifact_file=artifact_path
     )
-    os.makedirs(local_save_dir, exist_ok=True)
-    local_path = os.path.join(local_save_dir, f"image_{Path(fname).stem}.png")
-    fig.savefig(local_path, bbox_inches="tight", pad_inches=0)
-
     plt.close(fig)
+
+    # Lagrer bare prediksjonen lokalt
+    fig_pred, ax_pred = plt.subplots()
+    ax_pred.imshow(pred_np, cmap="gray")
+    ax_pred.axis("off")
+    os.makedirs(local_save_dir, exist_ok=True)
+    local_path = os.path.join(local_save_dir, f"pred_{Path(fname).stem}.png")
+    fig_pred.savefig(local_path, bbox_inches="tight", pad_inches=0)
+    plt.close(fig_pred)
 
 
 class BinaryPredictedMaskCallback(Callback):

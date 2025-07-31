@@ -15,7 +15,6 @@ from utils.callbacks import (
 from datamodules.snuplass_datamodule import get_datamodule
 from utils.checkpointing import save_best_checkpoint
 from mlflow.models.signature import infer_signature
-from utils.callbacks import BinaryPredictedMaskCallback
 
 
 def run_experiment(model_name, config):
@@ -37,9 +36,6 @@ def run_experiment(model_name, config):
 
     early_stopping = get_early_stopping(config["training"])
     model_checkpoint = get_model_checkpoint(config["training"])
-
-    binary_mask= BinaryPredictedMaskCallback(output_dir="predicted_binary_masks",
-    log_every_n_epochs=1)
     
 
     # Trainer
@@ -49,7 +45,7 @@ def run_experiment(model_name, config):
         accelerator=config['training'].get('accelerator', 'cpu'),
         devices=config['training'].get('devices', 1),
         precision=config['training'].get('precision', 16),
-        callbacks=[model_checkpoint, early_stopping, log_predictions, binary_mask],
+        callbacks=[model_checkpoint, early_stopping, log_predictions],
         log_every_n_steps=10,
         deterministic=True,  # Reproduserbarhet
     )
