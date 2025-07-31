@@ -5,6 +5,8 @@ import mlflow
 import torch
 import warnings
 from pathlib import Path
+import numpy as np
+from PIL import Image
 
 def get_early_stopping(config):
     return EarlyStopping(
@@ -146,4 +148,41 @@ def _log_prediction_artifact(rgb_tensor, dom_tensor, pred_tensor, fname, logger,
         artifact_file=artifact_path
     )
     plt.close(fig)
+class BinaryPredictedMaskCallback(Callback):
+    def __init__(self, output_dir="predicted_binary_masks", log_every_n_epochs=1):
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.log_every_n_epochs = log_every_n_epochs
+    
+    def on_validation_epoch_end(self, trainer, pl_module):
+        if trainer.current_epoch % self.log_every_n_epochs != 0:
+            return
+
+        dataloader = trainer.datamodule.val_dataloader()
+        device = pl_module.device
+        pl_module.eval()
+
+        for batch in dataloader:
+            if len(batch) != 3:
+                continue
+            x, _, fnames = batch
+            x = x.to(device)
+            with torch.no_grad():
+                logits = pl_module(x)
+                preds = (torch.sigmoid(logits) > 0.5).float()
+
+            for i in range(len(fnames)):
+                pred = preds[i].squeeze().cpu().numpy()*255
+                pred = pred.astype(np.uint8)
+
+                original_name= Path(fnames[i]).name
+                parts= original_name.split("_", 1)
+                if len(parts) == 2:
+                    new_name = f"preMask_{parts[1]}"
+                else:
+                    new_name = f"preMask_{original_name}"  
+
+                save_path = self.output_dir / new_name
+                Image.fromarray(pred).save(save_path)
+
 

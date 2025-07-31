@@ -23,6 +23,7 @@ def generate_run_name(model_name:str, config:dict)-> str:
 
 def get_logger(model_name: str, config: dict) -> MLFlowLogger:
     experiment_name = config.get("logging", {}).get("experiment_name", "default_experiment")
+    tracking_uri = config.get("logging", {}).get("tracking_uri", "databricks")
     run_name = generate_run_name(model_name, config)
 
     mlflow.set_tracking_uri(tracking_uri)

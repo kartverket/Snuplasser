@@ -26,18 +26,18 @@ model:
     backbone: resnet34
     in_channels: 4
     num_classes: 1
-    lr: 0.001
+    lr: 0.0005
 
 data:
-  image_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/img/
-  mask_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/lab/
-  dom_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/dom/
-  batch_size: 8               # Default (overstyres av Optuna)
+  image_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/images/
+  mask_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/labels/
+  dom_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/doms/
+  batch_size: 4               # Default (overstyres av Optuna)
   num_workers: 4              # DataLoader workers
   val_split: 0.2              # Valideringsandel (f.eks. 20%)
   holdout_size: 5
   seed: 42
-  use_augmentation: true
+  use_augmentation: false
   augmentation_ratio: 0.4
   flip_p: 0.3
   brightness_limit: 0.05
@@ -54,7 +54,7 @@ data:
 
 
 training:
-  max_epochs: 10              # Antall epoker per kjøring
+  max_epochs: 15              # Antall epoker per kjøring
   precision: 16      # Mixed precision (16 eller 32)
   accelerator: gpu
   devices: 1                  # GPU-ressurser
@@ -66,9 +66,12 @@ log_predictions_callback:
   log_every_n_epochs: 2
   artifact_dir: "val_predictions"
   always_log_ids:
-    - "image_252063_6774942_252131_6775008.png"
-    - "image_267985_6778930_268055_6779021.png"
-    - "image_270356_6771602_270421_6771665.png"
+    image_01be86867d17ad37bcec8d676206868cf204545d6cb707fbc9338addc0249166.png 
+    image_017093e46b390f10013a37e1039906b3e069a87dafcb9959ded4438b26f1671d.png 
+    image_014939e8c117b480092b755480377d8986331bb70068d686fb06de1f262a2b9c.png
+   # - "image_252063_6774942_252131_6775008.png"
+   # - "image_267985_6778930_268055_6779021.png"
+   # - "image_270356_6771602_270421_6771665.png"
 
 logging:
   use_mlflow: true

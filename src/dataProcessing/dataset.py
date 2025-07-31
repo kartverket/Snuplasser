@@ -54,10 +54,26 @@ class SnuplassDataset(Dataset):
 
         filename = f"{file_id}.png"
         return image, mask, filename 
+#hjelpe funksjon hvis det trenges
+def load_ignore_ids(missing_file_path):
+    ignore_ids = set()
+    with open(missing_file_path, "r") as f:
+        for line in f:
+            filename = line.strip()
+            if filename.startswith("image_"):
+                file_id = Path(filename).stem
+            elif filename.startswith("mask_"):
+                file_id = "image_" + Path(filename).stem.replace("mask_", "")
+            elif filename.startswith("dom_"):
+                file_id = "image_" + Path(filename).stem.replace("dom_", "")
+            else:
+                continue
+            ignore_ids.add(file_id)
+    return ignore_ids
 
 
 def load_numpy_split_stack(
-    image_dir, mask_dir, dom_dir, holdout_size=5, test_size=0.2, seed=42
+    image_dir, mask_dir, dom_dir, holdout_size=5, test_size=0.2, seed=42,  ignore_file_path=None 
 ):
     """
     Laster inn hele datasettet som numpy-arrays, splitter i tren/val/test og returnerer stacks.
@@ -72,6 +88,10 @@ def load_numpy_split_stack(
         ]
     )
     file_ids = [Path(f).stem for f in all_files]
+    
+    if ignore_file_path is not None:
+        ignore_ids = load_ignore_ids(ignore_file_path)
+        file_ids = [fid for fid in file_ids if fid not in ignore_ids]
 
     if len(file_ids) < holdout_size + 2:
         raise ValueError(
@@ -85,5 +105,6 @@ def load_numpy_split_stack(
     train_ids, val_ids = train_test_split(
         remaining_ids, test_size=test_size, random_state=seed
     )
+   
 
     return train_ids, val_ids, holdout_ids
