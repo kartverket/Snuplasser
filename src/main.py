@@ -81,16 +81,11 @@ def run_experiment(model_name, config):
         # Lagrer beste checkpoint som en artefakt
         mlflow.log_artifact(str(ckpt_path), artifact_path="best_checkpoint")
 
-        backbone_or_encoder = (
-            model_config.get("backbone") or model_config.get("encoder") or "noarch"
-        )
-        registered_model_name = f"{model_name}_{backbone_or_encoder}"
-
         # Logger hele den trente modellen til MLflow
         mlflow.pytorch.log_model(
             pytorch_model=trained_model,
             artifact_path="model",
-            registered_model_name=registered_model_name,
+            registered_model_name=model_name,
         )
 
         preds = trainer.predict(trained_model, datamodule=datamodule)

@@ -67,15 +67,15 @@ class DeepLabV3Plus(LightningModule):
             self.log("val_dice", dice, prog_bar=True)
             self.log("val_acc", acc, prog_bar=True)
 
-        def predict_step(self, batch, batch_idx, dataloader_idx=0):
-            with torch.no_grad():
-                x, filename = batch
+    def predict_step(self, batch, batch_idx, dataloader_idx=0):
+        with torch.no_grad():
+            x, filename = batch
 
-                logits = self(x)
-                probs = torch.sigmoid(logits)
-                preds = (probs > 0.5).float()
+            logits = self(x)
+            probs = torch.sigmoid(logits)
+            preds = (probs > 0.5).float()
 
-                return {"filename": filename, "mask": preds, "image": x}
+            return {"filename": filename, "mask": preds, "image": x}
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
