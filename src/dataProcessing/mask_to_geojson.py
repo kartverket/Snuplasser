@@ -77,28 +77,6 @@ def mask_to_geojson(mask_path: str, output_dir: Path):
     output_name = mask_path.stem + ".geojson"
     output_path = output_dir / output_name
 
-   
-
-    
-    if polygons:
-        merged = MultiPolygon(polygons)
-        centroid = merged.centroid
-        bbox_center_x = (x_min + x_max) / 2
-        bbox_center_y = (y_min + y_max) / 2
-
-        delta_x = bbox_center_x - centroid.x
-        delta_y = bbox_center_y - centroid.y
-
-        print(f"[DEBUG] Düzelti uygulanıyor (Δx: {delta_x:.3f}, Δy: {delta_y:.3f})")
-
-
-        polygons = [Polygon([(x + delta_x, y + delta_y) for x, y in poly.exterior.coords]) for poly in polygons]
-
-        print("\n[DEBUG] KARŞILAŞTIRMA:")
-        print(f" Polygon centroid: ({centroid.x:.3f}, {centroid.y:.3f})")
-        print(f" BBox center:      ({bbox_center_x:.3f}, {bbox_center_y:.3f})")
-        print(f" Delta (x,y):      ({centroid.x - bbox_center_x:.3f}, {centroid.y - bbox_center_y:.3f})\n")
-
     gdf = gpd.GeoDataFrame(geometry=polygons, crs=crs)
     try:
         gdf.to_file(output_path, driver="GeoJSON")
