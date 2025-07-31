@@ -3,15 +3,23 @@ from albumentations.pytorch import ToTensorV2
 
 
 def get_train_transforms(cfg: dict, ratio: float | None = None):
+    normalize_cfg = cfg.get("normalize", {})
+    mean = normalize_cfg.get("mean", [0.485, 0.456, 0.406, 0.5])
+    std = normalize_cfg.get("std", [0.229, 0.224, 0.225, 0.25])
+
     if ratio is None:
-        return A.Compose([ToTensorV2()])
+        return A.Compose(
+        [
+            A.Normalize(
+                mean=mean,
+                std=std,
+            ),
+            ToTensorV2(),
+        ]
+    )
 
     if ratio < 0 or ratio > 1:
         raise ValueError(f"Ratio must be between 0 and 1. Received: {ratio}")
-
-    normalize_cfg=cfg.get("normalize", {} )
-    mean= normalize_cfg.get("mean",[0.485, 0.456, 0.406, 0.5])
-    std= normalize_cfg.get("std", [0.229, 0.224, 0.225, 0.25])
 
     base_transform = A.Compose(
         [
@@ -21,10 +29,9 @@ def get_train_transforms(cfg: dict, ratio: float | None = None):
             A.ShiftScaleRotate(
                 shift_limit=0.05,
                 scale_limit=cfg.get("scale_limit", 0.1),
-                rotate_limit=cfg.get("rotate_limit",15),
+                rotate_limit=cfg.get("rotate_limit", 15),
                 p=0.5,
             ),  # Endringer i posisjon
-                
             A.RandomBrightnessContrast(
                 brightness_limit=cfg.get("brightness_limit", 0.2),
                 contrast_limit=cfg.get("contrast_limit", 0.2),
@@ -47,5 +54,16 @@ def get_train_transforms(cfg: dict, ratio: float | None = None):
     return base_transform
 
 
-def get_val_transforms():
-    return A.Compose([ToTensorV2()])
+def get_val_transforms(cfg: dict):
+    normalize_cfg = cfg.get("normalize", {})
+    mean = normalize_cfg.get("mean", [0.485, 0.456, 0.406, 0.5])
+    std = normalize_cfg.get("std", [0.229, 0.224, 0.225, 0.25])
+    return A.Compose(
+        [
+            A.Normalize(
+                mean=mean,
+                std=std,
+            ),
+            ToTensorV2(),
+        ]
+    )

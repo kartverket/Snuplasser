@@ -94,37 +94,32 @@ class LogPredictionsCallback(Callback):
         plt.close(fig)
 
 
-
-
-
-
-def log_test_predictions(model, dataloader, logger, artifact_dir, threshold=0.5, max_logs=20):
+def log_predictions_from_preds(preds, logger, artifact_dir="predictions", local_save_dir="/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/predicted_masks", max_logs=20):
     if not hasattr(logger, "run_id") or logger.run_id is None:
-        raise RuntimeError("MLFlowLogger må ha en aktiv run_id for å logge artifacts.")
+        raise RuntimeError("MLFlowLogger must have an active run_id to log artifacts.")
 
-    model.eval().to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
-    logged = 0
+    for batch in preds:
+        filenames = batch.get("filename")
+        masks = batch.get("mask")
+        images = batch.get("image")
 
-    for x, fnames in dataloader:
-        x = x.to(model.device)
-        with torch.no_grad():
-            preds = torch.sigmoid(model(x)) > threshold
+        for i in range(len(filenames)):
+            rgb_tensor = images[i, :3] if images is not None else None
+            dom_tensor = images[i, 3] if images is not None else None
 
-        for i in range(len(fnames)):
-            if logged >= max_logs:
-                return
             _log_prediction_artifact(
-                rgb_tensor=x[i, :3],
-                dom_tensor=x[i, 3],
-                pred_tensor=preds[i],
-                fname=fnames[i],
+                rgb_tensor=rgb_tensor,
+                dom_tensor=dom_tensor,
+                pred_tensor=masks[i],
+                fname=filenames[i],
                 logger=logger,
-                artifact_dir=artifact_dir
+                artifact_dir=artifact_dir,
+                local_save_dir=local_save_dir
             )
-            logged += 1
 
 
-def _log_prediction_artifact(rgb_tensor, dom_tensor, pred_tensor, fname, logger, artifact_dir):
+
+def _log_prediction_artifact(rgb_tensor, dom_tensor, pred_tensor, fname, logger, artifact_dir, local_save_dir):
     rgb_np = rgb_tensor.permute(1, 2, 0).cpu().numpy()
     dom_np = dom_tensor.cpu().numpy()
     pred_np = pred_tensor.squeeze().cpu().numpy()
@@ -147,7 +142,13 @@ def _log_prediction_artifact(rgb_tensor, dom_tensor, pred_tensor, fname, logger,
         figure=fig,
         artifact_file=artifact_path
     )
+    os.makedirs(local_save_dir, exist_ok=True)
+    local_path = os.path.join(local_save_dir, f"image_{Path(fname).stem}.png")
+    fig.savefig(local_path, bbox_inches="tight", pad_inches=0)
+
     plt.close(fig)
+
+
 class BinaryPredictedMaskCallback(Callback):
     def __init__(self, output_dir="predicted_binary_masks", log_every_n_epochs=1):
         self.output_dir = Path(output_dir)
@@ -184,5 +185,3 @@ class BinaryPredictedMaskCallback(Callback):
 
                 save_path = self.output_dir / new_name
                 Image.fromarray(pred).save(save_path)
-
-

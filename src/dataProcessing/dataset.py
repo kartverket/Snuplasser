@@ -49,11 +49,13 @@ class SnuplassDataset(Dataset):
             mask = torch.from_numpy(np.array(mask)).float()
         if mask.max() > 1:
             mask = mask / 255.0
-        if mask.ndim==2:
+        if mask.ndim == 2:
             mask = mask.unsqueeze(0)
 
         filename = f"{file_id}.png"
         return image, mask, filename 
+
+
 #hjelpe funksjon hvis det trenges
 def load_ignore_ids(missing_file_path):
     ignore_ids = set()
@@ -70,6 +72,42 @@ def load_ignore_ids(missing_file_path):
                 continue
             ignore_ids.add(file_id)
     return ignore_ids
+
+
+class SnuplassPredictDataset(Dataset):
+    def __init__(self, image_dir, dom_dir, transform=None):
+        self.image_dir = image_dir
+        self.dom_dir = dom_dir
+        self.transform = transform
+
+        files = sorted(
+            [
+                f
+                for f in os.listdir(image_dir)
+                if f.startswith("image_") and f.endswith(".png")
+            ]
+        )
+        self.file_list = [Path(f).stem for f in files]
+
+    def __len__(self):
+        return len(self.file_list)
+
+    def __getitem__(self, idx):
+        file_id = self.file_list[idx]
+        img_path = os.path.join(self.image_dir, f"{file_id}.png")
+        dom_path = os.path.join(self.dom_dir, f"dom_{file_id[6:]}.png")
+
+        img = np.array(Image.open(img_path).convert("RGB"))
+        dom = np.array(Image.open(dom_path).convert("L"))
+        dom = np.expand_dims(dom, axis=-1)  # (H,W,1)
+        image = np.concatenate((img, dom), axis=-1)  # (H,W,4)
+
+        if self.transform:
+            augmented = self.transform(image=np.array(image))
+            image = augmented["image"]
+
+        filename = f"{file_id}.png"
+        return image, filename
 
 
 def load_numpy_split_stack(
