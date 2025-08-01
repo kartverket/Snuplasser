@@ -13,9 +13,9 @@ scratch:
   weight_decay: 0.01
 
 dataset:
-  image_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/img/
-  mask_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/lab/
-  dom_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/dom/
+  image_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/images/
+  mask_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/labels/
+  dom_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/doms/
   batch_size: 8
   num_workers: 4
   val_split: 0.2
@@ -243,15 +243,15 @@ trainer:
     all:
       _target_: training.loss_fns.MultiStepMultiMasksAndIous
       weight_dict:
-        loss_mask: 20
-        loss_dice: 1
+        loss_mask: 5
+        loss_dice: 5
         loss_iou: 1
         loss_class: 1
       supervise_all_iou: true
       iou_use_l1_loss: true
       pred_obj_scores: true
-      focal_gamma_obj_score: 0.0
-      focal_alpha_obj_score: -1.0
+      focal_gamma_obj_score: 2.0
+      focal_alpha_obj_score: 0.2
 
   distributed:
     backend: nccl
