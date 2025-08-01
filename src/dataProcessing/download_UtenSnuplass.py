@@ -14,7 +14,7 @@ import getpass
 
 from src.config import IMAGE_SIZE, BASE_IMAGE_URL, BASE_DOM_URL, RESOLUTION
 
-# === Konfigürasyon ===
+
 GEOJSON_PATH = "/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/raw_geojson/turning_spaces.geojson"
 
 image_path = Path("/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/img/")
@@ -28,7 +28,6 @@ if not SECRET_TOKEN:
 if not SECRET_TOKEN:
     raise ValueError("Du må oppgi en WMS-token!")
 
-# === Fonksiyonlar ===
 def tile_bbox(xmin, ymin, xmax, ymax, image_size, resolution):
     tile_w = image_size[0] * resolution
     tile_h = image_size[1] * resolution
@@ -89,7 +88,7 @@ async def main(token):
 
     bboxes = tile_bbox(xmin, ymin, xmax, ymax, IMAGE_SIZE, RESOLUTION)
 
-    for i, bbox in enumerate(bboxes[:10]):  # sadece ilk 10 tile
+    for i, bbox in enumerate(bboxes[:10]):  # Bare de første 10 flisene
         bbox_str = "_".join(f"{int(c)}" for c in bbox)
         img_file = image_path / f"image_{bbox_str}.png"
         dom_file = dom_path / f"dom_{bbox_str}.png"

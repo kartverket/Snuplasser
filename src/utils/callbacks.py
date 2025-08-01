@@ -8,28 +8,36 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
+
 def get_early_stopping(config):
     return EarlyStopping(
         monitor=config.get("monitor", "val_loss"),  # val_IoU
-        mode=config.get("monitor_mode", "min"),     # "max" for IoU
+        mode=config.get("monitor_mode", "min"),  # "max" for IoU
         patience=config.get("early_stopping_patience", 5),
-        verbose=True
+        verbose=True,
     )
+
 
 def get_model_checkpoint(config):
     metric_name = config.get("monitor", "val_loss")  # val_IoU
     filename = f"{{epoch:02d}}-{{{metric_name}:.4f}}"
     return ModelCheckpoint(
-        monitor=metric_name,  
-        mode=config.get("monitor_mode", "min"),     # "max" for IoU
+        monitor=metric_name,
+        mode=config.get("monitor_mode", "min"),  # "max" for IoU
         save_top_k=1,
         save_weights_only=True,
-        filename=filename,       
+        filename=filename,
     )
 
 
 class LogPredictionsCallback(Callback):
-    def __init__(self, log_every_n_epochs=1, artifact_dir="val_predictions", always_log_ids=None, max_random_logs=10):
+    def __init__(
+        self,
+        log_every_n_epochs=1,
+        artifact_dir="val_predictions",
+        always_log_ids=None,
+        max_random_logs=10,
+    ):
         self.log_every_n_epochs = log_every_n_epochs
         self.artifact_dir = artifact_dir
         self.always_log_ids = set(always_log_ids or [])
@@ -50,20 +58,22 @@ class LogPredictionsCallback(Callback):
 
             for i, fname in enumerate(fnames):
                 name = Path(fname).name
-                log_this = (
-                    name in self.always_log_ids or
-                    (epoch % self.log_every_n_epochs == 0 and len(logged) < self.max_random_logs)
+                log_this = name in self.always_log_ids or (
+                    epoch % self.log_every_n_epochs == 0
+                    and len(logged) < self.max_random_logs
                 )
                 if log_this and name not in logged:
                     self._log_prediction(x[i], y[i], preds[i], name, epoch, trainer)
                     logged.add(name)
 
-            if len(logged) >= self.max_random_logs and not (self.always_log_ids - logged):
+            if len(logged) >= self.max_random_logs and not (
+                self.always_log_ids - logged
+            ):
                 break
 
     def _log_prediction(self, x, y, pred, name, epoch, trainer):
         img, dom = x[:3], x[3:]
-    
+
         # Sørg for 2D-tensorer til visning
         img_np = img.permute(1, 2, 0).cpu().numpy()
         dom_np = dom.squeeze().cpu().numpy()
@@ -85,16 +95,20 @@ class LogPredictionsCallback(Callback):
         axs[3].set_title("Predicted mask")
 
         plt.tight_layout()
-        artifact_path = f"{self.artifact_dir}/image_{name}/epoch_{epoch}.png"
+        artifact_path = f"{self.artifact_dir}/{name}/epoch_{epoch}.png"
         trainer.logger.experiment.log_figure(
-            run_id=trainer.logger.run_id,
-            figure=fig,
-            artifact_file=artifact_path
+            run_id=trainer.logger.run_id, figure=fig, artifact_file=artifact_path
         )
         plt.close(fig)
 
 
-def log_predictions_from_preds(preds, logger, artifact_dir="predictions", local_save_dir="/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/predicted_masks", max_logs=20):
+def log_predictions_from_preds(
+    preds,
+    logger,
+    artifact_dir="predictions",
+    local_save_dir="/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/predicted_masks",
+    max_logs=20,
+):
     if not hasattr(logger, "run_id") or logger.run_id is None:
         raise RuntimeError("MLFlowLogger must have an active run_id to log artifacts.")
 
@@ -114,12 +128,13 @@ def log_predictions_from_preds(preds, logger, artifact_dir="predictions", local_
                 fname=filenames[i],
                 logger=logger,
                 artifact_dir=artifact_dir,
-                local_save_dir=local_save_dir
+                local_save_dir=local_save_dir,
             )
 
 
-
-def _log_prediction_artifact(rgb_tensor, dom_tensor, pred_tensor, fname, logger, artifact_dir, local_save_dir):
+def _log_prediction_artifact(
+    rgb_tensor, dom_tensor, pred_tensor, fname, logger, artifact_dir, local_save_dir
+):
     rgb_np = rgb_tensor.permute(1, 2, 0).cpu().numpy()
     dom_np = dom_tensor.cpu().numpy()
     pred_np = pred_tensor.squeeze().cpu().numpy()
@@ -138,9 +153,7 @@ def _log_prediction_artifact(rgb_tensor, dom_tensor, pred_tensor, fname, logger,
     plt.tight_layout()
     artifact_path = f"{artifact_dir}/{Path(fname).stem}.png"
     logger.experiment.log_figure(
-        run_id=logger.run_id,
-        figure=fig,
-        artifact_file=artifact_path
+        run_id=logger.run_id, figure=fig, artifact_file=artifact_path
     )
     plt.close(fig)
 
@@ -159,7 +172,7 @@ class BinaryPredictedMaskCallback(Callback):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.log_every_n_epochs = log_every_n_epochs
-    
+
     def on_validation_epoch_end(self, trainer, pl_module):
         if trainer.current_epoch % self.log_every_n_epochs != 0:
             return
@@ -178,15 +191,15 @@ class BinaryPredictedMaskCallback(Callback):
                 preds = (torch.sigmoid(logits) > 0.5).float()
 
             for i in range(len(fnames)):
-                pred = preds[i].squeeze().cpu().numpy()*255
+                pred = preds[i].squeeze().cpu().numpy() * 255
                 pred = pred.astype(np.uint8)
 
-                original_name= Path(fnames[i]).name
-                parts= original_name.split("_", 1)
+                original_name = Path(fnames[i]).name
+                parts = original_name.split("_", 1)
                 if len(parts) == 2:
                     new_name = f"preMask_{parts[1]}"
                 else:
-                    new_name = f"preMask_{original_name}"  
+                    new_name = f"preMask_{original_name}"
 
                 save_path = self.output_dir / new_name
                 Image.fromarray(pred).save(save_path)

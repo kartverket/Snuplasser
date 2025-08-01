@@ -17,9 +17,6 @@ class SnuplassDataset(Dataset):
         self.dom_dir = dom_dir
         self.file_list = file_list
         self.transform = transform
-        if len(self.file_list) == 0:
-            print(f"[WARNING] No images found in {self.image_dir}. Check path or filename format.")
-        
 
     def __len__(self):
         return len(self.file_list)
@@ -56,9 +53,7 @@ class SnuplassDataset(Dataset):
             mask = mask.unsqueeze(0)
 
         filename = f"{file_id}.png"
-        return image, mask, filename 
-
-
+        return image, mask, filename
 
 
 class SnuplassPredictDataset(Dataset):
@@ -98,7 +93,7 @@ class SnuplassPredictDataset(Dataset):
 
 
 def load_numpy_split_stack(
-    image_dir, mask_dir, dom_dir, holdout_size=5, test_size=0.2, seed=42 
+    image_dir, mask_dir, dom_dir, holdout_size=5, test_size=0.2, seed=42
 ):
     """
     Laster inn hele datasettet som numpy-arrays, splitter i tren/val/test og returnerer stacks.
@@ -113,7 +108,6 @@ def load_numpy_split_stack(
         ]
     )
     file_ids = [Path(f).stem for f in all_files]
-    
 
     if len(file_ids) < holdout_size + 2:
         raise ValueError(
@@ -127,6 +121,5 @@ def load_numpy_split_stack(
     train_ids, val_ids = train_test_split(
         remaining_ids, test_size=test_size, random_state=seed
     )
-   
 
     return train_ids, val_ids, holdout_ids
