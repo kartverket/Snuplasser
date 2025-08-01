@@ -178,8 +178,14 @@ mlruns_v2/
 *.ckpt
 
 meta.yaml
+#mask mappe
+src/predicted_binary_masks/
+
 
 
 # Test filer 
+src/missing_files.txt
 src/test_kjøring.ipynb
+src/Untitled Notebook 2025-07-24 10_35_46.ipynb
+tests/Untitled Notebook 2025-07-29 11_43_34.ipynb
 

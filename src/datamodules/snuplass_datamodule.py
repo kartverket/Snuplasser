@@ -67,7 +67,7 @@ class SnuplassDataModule(LightningDataModule):
             transform=self.val_transform,
         )
 
-        self.test_dataset = SnuplassPredictDataset(
+        self.predict_dataset = SnuplassPredictDataset(
             self.endepunkt_image_dir,
             self.endepunkt_dom_dir,
             self.val_transform, # Bruker samme transformering som val_dataset
@@ -91,7 +91,7 @@ class SnuplassDataModule(LightningDataModule):
 
     def predict_dataloader(self):
         return DataLoader(
-            self.test_dataset,
+            self.predict_dataset,
             batch_size=self.batch_size,
             shuffle=False,
             num_workers=self.num_workers,
