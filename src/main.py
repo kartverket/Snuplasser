@@ -50,8 +50,9 @@ def run_experiment(model_name, config):
         deterministic=True,  # Reproduserbarhet
     )
 
-    # Trening og validering
+    # Trening og testing
     trainer.fit(model, datamodule=datamodule)
+    trainer.test(model, datamodule=datamodule)
 
     # Laster den beste checkpoint etter trening
     ckpt_path = save_best_checkpoint(model_checkpoint, model_name)
