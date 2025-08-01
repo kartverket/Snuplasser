@@ -20,14 +20,21 @@ class SnuplassDataModule(LightningDataModule):
         self.seed = data_config.get("seed", 42)
         self.train_transform = data_config.get("train_transform", None)
         self.val_transform = data_config.get("val_transform", None)
-        self.silver_table = data_config["silver_table"]
         self.mode = data_config.get("mode", "train")
-        self.spark = SparkSession.builder \
-            .appName("snuplass_training") \
-            .config("spark.sql.catalogImplementation", "in-memory") \
-            .config("spark.hadoop.hive.metastore.uris", "") \
-            .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.catalog.InMemoryCatalog") \
+        self.silver_table_name = data_config.get("silver_table")
+        self.spark = (
+            SparkSession.builder
+            .appName("snuplass_training")
+            .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
             .getOrCreate()
+        )
+
+        current_catalog = "land_topografisk-gdb_dev"
+        current_schema  = "ai2025"
+        self.spark.sql(f"USE CATALOG `{current_catalog}`")
+        self.spark.sql(f"USE SCHEMA `{current_schema}`")
+
+        self.silver_table = f"{current_catalog}.{current_schema}.{self.silver_table_name}"
 
         # Augmentering konfigurasjon
         use_aug = data_config.get("use_augmentation", False)
@@ -46,33 +53,47 @@ class SnuplassDataModule(LightningDataModule):
                 raise FileNotFoundError(f"Data-mappe finnes ikke: {d}")
 
     def setup(self, stage=None):
-        all_ids = get_file_list_from_silver(spark=self.spark, silver_table=self.silver_table, mode=self.mode)
-
+        
         if self.mode == "train":
             train_ids, val_ids, holdout_ids = get_split_from_silver(
-                spark=self.spark,
-                silver_table=self.silver_table,
-                val_size=self.val_split,
-                holdout_size=self.holdout_size,
-                seed=self.seed
+                spark       = self.spark,
+                silver_table= self.silver_table_name,
+                val_size    = self.val_split,
+                holdout_size= self.holdout_size,
+                seed        = self.seed
             )
+            self.train_ids = train_ids
+            self.val_ids   = val_ids
+            self.holdout_ids = holdout_ids
 
             self.train_dataset = SnuplassDataset(
-                self.image_dir, self.mask_dir, self.dom_dir,
-                train_ids, transform=self.train_transform,
+                image_dir=self.image_dir,
+                mask_dir =self.mask_dir,
+                dom_dir  =self.dom_dir,
+                file_list=train_ids,
+                transform=self.train_transform
+            )
+            self.val_dataset = SnuplassDataset(
+                image_dir=self.image_dir,
+                mask_dir =self.mask_dir,
+                dom_dir  =self.dom_dir,
+                file_list=val_ids,
+                transform=self.val_transform
             )
 
-            self.val_dataset = SnuplassDataset(
-                self.image_dir, self.mask_dir, self.dom_dir,
-                val_ids, transform=self.val_transform,
+        else:  # inference
+            self.inference_ids = get_file_list_from_silver(
+                spark       = self.spark,
+                silver_table= self.silver_table_name,
+                mode        = "inference"
             )
-        elif self.mode == "inference":
+
             self.inference_dataset = SnuplassDataset(
                 image_dir=self.image_dir,
-                mask_dir=None,
+                mask_dir=None,               # masker brukes ikke ved inference
                 dom_dir=self.dom_dir,
-                file_list=all_ids,
-                transform=self.val_transform,
+                file_list=self.inference_ids,
+                transform=self.val_transform   # eller en egen infer-transform?
             )
 
     def train_dataloader(self):

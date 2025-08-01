@@ -25,6 +25,7 @@ def get_logger(model_name: str, config: dict) -> MLFlowLogger:
     experiment_name = config.get("logging", {}).get("experiment_name", "default_experiment")
     run_name = generate_run_name(model_name, config)
 
+    tracking_uri = config.get("logging", {}).get("tracking_uri")
     mlflow.set_tracking_uri(tracking_uri)
 
     if not mlflow.get_experiment_by_name(experiment_name):
