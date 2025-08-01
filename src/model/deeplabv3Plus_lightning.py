@@ -67,6 +67,23 @@ class DeepLabV3Plus(LightningModule):
             self.log("val_dice", dice, prog_bar=True)
             self.log("val_acc", acc, prog_bar=True)
 
+    def test_step(self, batch, batch_idx):
+        with torch.no_grad():
+            x, y, _ = batch
+            y = y.float()
+            logts = self(x)
+            loss = self.loss_fn(logts, y)
+            self.log("test_loss", loss, prog_bar=True)
+
+            preds = torch.sigmoid(logts)
+            pred_bin = (preds > 0.5).float()
+            iou = self.iou_metric(pred_bin, y)
+            dice = self.dice_metric(pred_bin, y)
+            acc = self.accuracy_metric(pred_bin, y)
+
+            self.log("test_iou", iou, prog_bar=True)
+            self.log("test_dice", dice, prog_bar=True)
+
     def predict_step(self, batch, batch_idx, dataloader_idx=0):
         with torch.no_grad():
             x, filename = batch
