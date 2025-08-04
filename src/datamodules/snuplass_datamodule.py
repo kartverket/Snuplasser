@@ -61,6 +61,7 @@ class SnuplassDataModule(LightningDataModule):
                 raise FileNotFoundError(f"Data-mappe finnes ikke: {d}")
 
     def setup(self, stage=None):
+
         if self.mode == "train":
             train_ids, val_ids, holdout_ids = get_split_from_overview(
                 spark         = self.spark,
@@ -73,6 +74,7 @@ class SnuplassDataModule(LightningDataModule):
             self.train_ids   = train_ids
             self.val_ids     = val_ids
             self.holdout_ids = holdout_ids
+
 
             self.train_dataset = SnuplassDataset(
                 image_dir=self.image_dir,
@@ -104,6 +106,7 @@ class SnuplassDataModule(LightningDataModule):
                 transform=self.val_transform
             )
 
+
     def train_dataloader(self):
         return DataLoader(
             self.train_dataset,
@@ -118,6 +121,14 @@ class SnuplassDataModule(LightningDataModule):
             batch_size=self.batch_size,
             shuffle=False,
             num_workers=self.num_workers
+        )
+    
+    def test_dataloader(self):
+        return DataLoader(
+            self.test_dataset,
+            batch_size=self.batch_size,
+            shuffle=False,
+            num_workers=self.num_workers,
         )
 
     def predict_dataloader(self):
