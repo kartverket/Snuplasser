@@ -82,7 +82,7 @@ def run_experiment(model_name, config):
         mlflow.pytorch.log_model(
             pytorch_model=trained_model,
             artifact_path="model",
-            registered_model_name=model_name,
+            #registered_model_name=model_name,
         )
 
         preds = trainer.predict(trained_model, datamodule=datamodule)

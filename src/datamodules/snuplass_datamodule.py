@@ -46,9 +46,12 @@ class SnuplassDataModule(LightningDataModule):
         # Augmentering konfigurasjon
         use_aug = data_config.get("use_augmentation", False)
         aug_ratio = data_config.get("augmentation_ratio", None)
-
-        self.train_transform = get_train_transforms(cfg=data_config, ratio=aug_ratio) if use_aug else None
-        self.val_transform = get_val_transforms()
+        if use_aug:
+            self.train_transform = get_train_transforms(cfg=data_config, ratio=aug_ratio)
+        else:
+            self.train_transform = get_train_transforms(cfg=data_config, ratio=None)
+            
+        self.val_transform = get_val_transforms(cfg=data_config)
 
         if self.train_transform is not None:
             print(f"Augmentation aktivert: {self.train_transform}")
@@ -89,6 +92,14 @@ class SnuplassDataModule(LightningDataModule):
                 dom_dir  =self.dom_dir,
                 file_list=val_ids,
                 transform=self.val_transform
+            )
+
+            self.test_dataset = SnuplassDataset(
+                image_dir = self.image_dir,
+                mask_dir  = self.mask_dir,
+                dom_dir   = self.dom_dir,
+                file_list = self.holdout_ids,
+                transform = self.val_transform
             )
 
         else:  # predict
