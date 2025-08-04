@@ -3,7 +3,10 @@ from torch.utils.data import DataLoader
 from lightning.pytorch import LightningDataModule
 from dataProcessing.dataset import SnuplassDataset
 from dataProcessing.transform import get_train_transforms, get_val_transforms
-from utils.get_from_silver import get_file_list_from_silver, get_split_from_silver
+from utils.get_from_overview import (
+    get_file_list_from_overview,
+    get_split_from_overview,
+)
 from pyspark.sql import SparkSession
 
 
@@ -20,8 +23,13 @@ class SnuplassDataModule(LightningDataModule):
         self.seed = data_config.get("seed", 42)
         self.train_transform = data_config.get("train_transform", None)
         self.val_transform = data_config.get("val_transform", None)
+
         self.mode = data_config.get("mode", "train")
-        self.silver_table_name = data_config.get("silver_table")
+        section = data_config[self.mode]    
+        self.overview_table = section["overview_table"]
+        self.id_field       = section["id_field"]
+        self.require_mask   = (self.mode == "train")
+
         self.spark = (
             SparkSession.builder
             .appName("snuplass_training")
@@ -29,12 +37,11 @@ class SnuplassDataModule(LightningDataModule):
             .getOrCreate()
         )
 
-        current_catalog = "land_topografisk-gdb_dev"
-        current_schema  = "ai2025"
-        self.spark.sql(f"USE CATALOG `{current_catalog}`")
-        self.spark.sql(f"USE SCHEMA `{current_schema}`")
+        catalog = "land_topografisk-gdb_dev"
+        schema  = "ai2025"
+        self.spark.sql(f"USE CATALOG `{catalog}`")
+        self.spark.sql(f"USE SCHEMA `{schema}`")
 
-        self.silver_table = f"{current_catalog}.{current_schema}.{self.silver_table_name}"
 
         # Augmentering konfigurasjon
         use_aug = data_config.get("use_augmentation", False)
@@ -48,22 +55,23 @@ class SnuplassDataModule(LightningDataModule):
         else:
             print("Augmentation deaktivert")
 
-        for d in [self.image_dir, self.dom_dir] + ([self.mask_dir] if self.mode == "train" and self.mask_dir else []):
-            if d and not os.path.isdir(d):
+        for d in [self.image_dir, self.dom_dir] + \
+                ([self.mask_dir] if self.mode == "train" and self.mask_dir else []):
+            if not os.path.isdir(d):
                 raise FileNotFoundError(f"Data-mappe finnes ikke: {d}")
 
     def setup(self, stage=None):
-        
         if self.mode == "train":
-            train_ids, val_ids, holdout_ids = get_split_from_silver(
-                spark       = self.spark,
-                silver_table= self.silver_table_name,
-                val_size    = self.val_split,
-                holdout_size= self.holdout_size,
-                seed        = self.seed
+            train_ids, val_ids, holdout_ids = get_split_from_overview(
+                spark         = self.spark,
+                overview_table= self.overview_table,
+                id_field      = self.id_field,
+                val_size      = self.val_split,
+                holdout_size  = self.holdout_size,
+                seed          = self.seed
             )
-            self.train_ids = train_ids
-            self.val_ids   = val_ids
+            self.train_ids   = train_ids
+            self.val_ids     = val_ids
             self.holdout_ids = holdout_ids
 
             self.train_dataset = SnuplassDataset(
@@ -81,19 +89,19 @@ class SnuplassDataModule(LightningDataModule):
                 transform=self.val_transform
             )
 
-        else:  # inference
-            self.inference_ids = get_file_list_from_silver(
-                spark       = self.spark,
-                silver_table= self.silver_table_name,
-                mode        = "inference"
+        else:  # predict
+            predict_ids = get_file_list_from_overview(
+                spark         = self.spark,
+                overview_table= self.overview_table,
+                id_field      = self.id_field,
+                require_mask  = False
             )
-
-            self.inference_dataset = SnuplassDataset(
+            self.predict_dataset = SnuplassDataset(
                 image_dir=self.image_dir,
-                mask_dir=None,               # masker brukes ikke ved inference
-                dom_dir=self.dom_dir,
-                file_list=self.inference_ids,
-                transform=self.val_transform   # eller en egen infer-transform?
+                mask_dir =None,
+                dom_dir  =self.dom_dir,
+                file_list=predict_ids,
+                transform=self.val_transform
             )
 
     def train_dataloader(self):
@@ -111,10 +119,10 @@ class SnuplassDataModule(LightningDataModule):
             shuffle=False,
             num_workers=self.num_workers
         )
-    
-    def inference_dataloader(self):
+
+    def predict_dataloader(self):
         return DataLoader(
-            self.inference_dataset,
+            self.predict_dataset,
             batch_size=self.batch_size,
             shuffle=False,
             num_workers=self.num_workers

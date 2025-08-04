@@ -23,37 +23,39 @@ class SnuplassDataset(Dataset):
 
     def __getitem__(self, idx):
         file_id = self.file_list[idx]
-        image_path = os.path.join(self.image_dir, f"{file_id}.png")
-        mask_path = os.path.join(self.mask_dir, f"mask_{file_id[6:]}.png")
-        dom_path = os.path.join(self.dom_dir, f"dom_{file_id[6:]}.png")
 
+        image_path = os.path.join(self.image_dir, f"image_{file_id}.png")
         image = Image.open(image_path).convert("RGB")
-        mask = Image.open(mask_path).convert("L")
-        dom = Image.open(dom_path).convert("L")
+        image_np = np.array(image)
 
-        dom = np.expand_dims(dom, axis=-1)  # (H, W, 1)
-        image = np.concatenate((image, dom), axis=-1)  # (H, W, 4)
+        if self.dom_dir is not None:
+            dom_path = os.path.join(self.dom_dir, f"dom_{file_id}.png")
+            dom = Image.open(dom_path).convert("L")
+            dom_np = np.expand_dims(np.array(dom), axis=-1)
+            image_np = np.concatenate((image_np, dom_np), axis=-1)
+
+        mask_np = None
+        if self.mask_dir is not None:
+            mask_path = os.path.join(self.mask_dir, f"mask_{file_id}.png")
+            mask = Image.open(mask_path).convert("L")
+            mask_np = np.array(mask) // 255
 
         if self.transform:
-            augmented = self.transform(
-                image=np.array(image),
-                mask=np.array(mask) // 255,
-            )
-            image = augmented["image"]
-            mask = augmented["mask"]
+            data = {"image": image_np}
+            if mask_np is not None:
+                data["mask"] = mask_np
+            augmented = self.transform(**data)
+            image_np = augmented["image"]
+            mask_np = augmented.get("mask", mask_np)
 
-        if not isinstance(image, torch.Tensor):
-            image = torch.from_numpy(np.array(image)).permute(2, 0, 1)
-
-        if not isinstance(mask, torch.Tensor):
-            mask = torch.from_numpy(np.array(mask)).float()
-        if mask.max() > 1:
-            mask = mask / 255.0
-        if mask.ndim == 2:
-            mask = mask.unsqueeze(0)
+        image_tensor = torch.from_numpy(image_np).permute(2, 0, 1).float()
+        if mask_np is not None:
+            mask_tensor = torch.from_numpy(mask_np).unsqueeze(0).float()
+        else:
+            mask_tensor = None
 
         filename = f"{file_id}.png"
-        return image, mask, filename
+        return image_tensor, mask_tensor, filename
 
 
 class SnuplassPredictDataset(Dataset):

@@ -46,9 +46,18 @@ data:
   normalize:
     mean: [0.485, 0.456, 0.406, 0.5]
     std: [0.229, 0.224, 0.225, 0.25]
-  
-  silver_table: "polygons_silver"  # Tilpass etter din Databricks-tabell
-  mode: "train"                                                    # 'train' eller 'inference'
+
+
+  mode: "train"  # "predict"
+  train:
+    silver_table: "polygons_silver"  # Tilpass etter din Databricks-tabell
+    id_field: "row_hash"
+    overview_table: "polygons_status_overview"
+       
+  predict:
+    silver_table: "endepunkt_silver"
+    id_field: "nodeid"
+    overview_table: "endepunkt_status_overview"                       
 
 
 training:
