@@ -7,6 +7,7 @@ import warnings
 from pathlib import Path
 import numpy as np
 from PIL import Image
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 
 def get_early_stopping(config):
@@ -42,6 +43,9 @@ class LogPredictionsCallback(Callback):
         self.artifact_dir = artifact_dir
         self.always_log_ids = set(always_log_ids or [])
         self.max_random_logs = max_random_logs
+        self.all_true = []
+        self.all_pred = []
+        self.display_labels = ["annet", "snuplass"]
 
     def on_validation_epoch_end(self, trainer, pl_module):
         dataloader = trainer.datamodule.val_dataloader()
@@ -70,6 +74,41 @@ class LogPredictionsCallback(Callback):
                 self.always_log_ids - logged
             ):
                 break
+
+    def on_test_epoch_start(self, trainer, pl_module):
+        self.all_true.clear()
+        self.all_pred.clear()
+
+    def on_test_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx=0):
+        x, y, _ = batch
+        device = pl_module.device
+        y = y.to(device).long()
+        preds = (torch.sigmoid(pl_module(x.to(device))) > 0.5).long()
+        self.all_true.append(y.cpu())
+        self.all_pred.append(preds.cpu())
+
+    def on_test_epoch_end(self, trainer, pl_module):
+        y_true = torch.cat(self.all_true).numpy().ravel()
+        y_pred = torch.cat(self.all_pred).numpy().ravel()
+
+        cm = confusion_matrix(y_true, y_pred)
+        disp = ConfusionMatrixDisplay(
+            confusion_matrix=cm,
+            display_labels=self.display_labels
+        )
+
+        fig, ax = plt.subplots(figsize=(6,6))
+        disp.plot(ax=ax, cmap="Blues", colorbar=False)
+        ax.set_title(f"Confusion matrix (epoch {trainer.current_epoch})")
+        plt.tight_layout()
+
+        run_id = trainer.logger.run_id
+        trainer.logger.experiment.log_figure(
+            run_id=run_id,
+            figure=fig,
+            artifact_file=f"confusion_matrix_epoch_{trainer.current_epoch}.png"
+        )
+        plt.close(fig)
 
     def _log_prediction(self, x, y, pred, name, epoch, trainer):
         img, dom = x[:3], x[3:]
