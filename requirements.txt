@@ -20,8 +20,3 @@ submitit>=1.5.1
 pycocotools>=2.0.8
 dataclasses-json>=0.6.7
 segmentation-models-pytorch==0.3.3
-numpy==1.25.2
-pandas==2.0.3
-numpy==1.24.2
-pandas==2.0.3
-mlflow==2.9.1

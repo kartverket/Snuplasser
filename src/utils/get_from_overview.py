@@ -17,52 +17,52 @@ def get_file_list_from_overview(
     """
     df = spark.table(overview_table)
 
-    base_filter = (
+    filt = (
         (F.col("image_status") == "DOWNLOADED") &
         (F.col("dom_status")   == "DOWNLOADED")
     )
     if require_mask:
-        base_filter &= (F.col("mask_status") == "GENERATED")
+        filt &= (F.col("mask_status") == "GENERATED")
 
-    return (
-        df.filter(base_filter)
-          .select(F.col(id_field))
+    picked = (
+        df.filter(filt)
+          .select(id_field, "image_path", "dom_path", "mask_path")
           .distinct()
-          .rdd.flatMap(lambda r: r)  # -> List[str]
-          .collect()
     )
-
+    
+    # Konverter til liste av tupler
+    return picked.rdd.map(lambda r: (r.id_field, r.image_path, r.dom_path, r.mask_path)).collect()
 
 def get_split_from_overview(
     spark: SparkSession,
     overview_table: str,
-    id_field: str,
     val_size: float = 0.2,
     holdout_size: int = 5,
+    require_mask: bool = True,
     seed: int = 42
-) -> tuple[list[str], list[str], list[str]]:
+) -> tuple[
+    list[tuple[str, str, str, str]],
+    list[tuple[str, str, str, str]],
+    list[tuple[str, str, str, str]]
+]:
     """
-    Samme som get_file_list, men splitter i train/val/holdout.
+    Henter alle (row_hash, image_path, dom_path, mask_path), så splitt i:
+      - holdout  (første N rader)
+      - train/val (resten, delt med sklearn.train_test_split)
     """
-    all_ids = get_file_list_from_overview(
-        spark, overview_table, id_field, require_mask=True
-    )
-
-    if len(all_ids) < holdout_size + 2:
+    all_items = get_file_list_from_overview(spark, overview_table, require_mask)
+    
+    if len(all_items) < holdout_size + 2:
         raise ValueError(
-            "For få elementer til å lage holdout + validering."
+            f"For få elementer ({len(all_items)}) for holdout={holdout_size} + validering."
         )
+    
+    random.seed(seed)
+    random.shuffle(all_items)
 
-    np.random.seed(seed)
-    np.random.shuffle(all_ids)
+    holdout = all_items[:holdout_size]
+    remaining = all_items[holdout_size:]
 
-    holdout = all_ids[:holdout_size]
-    remaining = all_ids[holdout_size:]
-
-    train, val = train_test_split(
-        remaining, 
-        test_size=val_size, 
-        random_state=seed
-    )
-
+    train, val = train_test_split(remaining, test_size=val_size, random_state=seed)
+    
     return train, val, holdout
