@@ -36,6 +36,7 @@ def get_file_list_from_overview(
 def get_split_from_overview(
     spark: SparkSession,
     overview_table: str,
+    id_field: str,
     val_size: float = 0.2,
     holdout_size: int = 5,
     require_mask: bool = True,
