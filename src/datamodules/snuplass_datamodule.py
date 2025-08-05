@@ -42,7 +42,7 @@ class SnuplassDataModule(LightningDataModule):
                 raise FileNotFoundError(f"Data-mappe finnes ikke: {d}")
 
     def setup(self, stage=None):
-        train_ids, val_ids, _ = load_numpy_split_stack(
+        train_ids, val_ids, holdout_ids = load_numpy_split_stack(
             self.image_dir,
             self.mask_dir,
             self.dom_dir,
@@ -67,7 +67,15 @@ class SnuplassDataModule(LightningDataModule):
             transform=self.val_transform,
         )
 
-        self.test_dataset = SnuplassPredictDataset(
+        self.test_dataset = SnuplassDataset(
+            self.image_dir,
+            self.mask_dir,
+            self.dom_dir,
+            holdout_ids,
+            transform=self.val_transform, # Bruker samme transformering som val_dataset
+        )
+
+        self.predict_dataset = SnuplassPredictDataset(
             self.endepunkt_image_dir,
             self.endepunkt_dom_dir,
             self.val_transform, # Bruker samme transformering som val_dataset
@@ -88,10 +96,18 @@ class SnuplassDataModule(LightningDataModule):
             shuffle=False,
             num_workers=self.num_workers,
         )
+    
+    def test_dataloader(self):
+        return DataLoader(
+            self.test_dataset,
+            batch_size=self.batch_size,
+            shuffle=False,
+            num_workers=self.num_workers,
+        )
 
     def predict_dataloader(self):
         return DataLoader(
-            self.test_dataset,
+            self.predict_dataset,
             batch_size=self.batch_size,
             shuffle=False,
             num_workers=self.num_workers,

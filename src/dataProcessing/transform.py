@@ -3,17 +3,10 @@ from albumentations.pytorch import ToTensorV2
 
 
 def get_train_transforms(cfg: dict, ratio: float | None = None):
-    normalize_cfg = cfg.get("normalize", {})
-    mean = normalize_cfg.get("mean", [0.485, 0.456, 0.406, 0.5])
-    std = normalize_cfg.get("std", [0.229, 0.224, 0.225, 0.25])
 
     if ratio is None:
         return A.Compose(
         [
-            A.Normalize(
-                mean=mean,
-                std=std,
-            ),
             ToTensorV2(),
         ]
     )
@@ -44,10 +37,6 @@ def get_train_transforms(cfg: dict, ratio: float | None = None):
                 alpha_affine=30,
                 p=cfg.get("elastic_transform_p", 0.3),
             ),
-            A.Normalize(
-                mean=mean,
-                std=std,
-            ),
             ToTensorV2(),
         ]
     )
@@ -55,15 +44,8 @@ def get_train_transforms(cfg: dict, ratio: float | None = None):
 
 
 def get_val_transforms(cfg: dict):
-    normalize_cfg = cfg.get("normalize", {})
-    mean = normalize_cfg.get("mean", [0.485, 0.456, 0.406, 0.5])
-    std = normalize_cfg.get("std", [0.229, 0.224, 0.225, 0.25])
     return A.Compose(
         [
-            A.Normalize(
-                mean=mean,
-                std=std,
-            ),
             ToTensorV2(),
         ]
     )

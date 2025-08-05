@@ -36,21 +36,23 @@ def run_experiment(model_name, config):
 
     early_stopping = get_early_stopping(config["training"])
     model_checkpoint = get_model_checkpoint(config["training"])
+    
 
     # Trainer
     trainer = Trainer(
         logger=logger,
-        max_epochs=config["training"]["max_epochs"],
-        accelerator=config["training"].get("accelerator", "cpu"),
-        devices=config["training"].get("devices", 1),
-        precision=config["training"].get("precision", 16),
+        max_epochs=config['training']['max_epochs'],
+        accelerator=config['training'].get('accelerator', 'cpu'),
+        devices=config['training'].get('devices', 1),
+        precision=config['training'].get('precision', 16),
         callbacks=[model_checkpoint, early_stopping, log_predictions],
         log_every_n_steps=10,
         deterministic=True,  # Reproduserbarhet
     )
 
-    # Trening og validering
+    # Trening og testing
     trainer.fit(model, datamodule=datamodule)
+    trainer.test(model, datamodule=datamodule)
 
     # Laster den beste checkpoint etter trening
     ckpt_path = save_best_checkpoint(model_checkpoint, model_name)
@@ -76,16 +78,11 @@ def run_experiment(model_name, config):
         # Lagrer beste checkpoint som en artefakt
         mlflow.log_artifact(str(ckpt_path), artifact_path="best_checkpoint")
 
-        backbone_or_encoder = (
-            model_config.get("backbone") or model_config.get("encoder") or "noarch"
-        )
-        registered_model_name = f"{model_name}_{backbone_or_encoder}"
-
         # Logger hele den trente modellen til MLflow
         mlflow.pytorch.log_model(
             pytorch_model=trained_model,
             artifact_path="model",
-            registered_model_name=registered_model_name,
+            registered_model_name=model_name,
         )
 
         preds = trainer.predict(trained_model, datamodule=datamodule)
