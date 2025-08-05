@@ -1,5 +1,4 @@
 import argparse
-import torch
 import os
 import yaml
 import mlflow
@@ -14,95 +13,91 @@ from utils.callbacks import (
 )
 from datamodules.snuplass_datamodule import get_datamodule
 from utils.checkpointing import save_best_checkpoint
-from mlflow.models.signature import infer_signature
 
 
 def run_experiment(model_name, config):
-    print(f"Trener modell: {model_name}")
+    mode = config.get("data", {}).get("mode", "train")
+    print(f"Kjører {mode}-jobb for modell: {model_name}")
 
-    # Forbered data
-    datamodule = get_datamodule(config["data"])
+    # --- Data & modell ---
+    datamodule = get_datamodule(config.get("data", {}))
+    model_cfg = config.get("model", {}).get(model_name, {})
+    model = get_model(model_name, model_cfg)
 
-    # Forbered modell
-    model_config = config["model"].get(model_name, {})
-    model = get_model(model_name, model_config)
-
-    # Logger
+    # --- Logger & callbacks ---
     logger = get_logger(model_name, config)
-
-    # Callbacks
+    es_cb = get_early_stopping(config.get("training", {}))
+    ckpt_cb = get_model_checkpoint(config.get("training", {}))
     log_pred_cfg = config.get("log_predictions_callback", {})
-    log_predictions = LogPredictionsCallback(**log_pred_cfg)
+    log_pred_cb = LogPredictionsCallback(**log_pred_cfg)
 
-    early_stopping = get_early_stopping(config["training"])
-    model_checkpoint = get_model_checkpoint(config["training"])
-    
-
-    # Trainer
     trainer = Trainer(
         logger=logger,
-        max_epochs=config['training']['max_epochs'],
-        accelerator=config['training'].get('accelerator', 'cpu'),
-        devices=config['training'].get('devices', 1),
-        precision=config['training'].get('precision', 16),
-        callbacks=[model_checkpoint, early_stopping, log_predictions],
-        log_every_n_steps=10,
-        deterministic=True,  # Reproduserbarhet
+        max_epochs=config.get("training", {}).get("max_epochs", 1),
+        accelerator=config.get("training", {}).get("accelerator", "cpu"),
+        devices=config.get("training", {}).get("devices", 1),
+        precision=config.get("training", {}).get("precision", 32),
+        callbacks=[ckpt_cb, es_cb, log_pred_cb] if mode == "train" else [],
+        log_every_n_steps=config.get("training", {}).get("log_every_n_steps", 10),
+        deterministic=True,
     )
 
-    # Trening og testing
-    trainer.fit(model, datamodule=datamodule)
-    trainer.test(model, datamodule=datamodule)
+    if mode == "train":
+        # 1) Tren + test
+        trainer.fit(model, datamodule=datamodule)
+        trainer.test(model, datamodule=datamodule)
 
-    # Laster den beste checkpoint etter trening
-    ckpt_path = save_best_checkpoint(model_checkpoint, model_name)
+        # 2) Last inn beste checkpoint og logg til MLflow
+        best_ckpt = save_best_checkpoint(ckpt_cb, model_name)
+        mlflow.set_registry_uri(config.get("logging", {}).get("tracking_uri", ""))
+        with mlflow.start_run(run_id=trainer.logger.run_id):
+            trained = model.__class__.load_from_checkpoint(
+                str(best_ckpt), config=model_cfg
+            )
+            # valider igjen for å få metrics
+            trainer.validate(trained, datamodule=datamodule)
+            metrics = trainer.callback_metrics
+            mlflow.log_metrics({
+                #"val_acc":  metrics["val_acc"].item(),
+                "val_dice": metrics["val_dice"].item(),
+                "val_iou":  metrics["val_iou"].item(),
+                "val_loss": metrics["val_loss"].item(),
+            })
+            mlflow.log_artifact(str(best_ckpt), artifact_path="best_checkpoint")
+            mlflow.pytorch.log_model(
+                pytorch_model=trained,
+                artifact_path="model",
+                registered_model_name=model_name,
+            )
 
-    # Laster modellen fra checkpoint for å kunne validere og logge den
-    mlflow.set_registry_uri("databricks")
-    with mlflow.start_run(run_id=trainer.logger.run_id):
-        trained_model = model.__class__.load_from_checkpoint(
-            str(ckpt_path), config=model_config
-        )
+    elif mode == "predict":
+        # Last inn checkpoint for prediksjon
+        ckpt_path = config.get("data", {}).get("predict", {}).get("checkpoint_path")
+        if not ckpt_path:
+            raise ValueError("Mangler data.predict.checkpoint_path i konfigurasjonen")
+        trained = model.__class__.load_from_checkpoint(str(ckpt_path), config=model_cfg)
 
-        trainer.validate(trained_model, datamodule=datamodule)
-        # Logger valideringsmetrikker til MLflow
-        val_metrics = trainer.callback_metrics
-        mlflow.log_metrics(
-            {
-                "val_acc": val_metrics["val_acc"].item(),
-                "val_dice": val_metrics["val_dice"].item(),
-                "val_iou": val_metrics["val_iou"].item(),
-                "val_loss": val_metrics["val_loss"].item(),
-            }
-        )
-        # Lagrer beste checkpoint som en artefakt
-        mlflow.log_artifact(str(ckpt_path), artifact_path="best_checkpoint")
-
-        # Logger hele den trente modellen til MLflow
-        mlflow.pytorch.log_model(
-            pytorch_model=trained_model,
-            artifact_path="model",
-            #registered_model_name=model_name,
-        )
-
-        preds = trainer.predict(trained_model, datamodule=datamodule)
+        # Kjør prediksjon
+        preds = trainer.predict(trained, datamodule=datamodule)
         log_predictions_from_preds(preds, logger)
+
+    else:
+        raise ValueError(f"Ukjent mode: {mode}")
 
 
 def main(config_path):
-    with open(config_path) as f:
+    with open(config_path, "r") as f:
         config = yaml.safe_load(f)
-        print("Konfig-innhold:", config.keys())
+    print("Konfig-innhold:", config.keys())
 
-    models_to_run = config.get("model_names", [])
-    for model_name in models_to_run:
-        run_experiment(model_name, config)
+    for name in config.get("model_names", []):
+        run_experiment(name, config)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, help="Path til YAML-konfigurasjon")
+    parser.add_argument(
+        "--config", type=str, required=True, help="Path til YAML-konfigurasjon"
+    )
     args = parser.parse_args()
-    if args.config is None:
-        raise ValueError("Du må angi path til en YAML-konfigurasjon med --config")
     main(args.config)

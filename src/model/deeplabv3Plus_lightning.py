@@ -14,7 +14,7 @@ class DeepLabV3Plus(LightningModule):
         self.save_hyperparameters(config)
 
         self.model = smp.DeepLabV3Plus(
-            encoder_name=config.get("backbone", "mobilenet_v2"),
+            encoder_name=config.get("backbone", "resnet101"),
             encoder_weights=None,
             in_channels=config.get("in_channels", 4),
             classes=1,

@@ -102,7 +102,7 @@ class SnuplassDataModule(LightningDataModule):
                 transform = self.val_transform
             )
 
-        else:  # predict
+        elif self.mode == "predict":
             predict_ids = get_file_list_from_overview(
                 spark         = self.spark,
                 overview_table= self.overview_table,
