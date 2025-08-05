@@ -1,7 +1,7 @@
 import argparse
 import os
 import yaml
-import mlflow
+
 from lightning.pytorch import Trainer
 from model_factory import get_model
 from utils.logger import get_logger
@@ -43,6 +43,7 @@ def run_experiment(model_name, config):
     )
 
     if mode == "train":
+        import mlflow
         # 1) Tren + test
         trainer.fit(model, datamodule=datamodule)
         trainer.test(model, datamodule=datamodule)
