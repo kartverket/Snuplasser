@@ -1,23 +1,19 @@
 import os
-import random
 from pathlib import Path
 from torch.utils.data import Dataset
 from PIL import Image
 import numpy as np
-from sklearn.model_selection import train_test_split
 import torch
-import json
-from datetime import datetime
 
 
 class SnuplassDataset(Dataset):
-    def __init__(self, image_dir, mask_dir, dom_dir, uten_image_dir, uten_mask_dir, uten_dom_dir, file_list, uten_file_list, transform=None):
-        self.image_dir = image_dir
-        self.mask_dir = mask_dir
-        self.dom_dir = dom_dir
-        self.uten_image_dir = uten_image_dir
-        self.uten_mask_dir = uten_mask_dir
-        self.uten_dom_dir = uten_dom_dir
+    def __init__(self, file_list: list[tuple], transform=None):
+        """
+        file_list: List of tuples with paths.
+            - Training: List of (image_path, dom_path, mask_path)
+            - Predict:  List of (image_path, dom_path)
+        transform: Albumentations or similar with signature transform(image, mask)
+        """
         self.file_list = file_list
         self.uten_file_list = uten_file_list
         self.all_files = list(self.file_list) + list(self.uten_file_list)
@@ -28,109 +24,50 @@ class SnuplassDataset(Dataset):
         return len(self.all_files)
 
     def __getitem__(self, idx):
-        file_id = self.all_files[idx]
-        if file_id in self.file_list:
-            image_path = os.path.join(self.image_dir, f"{file_id}.png")
-            mask_path = os.path.join(self.mask_dir, f"mask_{file_id[6:]}.png")
-            dom_path = os.path.join(self.dom_dir, f"dom_{file_id[6:]}.png")
+        entry = self.file_list[idx]
+        # Unpack tuple
+        if len(entry) == 3:
+            image_path, dom_path, mask_path = entry
+        elif len(entry) == 2:
+            image_path, dom_path = entry
+            mask_path = None
         else:
-            image_path = os.path.join(self.uten_image_dir, f"{file_id}.png")
-            mask_path = os.path.join(self.uten_mask_dir, f"mask_{file_id[6:]}.png")
-            dom_path = os.path.join(self.uten_dom_dir, f"dom_{file_id[6:]}.png")
-
-        image = Image.open(image_path).convert("RGB")
-        mask = Image.open(mask_path).convert("L")
-        dom = Image.open(dom_path).convert("L")
-
-        dom = np.expand_dims(dom, axis=-1)  # (H, W, 1)
-        image = np.concatenate((image, dom), axis=-1)  # (H, W, 4)
-
-        if self.transform:
-            augmented = self.transform(
-                image=np.array(image),
-                mask=np.array(mask) // 255,
+            raise ValueError(
+                f"Invalid entry in file_list. Expected 2 or 3 elements, got {len(entry)}"
             )
-            image = augmented["image"]
+
+        # Load image and DOM
+        img = np.array(Image.open(image_path).convert("RGB"))
+        dom = np.array(Image.open(dom_path).convert("L"))
+        # Append DOM as extra channel
+        img = np.concatenate([img, dom[..., None]], axis=-1)
+
+        # Load mask or create dummy
+        if mask_path:
+            mask = np.array(Image.open(mask_path).convert("L")) // 255
+        else:
+            # dummy mask of zeros at same HxW
+            mask = np.zeros(img.shape[:2], dtype=np.uint8)
+
+        # Apply transforms if any
+        if self.transform:
+            augmented = self.transform(image=img, mask=mask)
+            img = augmented["image"]
             mask = augmented["mask"]
 
-        if not isinstance(image, torch.Tensor):
-            image = torch.from_numpy(np.array(image)).permute(2, 0, 1)
+        # Convert image to tensor (C, H, W), float
+        if isinstance(img, torch.Tensor):
+            image_tensor = img.float()
+        else:
+            image_tensor = torch.from_numpy(img).permute(2, 0, 1).float()
 
-        if not isinstance(mask, torch.Tensor):
-            mask = torch.from_numpy(np.array(mask)).float()
-        if mask.max() > 1:
-            mask = mask / 255.0
-        if mask.ndim == 2:
-            mask = mask.unsqueeze(0)
+        # Convert mask to tensor (1, H, W), float
+        if isinstance(mask, torch.Tensor):
+            mask_tensor = mask.float().unsqueeze(0) if mask.ndim == 2 else mask.float()
+        else:
+            mask_tensor = torch.from_numpy(mask).float().unsqueeze(0)
 
-        filename = f"{file_id}.png"
-        return image, mask, filename
+        # Filename for identification
+        filename = Path(image_path).name
 
-
-class SnuplassPredictDataset(Dataset):
-    def __init__(self, image_dir, dom_dir, transform=None):
-        self.image_dir = image_dir
-        self.dom_dir = dom_dir
-        self.transform = transform
-
-        files = sorted(
-            [
-                f
-                for f in os.listdir(image_dir)
-                if f.startswith("image_") and f.endswith(".png")
-            ]
-        )
-        self.file_list = [Path(f).stem for f in files]
-
-    def __len__(self):
-        return len(self.file_list)
-
-    def __getitem__(self, idx):
-        file_id = self.file_list[idx]
-        img_path = os.path.join(self.image_dir, f"{file_id}.png")
-        dom_path = os.path.join(self.dom_dir, f"dom_{file_id[6:]}.png")
-
-        img = np.array(Image.open(img_path).convert("RGB"))
-        dom = np.array(Image.open(dom_path).convert("L"))
-        dom = np.expand_dims(dom, axis=-1)  # (H,W,1)
-        image = np.concatenate((img, dom), axis=-1)  # (H,W,4)
-
-        if self.transform:
-            augmented = self.transform(image=np.array(image))
-            image = augmented["image"]
-
-        filename = f"{file_id}.png"
-        return image, filename
-
-
-def load_numpy_split_stack(
-    image_dir, mask_dir, dom_dir, holdout_size=50, test_size=0.2, seed=42
-):
-    """
-    Laster inn hele datasettet som numpy-arrays, splitter i tren/val/test og returnerer stacks.
-    """
-    np.random.seed(seed)
-
-    all_files = sorted(
-        [
-            f
-            for f in os.listdir(image_dir)
-            if f.startswith("image_") and f.endswith(".png")
-        ]
-    )
-    file_ids = [Path(f).stem for f in all_files]
-
-    if len(file_ids) < holdout_size + 2:
-        raise ValueError(
-            "For få bilder til å gjennomføre splitting med holdout og validering."
-        )
-
-    np.random.shuffle(file_ids)
-    holdout_ids = file_ids[:holdout_size]
-    remaining_ids = file_ids[holdout_size:]
-
-    train_ids, val_ids = train_test_split(
-        remaining_ids, test_size=test_size, random_state=seed
-    )
-
-    return train_ids, val_ids, holdout_ids
+        return image_tensor, mask_tensor, filename
