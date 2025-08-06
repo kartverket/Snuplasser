@@ -15,10 +15,13 @@ class SnuplassDataset(Dataset):
         transform: Albumentations or similar with signature transform(image, mask)
         """
         self.file_list = file_list
+        self.uten_file_list = uten_file_list
+        self.all_files = list(self.file_list) + list(self.uten_file_list)
+        random.shuffle(self.all_files)
         self.transform = transform
 
     def __len__(self):
-        return len(self.file_list)
+        return len(self.all_files)
 
     def __getitem__(self, idx):
         entry = self.file_list[idx]

@@ -1,3 +1,4 @@
+
 import os
 import random
 from typing import Optional, Tuple, List
@@ -12,7 +13,6 @@ from utils.get_from_overview import (
     get_file_list_from_overview,
     get_split_from_overview,
 )
-
 
 class SnuplassDataModule(LightningDataModule):
     def __init__(self, data_config: dict):
@@ -108,6 +108,7 @@ class SnuplassDataModule(LightningDataModule):
         return DataLoader(self.train_dataset, batch_size=self.batch_size,
                           shuffle=True,  num_workers=self.num_workers)
 
+
     def val_dataloader(self):
         return DataLoader(self.val_dataset,   batch_size=self.batch_size,
                           shuffle=False, num_workers=self.num_workers)
@@ -115,6 +116,7 @@ class SnuplassDataModule(LightningDataModule):
     def test_dataloader(self):
         return DataLoader(self.test_dataset,  batch_size=self.batch_size,
                           shuffle=False, num_workers=self.num_workers)
+
 
     def predict_dataloader(self):
         return DataLoader(self.predict_dataset,
