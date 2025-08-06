@@ -1,3 +1,4 @@
+
 from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint, Callback
 import os
 import matplotlib.pyplot as plt
@@ -9,7 +10,6 @@ import numpy as np
 from PIL import Image
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
-
 def get_early_stopping(config):
     return EarlyStopping(
         monitor=config.get("monitor", "val_loss"),  # val_IoU
@@ -17,7 +17,6 @@ def get_early_stopping(config):
         patience=config.get("early_stopping_patience", 5),
         verbose=True,
     )
-
 
 def get_model_checkpoint(config):
     metric_name = config.get("monitor", "val_loss")  # val_IoU
@@ -29,7 +28,6 @@ def get_model_checkpoint(config):
         save_weights_only=True,
         filename=filename,
     )
-
 
 class LogPredictionsCallback(Callback):
     def __init__(
@@ -46,20 +44,17 @@ class LogPredictionsCallback(Callback):
         self.all_true = []
         self.all_pred = []
         self.display_labels = ["annet", "snuplass"]
-
     def on_validation_epoch_end(self, trainer, pl_module):
         dataloader = trainer.datamodule.val_dataloader()
         device = pl_module.device
         epoch = trainer.current_epoch
         logged = set()
-
         for batch in dataloader:
             if len(batch) != 3:
                 continue
             x, y, fnames = batch
             x, y = x.to(device), y.to(device)
             preds = torch.sigmoid(pl_module(x)) > 0.5
-
             for i, fname in enumerate(fnames):
                 name = Path(fname).name
                 log_this = name in self.always_log_ids or (
@@ -69,39 +64,33 @@ class LogPredictionsCallback(Callback):
                 if log_this and name not in logged:
                     self._log_prediction(x[i], y[i], preds[i], name, epoch, trainer)
                     logged.add(name)
-
             if len(logged) >= self.max_random_logs and not (
                 self.always_log_ids - logged
             ):
                 break
-
     def on_test_epoch_start(self, trainer, pl_module):
         self.all_true.clear()
         self.all_pred.clear()
-
     def on_test_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx=0):
         x, y, _ = batch
         device = pl_module.device
         y = y.to(device).long()
         preds = (torch.sigmoid(pl_module(x.to(device))) > 0.5).long()
-        self.all_true.append(y.cpu())
-        self.all_pred.append(preds.cpu())
-
+        for y_img, p_img in zip(y.cpu(), preds.cpu()):
+            self.all_true.append(y_img)
+            self.all_pred.append(p_img)
     def on_test_epoch_end(self, trainer, pl_module):
-        y_true = torch.cat(self.all_true).numpy().ravel()
-        y_pred = torch.cat(self.all_pred).numpy().ravel()
-
-        cm = confusion_matrix(y_true, y_pred)
+        y_true = [int((m.numpy() == 1).any()) for m in self.all_true]
+        y_pred = [int((p.numpy() == 1).any()) for p in self.all_pred]
+        cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
         disp = ConfusionMatrixDisplay(
             confusion_matrix=cm,
             display_labels=self.display_labels
         )
-
         fig, ax = plt.subplots(figsize=(6,6))
         disp.plot(ax=ax, cmap="Blues", colorbar=False)
         ax.set_title(f"Confusion matrix (epoch {trainer.current_epoch})")
         plt.tight_layout()
-
         run_id = trainer.logger.run_id
         trainer.logger.experiment.log_figure(
             run_id=run_id,
@@ -109,37 +98,30 @@ class LogPredictionsCallback(Callback):
             artifact_file=f"confusion_matrix_epoch_{trainer.current_epoch}.png"
         )
         plt.close(fig)
-
     def _log_prediction(self, x, y, pred, name, epoch, trainer):
         img, dom = x[:3], x[3:]
-
         # Sørg for 2D-tensorer til visning
         img_np = img.permute(1, 2, 0).cpu().numpy()
         dom_np = dom.squeeze().cpu().numpy()
         y_np = y.squeeze().cpu().numpy()
         pred_np = pred.squeeze().cpu().numpy()
-
         fig, axs = plt.subplots(1, 4, figsize=(12, 3))
         axs[0].imshow(img_np)
         axs[1].imshow(dom_np, cmap="gray")
         axs[2].imshow(y_np, cmap="gray")
         axs[3].imshow(pred_np, cmap="gray")
-
         for ax in axs:
             ax.axis("off")
-
         axs[0].set_title("Input RGB")
         axs[1].set_title("Input DOM")
         axs[2].set_title("Target mask")
         axs[3].set_title("Predicted mask")
-
         plt.tight_layout()
         artifact_path = f"{self.artifact_dir}/{name}/epoch_{epoch}.png"
         trainer.logger.experiment.log_figure(
             run_id=trainer.logger.run_id, figure=fig, artifact_file=artifact_path
         )
         plt.close(fig)
-
 
 def log_predictions_from_preds(
     preds,
@@ -150,16 +132,13 @@ def log_predictions_from_preds(
 ):
     if not hasattr(logger, "run_id") or logger.run_id is None:
         raise RuntimeError("MLFlowLogger must have an active run_id to log artifacts.")
-
     for batch in preds:
         filenames = batch.get("filename")
         masks = batch.get("mask")
         images = batch.get("image")
-
         for i in range(len(filenames)):
             rgb_tensor = images[i, :3] if images is not None else None
             dom_tensor = images[i, 3] if images is not None else None
-
             _log_prediction_artifact(
                 rgb_tensor=rgb_tensor,
                 dom_tensor=dom_tensor,
@@ -170,14 +149,12 @@ def log_predictions_from_preds(
                 local_save_dir=local_save_dir,
             )
 
-
 def _log_prediction_artifact(
     rgb_tensor, dom_tensor, pred_tensor, fname, logger, artifact_dir, local_save_dir
 ):
     rgb_np = rgb_tensor.permute(1, 2, 0).cpu().numpy()
     dom_np = dom_tensor.cpu().numpy()
     pred_np = pred_tensor.squeeze().cpu().numpy()
-
     fig, axs = plt.subplots(1, 3, figsize=(9, 3))
     axs[0].imshow(rgb_np)
     axs[0].set_title("RGB")
@@ -185,17 +162,14 @@ def _log_prediction_artifact(
     axs[1].set_title("DOM")
     axs[2].imshow(pred_np, cmap="gray")
     axs[2].set_title("Prediction")
-
     for ax in axs:
         ax.axis("off")
-
     plt.tight_layout()
     artifact_path = f"{artifact_dir}/{Path(fname).stem}.png"
     logger.experiment.log_figure(
         run_id=logger.run_id, figure=fig, artifact_file=artifact_path
     )
     plt.close(fig)
-
     # Lagrer bare prediksjonen lokalt
     fig_pred, ax_pred = plt.subplots()
     ax_pred.imshow(pred_np, cmap="gray")
@@ -205,21 +179,17 @@ def _log_prediction_artifact(
     fig_pred.savefig(local_path, bbox_inches="tight", pad_inches=0)
     plt.close(fig_pred)
 
-
 class BinaryPredictedMaskCallback(Callback):
     def __init__(self, output_dir="predicted_binary_masks", log_every_n_epochs=1):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.log_every_n_epochs = log_every_n_epochs
-
     def on_validation_epoch_end(self, trainer, pl_module):
         if trainer.current_epoch % self.log_every_n_epochs != 0:
             return
-
         dataloader = trainer.datamodule.val_dataloader()
         device = pl_module.device
         pl_module.eval()
-
         for batch in dataloader:
             if len(batch) != 3:
                 continue
@@ -228,17 +198,14 @@ class BinaryPredictedMaskCallback(Callback):
             with torch.no_grad():
                 logits = pl_module(x)
                 preds = (torch.sigmoid(logits) > 0.5).float()
-
             for i in range(len(fnames)):
                 pred = preds[i].squeeze().cpu().numpy() * 255
                 pred = pred.astype(np.uint8)
-
                 original_name = Path(fnames[i]).name
                 parts = original_name.split("_", 1)
                 if len(parts) == 2:
                     new_name = f"preMask_{parts[1]}"
                 else:
                     new_name = f"preMask_{original_name}"
-
                 save_path = self.output_dir / new_name
                 Image.fromarray(pred).save(save_path)

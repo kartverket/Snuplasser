@@ -29,10 +29,13 @@ data:
   dom_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/doms/
   endepunkt_image_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/endepunkt_images/
   endepunkt_dom_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/endepunkt_dom/
+  uten_image_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/utenSimage/
+  uten_mask_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/utenSlabel/
+  uten_dom_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/utenSdom/
   batch_size: 4               # Default (overstyres av Optuna)
   num_workers: 4              # DataLoader workers
   val_split: 0.2              # Valideringsandel (f.eks. 20%)
-  holdout_size: 5
+  holdout_size: 50
   seed: 42
   use_augmentation: false
   augmentation_ratio: 0.4
