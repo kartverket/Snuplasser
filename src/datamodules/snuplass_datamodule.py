@@ -39,12 +39,8 @@ class SnuplassDataModule(LightningDataModule):
             .getOrCreate()
         )
         # sett katalog og schema om nødvendig
-        catalog = data_config.get("spark_catalog", None)
-        schema  = data_config.get("spark_schema", None)
-        if catalog:
-            self.spark.sql(f"USE CATALOG `{catalog}`")
-        if schema:
-            self.spark.sql(f"USE SCHEMA `{schema}`")
+        self.catalog = data_config.get("spark_catalog")
+        self.schema  = data_config.get("spark_schema")
 
         # transformasjoner
         use_aug  = data_config.get("use_augmentation", False)
@@ -61,6 +57,8 @@ class SnuplassDataModule(LightningDataModule):
             # hent tuples: (row_hash, image_path, dom_path, mask_path)
             train_items, val_items, holdout_items = get_split_from_overview(
                 spark          = self.spark,
+                catalog        = self.catalog,
+                schema         = self.schema,
                 overview_table = self.overview_table,
                 id_field       = self.id_field,
                 val_size       = self.val_split,
@@ -92,12 +90,14 @@ class SnuplassDataModule(LightningDataModule):
             # hent tuples (row_hash, image_path, dom_path, mask_path)
             items = get_file_list_from_overview(
                 spark          = self.spark,
+                catalog        = self.catalog,
+                schema         = self.schema,
                 overview_table = self.overview_table,
                 id_field       = self.id_field,
                 require_mask   = False
             )
-            # Fjern row_hash og mask_path
-            predict_list = [(img, dom) for (_, img, dom, _mask) in items]
+           
+            predict_list = [(image_path, dom_path) for (_, image_path, dom_path) in items]
 
             self.predict_dataset = SnuplassDataset(
                 file_list = predict_list,

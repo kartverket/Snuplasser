@@ -31,12 +31,15 @@ data:
   gaussian_blur_p: 0.1
   elastic_transform_p: 0.1
 
-
+  spark_catalog: land_topografisk-gdb_dev
+  spark_schema: ai2025
+  
   mode: "train"  # "predict"
   train:
-    silver_table: "polygons_silver"  # Tilpass etter din Databricks-tabell
-    id_field: "row_hash"
-    overview_table: "polygons_status_overview"               
+    id_field: row_hash
+    overview_table: polygons_status_overview
+    
+
 
 
 training:

@@ -1,11 +1,14 @@
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from sklearn.model_selection import train_test_split
+import random
 import numpy as np
 
 
 def get_file_list_from_overview(
     spark: SparkSession,
+    catalog: str,
+    schema: str,
     overview_table: str,
     id_field: str,
     require_mask: bool = True
@@ -15,7 +18,8 @@ def get_file_list_from_overview(
       - alltid image_status=DOWNLOADED AND dom_status=DOWNLOADED
       - hvis require_mask=True, også mask_status=GENERATED
     """
-    df = spark.table(overview_table)
+    qualified = f"`{catalog}`.{schema}.{overview_table}"
+    df = spark.table(qualified)
 
     filt = (
         (F.col("image_status") == "DOWNLOADED") &
@@ -23,18 +27,22 @@ def get_file_list_from_overview(
     )
     if require_mask:
         filt &= (F.col("mask_status") == "GENERATED")
-
-    picked = (
-        df.filter(filt)
-          .select(id_field, "image_path", "dom_path", "mask_path")
-          .distinct()
-    )
     
-    # Konverter til liste av tupler
-    return picked.rdd.map(lambda r: (r.id_field, r.image_path, r.dom_path, r.mask_path)).collect()
+    cols = [id_field, "image_path", "dom_path"]
+    if require_mask:
+        cols.append("mask_path")
+
+    picked = df.filter(filt).select(*cols).distinct()
+    
+    if require_mask:
+        return picked.rdd.map(lambda r: (r[id_field], r.image_path, r.dom_path, r.mask_path)).collect()
+    else:
+        return picked.rdd.map(lambda r: (r[id_field], r.image_path, r.dom_path)).collect()
 
 def get_split_from_overview(
     spark: SparkSession,
+    catalog: str,
+    schema: str,
     overview_table: str,
     id_field: str,
     val_size: float = 0.2,
@@ -51,7 +59,9 @@ def get_split_from_overview(
       - holdout  (første N rader)
       - train/val (resten, delt med sklearn.train_test_split)
     """
-    all_items = get_file_list_from_overview(spark, overview_table, require_mask)
+    all_items = get_file_list_from_overview(
+            spark, catalog, schema, overview_table, id_field, require_mask
+        )
     
     if len(all_items) < holdout_size + 2:
         raise ValueError(

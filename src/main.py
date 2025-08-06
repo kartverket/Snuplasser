@@ -24,27 +24,27 @@ def run_experiment(model_name, config):
     model_cfg = config.get("model", {}).get(model_name, {})
     model = get_model(model_name, model_cfg)
 
+    
+    # --- Logger & callbacks ---
+    logger = get_logger(model_name, config)
+    es_cb = get_early_stopping(config.get("training", {}))
+    ckpt_cb = get_model_checkpoint(config.get("training", {}))
+    log_pred_cfg = config.get("log_predictions_callback", {})
+    log_pred_cb = LogPredictionsCallback(**log_pred_cfg)
+
+    trainer = Trainer(
+        logger=logger,
+        max_epochs=config.get("training", {}).get("max_epochs", 1),
+        accelerator=config.get("training", {}).get("accelerator", "cpu"),
+        devices=config.get("training", {}).get("devices", 1),
+        precision=config.get("training", {}).get("precision", 32),
+        callbacks=[ckpt_cb, es_cb, log_pred_cb] if mode == "train" else [],
+        log_every_n_steps=config.get("training", {}).get("log_every_n_steps", 10),
+        deterministic=True,
+    )
+
     if mode == "train":
-        import mlflow
-        # --- Logger & callbacks ---
-        logger = get_logger(model_name, config)
-        es_cb = get_early_stopping(config.get("training", {}))
-        ckpt_cb = get_model_checkpoint(config.get("training", {}))
-        log_pred_cfg = config.get("log_predictions_callback", {})
-        log_pred_cb = LogPredictionsCallback(**log_pred_cfg)
-
-        trainer = Trainer(
-            logger=logger,
-            max_epochs=config.get("training", {}).get("max_epochs", 1),
-            accelerator=config.get("training", {}).get("accelerator", "cpu"),
-            devices=config.get("training", {}).get("devices", 1),
-            precision=config.get("training", {}).get("precision", 32),
-            callbacks=[ckpt_cb, es_cb, log_pred_cb] if mode == "train" else [],
-            log_every_n_steps=config.get("training", {}).get("log_every_n_steps", 10),
-            deterministic=True,
-        )
-
-        
+        import mlflow    
         # 1) Tren + test
         trainer.fit(model, datamodule=datamodule)
         trainer.test(model, datamodule=datamodule)
@@ -77,7 +77,7 @@ def run_experiment(model_name, config):
         ckpt_path = config.get("data", {}).get("predict", {}).get("checkpoint_path")
         if not ckpt_path:
             raise ValueError("Mangler data.predict.checkpoint_path i konfigurasjonen")
-        trained = model.__class__.load_from_checkpoint(str(ckpt_path), config=model_cfg)
+        trained = model.__class__.load_from_checkpoint(str(ckpt_path))
 
         # Kjør prediksjon
         preds = trainer.predict(trained, datamodule=datamodule)

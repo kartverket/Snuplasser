@@ -29,46 +29,42 @@ class SnuplassDataset(Dataset):
             image_path, dom_path = entry
             mask_path = None
         else:
-            raise ValueError(f"Invalid entry in file_list. Expected 2 or 3 elements, got {len(entry)}")
+            raise ValueError(
+                f"Invalid entry in file_list. Expected 2 or 3 elements, got {len(entry)}"
+            )
 
-        # Load image and dom
+        # Load image and DOM
         img = np.array(Image.open(image_path).convert("RGB"))
         dom = np.array(Image.open(dom_path).convert("L"))
-        # Append dom as extra channel
+        # Append DOM as extra channel
         img = np.concatenate([img, dom[..., None]], axis=-1)
 
-        # Load mask if present
-        mask = None
-        if mask_path is not None:
-            m = np.array(Image.open(mask_path).convert("L")) // 255
-            mask = m
+        # Load mask or create dummy
+        if mask_path:
+            mask = np.array(Image.open(mask_path).convert("L")) // 255
+        else:
+            # dummy mask of zeros at same HxW
+            mask = np.zeros(img.shape[:2], dtype=np.uint8)
 
-        # Apply transform
+        # Apply transforms if any
         if self.transform:
-            data = {"image": img}
-            if mask is not None:
-                data["mask"] = mask
-            out = self.transform(**data)
-            img = out["image"]
-            mask = out.get("mask", mask)
+            augmented = self.transform(image=img, mask=mask)
+            img = augmented["image"]
+            mask = augmented["mask"]
 
-        # Convert to tensors
-        # Image: CHW float
+        # Convert image to tensor (C, H, W), float
         if isinstance(img, torch.Tensor):
             image_tensor = img.float()
         else:
             image_tensor = torch.from_numpy(img).permute(2, 0, 1).float()
 
-        # Mask: add channel dim
-        mask_tensor = None
-        if mask is not None:
-            if isinstance(mask, torch.Tensor):
-                t = mask.float()
-            else:
-                t = torch.from_numpy(mask).float()
-            if t.ndim == 2:
-                t = t.unsqueeze(0)
-            mask_tensor = t
+        # Convert mask to tensor (1, H, W), float
+        if isinstance(mask, torch.Tensor):
+            mask_tensor = mask.float().unsqueeze(0) if mask.ndim == 2 else mask.float()
+        else:
+            mask_tensor = torch.from_numpy(mask).float().unsqueeze(0)
 
-        # Return image, mask (or None), and source path for identification
-        return image_tensor, mask_tensor, Path(image_path).name
+        # Filename for identification
+        filename = Path(image_path).name
+
+        return image_tensor, mask_tensor, filename

@@ -14,12 +14,15 @@ data:
   batch_size:   4
   num_workers:  4
 
-  # Kun dette er påkrevd for predict–steget:
+  spark_catalog: land_topografisk-gdb_dev
+  spark_schema: ai2025
+  
   mode: "predict"
   predict:
-    checkpoint_path: /Workspace/Users/fabian.heflo@kartverket.no/Snuplasser/src/model/modelsCheckpoints/
-    overview_table: "endepunkt_status_overview"
-    id_field:       "nodeid"
+    checkpoint_path: /Workspace/Users/fabian.heflo@kartverket.no/Snuplasser/src/model/modelsCheckpoints/deeplabv3plus_best.ckpt
+    overview_table: endepunkt_status_overview
+    id_field:       nodeid
+    
 
 # Valgfritt: om du fortsatt vil logge prediksjonene
 logging:
