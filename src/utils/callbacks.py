@@ -115,6 +115,7 @@ class LogPredictionsCallback(Callback):
 
         # Sørg for 2D-tensorer til visning
         img_np = img.permute(1, 2, 0).cpu().numpy()
+        img_np = img_np / 255.0
         dom_np = dom.squeeze().cpu().numpy()
         y_np = y.squeeze().cpu().numpy()
         pred_np = pred.squeeze().cpu().numpy()
@@ -175,6 +176,7 @@ def _log_prediction_artifact(
     rgb_tensor, dom_tensor, pred_tensor, fname, logger, artifact_dir, local_save_dir
 ):
     rgb_np = rgb_tensor.permute(1, 2, 0).cpu().numpy()
+    rgb_np = rgb_np / 255.0 
     dom_np = dom_tensor.cpu().numpy()
     pred_np = pred_tensor.squeeze().cpu().numpy()
 
