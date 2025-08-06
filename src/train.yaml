@@ -3,7 +3,7 @@ model_names:
 
 model:
   deeplabv3plus:
-    backbone: resnet101
+    backbone: xception #resnet101
     in_channels: 4
     num_classes: 1
     lr: 0.0005
@@ -19,7 +19,7 @@ data:
   batch_size: 4               # Default (overstyres av Optuna)
   num_workers: 4              # DataLoader workers
   val_split: 0.2              # Valideringsandel (f.eks. 20%)
-  holdout_size: 5
+  holdout_size: 50
   seed: 42
   use_augmentation: false
   augmentation_ratio: 0.4
@@ -43,7 +43,7 @@ data:
 
 
 training:
-  max_epochs: 1              # Antall epoker per kjøring
+  max_epochs: 50              # Antall epoker per kjøring
   precision: 16-mixed      # Mixed precision (16 eller 32)
   accelerator: gpu
   devices: 1                  # GPU-ressurser
