@@ -11,21 +11,32 @@ from datetime import datetime
 
 
 class SnuplassDataset(Dataset):
-    def __init__(self, image_dir, mask_dir, dom_dir, file_list, transform=None):
+    def __init__(self, image_dir, mask_dir, dom_dir, uten_image_dir, uten_mask_dir, uten_dom_dir, file_list, uten_file_list, transform=None):
         self.image_dir = image_dir
         self.mask_dir = mask_dir
         self.dom_dir = dom_dir
+        self.uten_image_dir = uten_image_dir
+        self.uten_mask_dir = uten_mask_dir
+        self.uten_dom_dir = uten_dom_dir
         self.file_list = file_list
+        self.uten_file_list = uten_file_list
+        self.all_files = list(self.file_list) + list(self.uten_file_list)
+        random.shuffle(self.all_files)
         self.transform = transform
 
     def __len__(self):
-        return len(self.file_list)
+        return len(self.all_files)
 
     def __getitem__(self, idx):
-        file_id = self.file_list[idx]
-        image_path = os.path.join(self.image_dir, f"{file_id}.png")
-        mask_path = os.path.join(self.mask_dir, f"mask_{file_id[6:]}.png")
-        dom_path = os.path.join(self.dom_dir, f"dom_{file_id[6:]}.png")
+        file_id = self.all_files[idx]
+        if file_id in self.file_list:
+            image_path = os.path.join(self.image_dir, f"{file_id}.png")
+            mask_path = os.path.join(self.mask_dir, f"mask_{file_id[6:]}.png")
+            dom_path = os.path.join(self.dom_dir, f"dom_{file_id[6:]}.png")
+        else:
+            image_path = os.path.join(self.uten_image_dir, f"{file_id}.png")
+            mask_path = os.path.join(self.uten_mask_dir, f"mask_{file_id[6:]}.png")
+            dom_path = os.path.join(self.uten_dom_dir, f"dom_{file_id[6:]}.png")
 
         image = Image.open(image_path).convert("RGB")
         mask = Image.open(mask_path).convert("L")
@@ -93,7 +104,7 @@ class SnuplassPredictDataset(Dataset):
 
 
 def load_numpy_split_stack(
-    image_dir, mask_dir, dom_dir, holdout_size=5, test_size=0.2, seed=42
+    image_dir, mask_dir, dom_dir, holdout_size=50, test_size=0.2, seed=42
 ):
     """
     Laster inn hele datasettet som numpy-arrays, splitter i tren/val/test og returnerer stacks.
