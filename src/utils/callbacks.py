@@ -10,6 +10,7 @@ import numpy as np
 from PIL import Image
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
+
 def get_early_stopping(config):
     return EarlyStopping(
         monitor=config.get("monitor", "val_loss"),  # val_IoU
@@ -17,6 +18,7 @@ def get_early_stopping(config):
         patience=config.get("early_stopping_patience", 5),
         verbose=True,
     )
+
 
 def get_model_checkpoint(config):
     metric_name = config.get("monitor", "val_loss")  # val_IoU
@@ -28,6 +30,7 @@ def get_model_checkpoint(config):
         save_weights_only=True,
         filename=filename,
     )
+
 
 class LogPredictionsCallback(Callback):
     def __init__(
@@ -43,12 +46,48 @@ class LogPredictionsCallback(Callback):
         self.max_random_logs = max_random_logs
         self.all_true = []
         self.all_pred = []
+        self.val_true = []
+        self.val_pred = []
         self.display_labels = ["annet", "snuplass"]
+
+    def on_validation_epoch_start(self, trainer, pl_module):
+        self.val_true.clear()
+        self.val_pred.clear()
+
+    def on_validation_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx=0):
+        x, y, _ = batch
+        device = pl_module.device
+        y = y.to(device).long()
+        preds = (torch.sigmoid(pl_module(x.to(device))) > 0.5).long()
+        for y_img, p_img in zip(y.cpu(), preds.cpu()):
+            self.val_true.append(y_img)
+            self.val_pred.append(p_img)
+
     def on_validation_epoch_end(self, trainer, pl_module):
         dataloader = trainer.datamodule.val_dataloader()
         device = pl_module.device
         epoch = trainer.current_epoch
         logged = set()
+
+        y_true = [int((m.numpy() == 1).any()) for m in self.val_true]
+        y_pred = [int((p.numpy() == 1).any()) for p in self.val_pred]
+        cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
+        disp = ConfusionMatrixDisplay(
+            confusion_matrix=cm,
+            display_labels=self.display_labels
+        )
+        fig, ax = plt.subplots(figsize=(6,6))
+        disp.plot(ax=ax, cmap="Blues", colorbar=False)
+        ax.set_title(f"Val_confusion matrix (epoch {trainer.current_epoch})")
+        plt.tight_layout()
+        run_id = trainer.logger.run_id
+        trainer.logger.experiment.log_figure(
+            run_id=run_id,
+            figure=fig,
+            artifact_file=f"val_confusion_matrix_epoch_{trainer.current_epoch}.png"
+        )
+        plt.close(fig)
+
         for batch in dataloader:
             if len(batch) != 3:
                 continue
@@ -68,9 +107,11 @@ class LogPredictionsCallback(Callback):
                 self.always_log_ids - logged
             ):
                 break
+
     def on_test_epoch_start(self, trainer, pl_module):
         self.all_true.clear()
         self.all_pred.clear()
+
     def on_test_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx=0):
         x, y, _ = batch
         device = pl_module.device
@@ -79,6 +120,7 @@ class LogPredictionsCallback(Callback):
         for y_img, p_img in zip(y.cpu(), preds.cpu()):
             self.all_true.append(y_img)
             self.all_pred.append(p_img)
+
     def on_test_epoch_end(self, trainer, pl_module):
         y_true = [int((m.numpy() == 1).any()) for m in self.all_true]
         y_pred = [int((p.numpy() == 1).any()) for p in self.all_pred]
@@ -98,6 +140,7 @@ class LogPredictionsCallback(Callback):
             artifact_file=f"confusion_matrix_epoch_{trainer.current_epoch}.png"
         )
         plt.close(fig)
+
     def _log_prediction(self, x, y, pred, name, epoch, trainer):
         img, dom = x[:3], x[3:]
         # Sørg for 2D-tensorer til visning
@@ -122,6 +165,7 @@ class LogPredictionsCallback(Callback):
             run_id=trainer.logger.run_id, figure=fig, artifact_file=artifact_path
         )
         plt.close(fig)
+
 
 def log_predictions_from_preds(
     preds,
@@ -148,6 +192,7 @@ def log_predictions_from_preds(
                 artifact_dir=artifact_dir,
                 local_save_dir=local_save_dir,
             )
+
 
 def _log_prediction_artifact(
     rgb_tensor, dom_tensor, pred_tensor, fname, logger, artifact_dir, local_save_dir
@@ -179,11 +224,13 @@ def _log_prediction_artifact(
     fig_pred.savefig(local_path, bbox_inches="tight", pad_inches=0)
     plt.close(fig_pred)
 
+
 class BinaryPredictedMaskCallback(Callback):
     def __init__(self, output_dir="predicted_binary_masks", log_every_n_epochs=1):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.log_every_n_epochs = log_every_n_epochs
+
     def on_validation_epoch_end(self, trainer, pl_module):
         if trainer.current_epoch % self.log_every_n_epochs != 0:
             return
