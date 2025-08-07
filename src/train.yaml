@@ -37,7 +37,7 @@ data:
   mode: "train"  # "predict"
   train:
     id_field: row_hash
-    overview_table: polygons_status_overview
+    overview_table: train_silver
     
 
 
