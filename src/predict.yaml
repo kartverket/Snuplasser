@@ -10,8 +10,6 @@ model:
     lr: 0.0005
 
 data:
-  image_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/storreendepunkt_images/
-  dom_dir:   /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/storreendepunkt_dom/
   batch_size:   4
   num_workers:  4
 

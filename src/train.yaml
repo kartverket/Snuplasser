@@ -11,10 +11,6 @@ model:
 
 
 data:
-  image_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/storreimage/
-  mask_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/storrelabel/
-  dom_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/storredom/
-
   batch_size: 4               # Default (overstyres av Optuna)
   num_workers: 4              # DataLoader workers
   val_split: 0.2              # Valideringsandel (f.eks. 20%)
