@@ -1,7 +1,7 @@
 from lightning.pytorch import LightningModule
-from model.deeplabv3_lightning import get_deeplabv3_lightning
-from model.unet_lightning import get_unet_lightning
-from model.deeplabv3Plus_lightning import get_deeplabv3plus_lightning_model
+from src.model.deeplabv3_lightning import get_deeplabv3_lightning
+from src.model.unet_lightning import get_unet_lightning
+from src.model.deeplabv3Plus_lightning import get_deeplabv3plus_lightning_model
 
 
 model_registry = {

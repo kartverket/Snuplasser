@@ -6,6 +6,7 @@ model:
     backbone: resnet101
     in_channels: 4
     num_classes: 1
+    batch_size: 4
     lr: 0.0005
 
 data:
@@ -17,7 +18,6 @@ data:
   
   mode: "predict"
   predict:
-    checkpoint_path: /Workspace/Users/fabian.heflo@kartverket.no/Snuplasser/src/model/modelsCheckpoints/deeplabv3plus_best.ckpt
     overview_table: endepunkt_status_overview
     id_field:       nodeid
     
@@ -25,5 +25,4 @@ data:
 # Valgfritt: om du fortsatt vil logge prediksjonene
 logging:
   use_mlflow:     true
-  experiment_name: /Users/fabian.heflo@kartverket.no/deeplabv3plus
   tracking_uri:    "databricks"
