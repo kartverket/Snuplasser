@@ -2,6 +2,7 @@ import argparse
 import os
 import yaml
 import mlflow
+from mlflow.tracking import MlflowClient
 from pathlib import Path
 
 from lightning.pytorch import Trainer
@@ -81,9 +82,27 @@ def run_experiment(model_name, config):
         experiment_name = f"/Users/{username}/{model_name}"
         experiment_id = mlflow.get_experiment_by_name(experiment_name).experiment_id
         experiment_path = Path(f"/Workspace/Users/{username}/Snuplasser/src/{experiment_id}")
-        ckpt_folders = [f for f in experiment_path.iterdir() if f.is_dir()]
-        newest_ckpt = ckpt_folders[-1]
-        ckpt_path = f"/Workspace/Users/{username}/Snuplasser/src/{experiment_id}/{newest_ckpt}/ckeckpoints/best.ckpt"
+
+        client = MlflowClient()
+        runs = client.search_runs(
+            experiment_ids=[experiment_id],
+            order_by=["attributes.start_time DESC"],
+            max_results=100
+        )
+
+        filtered_runs = []
+        for run in runs:
+            experiment_folders = [f for f in experiment_path.iterdir() if f.is_dir()]
+            for folder in experiment_folders:
+                if run.info.run_id in folder.name:
+                    filtered_runs.append(run)
+
+        if filtered_runs:
+            newest = filtered_runs[0]
+        else:
+            raise ValueError("Fant ingen kjøringer i dette eksperimentet")
+
+        ckpt_path = f"/Workspace/Users/{username}/Snuplasser/src/{experiment_id}/{newest.info.run_id}/checkpoints/best.ckpt"
         trained = model.__class__.load_from_checkpoint(str(ckpt_path))
 
         # Kjør prediksjon
