@@ -1,4 +1,3 @@
-
 from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint, Callback
 import os
 import matplotlib.pyplot as plt
@@ -22,7 +21,7 @@ def get_early_stopping(config):
 
 def get_model_checkpoint(config):
     metric_name = config.get("monitor", "val_loss")  # val_IoU
-    filename = f"{{epoch:02d}}-{{{metric_name}:.4f}}"
+    filename = "best"
     return ModelCheckpoint(
         monitor=metric_name,
         mode=config.get("monitor_mode", "min"),  # "max" for IoU

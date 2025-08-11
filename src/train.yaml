@@ -6,15 +6,14 @@ model:
     backbone: resnet101
     in_channels: 4
     num_classes: 1
+    batch_size: 4
     lr: 0.0005
 
 
 data:
-  image_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/images/
-  mask_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/labels/
-  dom_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/doms/
-
-
+  image_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/storreimage/
+  mask_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/storrelabel/
+  dom_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/storredom/
 
   batch_size: 4               # Default (overstyres av Optuna)
   num_workers: 4              # DataLoader workers
@@ -38,17 +37,14 @@ data:
   train:
     id_field: row_hash
     overview_table: polygons_status_overview
-    
-
-
 
 training:
   max_epochs: 50              # Antall epoker per kjøring
   precision: 16-mixed      # Mixed precision (16 eller 32)
   accelerator: gpu
   devices: 1                  # GPU-ressurser
-  early_stopping_patience: 5  # Stopper tidlig om validerings-loss ikke forbedres
-  monitor: val_loss  # val_IoU , Må logges av modellen og oppdateres i utils.callbacks
+  early_stopping_patience: 10  # Stopper tidlig om validerings-loss ikke forbedres
+  monitor: val_loss  # val_iou , Må logges av modellen og oppdateres i utils.callbacks
   monitor_mode: min  # max for IoU
 
 log_predictions_callback:
@@ -61,13 +57,10 @@ log_predictions_callback:
 
 logging:
   use_mlflow: true
-
-  experiment_name: /Users/fabian.heflo@kartverket.no/deeplabv3plus
-  #experiment_name: /Users/enes.topcu@kartverket.no/deeplabv3_resnet50_retrain
-
   tracking_uri: "databricks" # Slik at eksperimenter og modeller kan lagres og sammenlignes sentralt
 
 optuna:
   direction: maximize         # Hvilken vei metrikken skal optimaliseres
-  metric_name: val_IoU        # Navn på metrikken som returneres fra validate()
+  metric_name: val_iou        # Navn på metrikken som returneres fra validate()
   n_trials: 30                # Antall eksperimenter
+  n_jobs: 8                   # Skal matche antall workers på clusteret
