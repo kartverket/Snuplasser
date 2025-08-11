@@ -29,7 +29,7 @@ data:
   spark_catalog: land_topografisk-gdb_dev
   spark_schema: ai2025
   
-  mode: "train"  # "predict"
+  mode: "train"
   train:
     id_field: row_hash
     overview_table: train_silver # polygons_status_overview 
@@ -58,5 +58,5 @@ logging:
 optuna:
   direction: maximize         # Hvilken vei metrikken skal optimaliseres
   metric_name: val_iou        # Navn på metrikken som returneres fra validate()
-  n_trials: 30                # Antall eksperimenter
+  n_trials: 50                # Antall eksperimenter
   n_jobs: 8                   # Skal matche antall workers på clusteret

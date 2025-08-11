@@ -5,12 +5,8 @@ from torch.utils.data import DataLoader
 from lightning.pytorch import LightningDataModule
 from sklearn.model_selection import train_test_split
 
-from dataProcessing.dataset import SnuplassDataset
+from src.data.dataset import SnuplassDataset
 #from dataProcessing.transform import get_train_transforms, get_val_transforms
-from utils.get_from_overview import (
-    get_file_list_from_overview,
-    get_split_from_overview,
-)
 
 
 class SnuplassDataModule(LightningDataModule):
