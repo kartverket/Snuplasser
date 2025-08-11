@@ -21,7 +21,7 @@ class SnuplassDataModule(LightningDataModule):
         self.batch_size   = data_config["batch_size"]
         self.num_workers  = data_config.get("num_workers", 4)
         self.val_split    = data_config.get("val_split", 0.2)
-        self.holdout_size = data_config.get("holdout_size", 5)
+        self.holdout_size = data_config.get("holdout_size", 50)
         self.seed         = data_config.get("seed", 42)
 
         # modus: 'train' eller 'predict'

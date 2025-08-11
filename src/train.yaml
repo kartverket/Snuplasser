@@ -6,7 +6,7 @@ model:
     backbone: resnet101
     in_channels: 4
     num_classes: 1
-    lr: 0.0005
+    lr: 0.0001
 
 
 data:
@@ -37,17 +37,17 @@ data:
   mode: "train"  # "predict"
   train:
     id_field: row_hash
-    overview_table: train_silver
+    overview_table: polygons_status_overview  #train_silver
     
 
 
 
 training:
-  max_epochs: 50              # Antall epoker per kjøring
+  max_epochs: 100              # Antall epoker per kjøring
   precision: 16-mixed      # Mixed precision (16 eller 32)
   accelerator: gpu
   devices: 1                  # GPU-ressurser
-  early_stopping_patience: 5  # Stopper tidlig om validerings-loss ikke forbedres
+  early_stopping_patience: 15  # Stopper tidlig om validerings-loss ikke forbedres
   monitor: val_loss  # val_IoU , Må logges av modellen og oppdateres i utils.callbacks
   monitor_mode: min  # max for IoU
 

@@ -46,7 +46,7 @@ def get_split_from_overview(
     overview_table: str,
     id_field: str,
     val_size: float = 0.2,
-    holdout_size: int = 5,
+    holdout_size: int = 50,
     require_mask: bool = True,
     seed: int = 42
 ) -> tuple[
