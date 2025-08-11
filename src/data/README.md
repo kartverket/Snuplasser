@@ -1,63 +1,52 @@
-# 📁 Nedlasting av Data
+# 📁 Data – Nedlasting, behandling og forberedelse
 
 ## 📌 Formål
-`dataProcessing/` inneholder moduler for nedlasting, behandling og forberedelse av trenings- og testdata til bruk i segmenteringsmodellen.
-
+`data/` inneholder moduler og notebooks for hele dataflyten knyttet til trenings-, validerings- og testdata for segmenteringsmodellen.  
 Dette inkluderer:
-- Nedlasting av bilder fra WMS-tjeneste
+
+- Opprettelse og oppdatering av Delta-tabeller som beskriver datasett
+- Nedlasting av ortofoto og DOM-bilder fra WMS-tjenester
 - Generering av binære maskefiler fra geojson-polygoner
-- Datasplitt til trenings- og valideringssett
-- Dataset- og transformklasser for PyTorch
-- Nedlasting av endepunktbilder til bruk under testing
-- Sletting av alle bilder i mappene med treningsbilder og DOM-bilder
+- Splitting av data i trenings-, validerings- og holdout-sett
+- PyTorch-datasett og datamoduler for modelltrening
+- Nedlasting av endepunktbilder til bruk under prediksjon/testing
+- Sletting og deduplisering av lagrede bilder
 
 ---
 
-## 📂 Innhold i `dataProcessing/`
+## 📂 Mappestruktur og innhold
 
-| Fil / mappe                | Beskrivelse                                                         |
-|----------------------------|---------------------------------------------------------------------|
-| `augmentation_config.py´   | Definerer konfigurasjonen for augmentasjon av dataen                |
-| `dataset.py`               | Definerer `SnuplassDataset` og funksjon for datasplitt              |
-| `download.py`              | Laster ned bilder og oppretter maskefiler fra geojson               |
-| ´download_skogsbilveg´     | Henter skogsbilveier og alle nodene på veien                        |
-| ´endepunkt.py´             | Laster ned bilder av endepunkter til bruk under testing             |
-| `gdb_to_geojson.py`        | Konverterer GDB til geojson (hvis du starter fra GDB)               |
-| `losses.py`                | Egne tapsfunksjoner hvis aktuelt                                    |
-| ´reset_images_dom´         | Sletter alle bilder i mappene med treningsbilder og DOM-bilder      |
-| `transform.py`             | Inneholder transformasjoner med `albumentations`                    |
-| `visualize.py`             | Brukes for å vise bildefiler og tilhørende masker                   |
+| Fil / mappe                  | Beskrivelse |
+|------------------------------|-------------|
+| `dataset.py`                 | Definerer `SnuplassDataset` og funksjoner for datasplitt (inkl. støtte for tren/val/holdout). |
+| `snuplass_datamodule.py`     | PyTorch Lightning `DataModule` som klargjør data for trening og validering. |
+| `train/`                     | Notebooks for innhenting og klargjøring av annotert treningsdata fra GeoJSON. Oppretter Delta-tabeller (`polygons_*`, `train_silver`, `utenSnuplass_*`) med WMS-paths, ID og metadata. |
+| `predict/`                   | Notebooks for innhenting og behandling av data til prediksjon. Inkluderer prosessering til `predicted_*`-tabeller for ulike størrelsesklasser. |
+| `predict/predicted/`         | Notebooks for videre behandling og klassifisering av prediksjonsresultater (bronze, silver, gold). |
+| `download_or_delete_data/`   | Verktøy for å laste ned eller slette datafiler fra mappene. Bruker kan velge hva som slettes eller dedupliseres. |
 
 ---
 
-## 📥 Fremgangsmåte for nedlasting av data
+## 📥 Typisk arbeidsflyt for nedlasting og behandling
 
-1. **Klargjør geojson**: Sørg for at du har en geojson-fil med polygoner rundt objektene (f.eks. snuplasser).
+1. **Hente metadata**  
+   - Bruk notebooks i `train/` eller `predict/` for å hente inn metadata fra NVDB og lagre i bronze-tabeller.
 
-2. **Kjør `download.py`** for å:
-   - Laste ned flyfoto via WMS
-   - Opprette tilhørende maskefiler automatisk
-   - Lagre bilder og masker i data lake (DL)
-   - Det settes en buffer for å forstørre bildeutsnittet litt rundt objektet, slik at snuplassen kommer godt med
+2. **Laste ned bilder**  
+   - Oppdater `*_silver`-tabeller med WMS-URL-er, last ned bilder (DOM + ortofoto), og sett status til `DOWNLOADED`.
 
-3. **Kjør endepunkt.py** for å:
-   - Hente koordinater til endepunkter via WMS
-   - Finn ekte endepunkter
-   - Laste ned endepunktsbilder via WMS
-   - Det settes en buffer for å forstørre bildeutsnittet litt rundt objektet, slik at endepunktet kommer godt med
+3. **Generere masker**  
+   - Bruk polygondata til å lage binære maskefiler (1 = snuplass, 0 = bakgrunn).
 
----
+4. **Datasplitt**  
+   - Splitt datasettet i trenings-, validerings- og eventuelt holdout-sett.
 
-## 🧪 Testing og visualisering
+5. **Trening og validering**  
+   - Bruk `snuplass_datamodule.py` sammen med `dataset.py` for å mate modellen med riktig datasett.
 
-- Bruk `visualize.py` for å sjekke at bilder og masker stemmer overens visuelt
-- Augmentering kan forhåndsvise hvordan data transformeres under trening
-- Endre ´augmentation_config.py´ for å bestemme hvordan dataen skal augmenteres
+6. **Prediksjon**  
+   - Kjør notebooks i `predict/` for å laste ned og prosessere bilder til prediksjon, og lagre resultatene i `predicted_*`-tabeller.
 
 ---
 
-## ✅ Neste steg
 
-Etter at data er lastet ned og splittet:
-- Velg modellen som skal brukes i ´main.py´ og sett parametere i ´static.yaml´
-- Klar til å brukes med `SnuplassDataset` i `main.py`
