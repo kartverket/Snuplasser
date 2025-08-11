@@ -7,8 +7,8 @@ from lightning.pytorch import LightningDataModule
 from pyspark.sql import SparkSession
 from sklearn.model_selection import train_test_split
 
-from dataProcessing.dataset import SnuplassDataset
-from dataProcessing.transform import get_train_transforms, get_val_transforms
+from dataset import SnuplassDataset
+from utils.transform import get_train_transforms, get_val_transforms
 from utils.get_from_overview import (
     get_file_list_from_overview,
     get_split_from_overview,
@@ -21,7 +21,7 @@ class SnuplassDataModule(LightningDataModule):
         self.batch_size   = data_config["batch_size"]
         self.num_workers  = data_config.get("num_workers", 4)
         self.val_split    = data_config.get("val_split", 0.2)
-        self.holdout_size = data_config.get("holdout_size", 5)
+        self.holdout_size = data_config.get("holdout_size", 50)
         self.seed         = data_config.get("seed", 42)
 
         # modus: 'train' eller 'predict'

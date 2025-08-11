@@ -6,7 +6,7 @@ from mlflow.tracking import MlflowClient
 from pathlib import Path
 
 from lightning.pytorch import Trainer
-from model_factory import get_model
+from utils.model_factory import get_model
 from utils.logger import get_logger
 from utils.callbacks import (
     get_early_stopping,
@@ -14,7 +14,7 @@ from utils.callbacks import (
     LogPredictionsCallback,
     log_predictions_from_preds,
 )
-from datamodules.snuplass_datamodule import get_datamodule
+from data.snuplass_datamodule import get_datamodule
 from pyspark.sql import SparkSession
 
 spark = SparkSession.builder.getOrCreate()
