@@ -4,8 +4,8 @@ import torch.nn as nn
 import segmentation_models_pytorch as smp
 from torchmetrics.classification import BinaryJaccardIndex, BinaryAccuracy
 from torchmetrics.segmentation import DiceScore
-from .losses.losses import DiceBCELoss
-from .losses.loss_utils import compute_loss_weights
+from model.losses.losses import DiceBCELoss
+from model.losses.loss_utils import compute_loss_weights
 
 
 class DeepLabV3Plus(LightningModule):
