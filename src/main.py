@@ -1,6 +1,9 @@
 import argparse
 import os
 import yaml
+import mlflow
+from mlflow.tracking import MlflowClient
+from pathlib import Path
 
 from lightning.pytorch import Trainer
 from utils.model_factory import get_model
@@ -12,7 +15,9 @@ from utils.callbacks import (
     log_predictions_from_preds,
 )
 from data.snuplass_datamodule import get_datamodule
-from utils.checkpointing import save_best_checkpoint
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.getOrCreate()
 
 
 def run_experiment(model_name, config):
@@ -44,13 +49,12 @@ def run_experiment(model_name, config):
     )
 
     if mode == "train":
-        import mlflow    
         # 1) Tren + test
         trainer.fit(model, datamodule=datamodule)
         trainer.test(model, datamodule=datamodule)
 
         # 2) Last inn beste checkpoint og logg til MLflow
-        best_ckpt = save_best_checkpoint(ckpt_cb, model_name)
+        best_ckpt = ckpt_cb.best_model_path
         mlflow.set_registry_uri(config.get("logging", {}).get("tracking_uri", ""))
         with mlflow.start_run(run_id=trainer.logger.run_id):
             trained = model.__class__.load_from_checkpoint(
@@ -74,9 +78,31 @@ def run_experiment(model_name, config):
 
     elif mode == "predict":
         # Last inn checkpoint for prediksjon
-        ckpt_path = config.get("data", {}).get("predict", {}).get("checkpoint_path")
-        if not ckpt_path:
-            raise ValueError("Mangler data.predict.checkpoint_path i konfigurasjonen")
+        username = spark.sql("SELECT current_user()").collect()[0][0]
+        experiment_name = f"/Users/{username}/{model_name}"
+        experiment_id = mlflow.get_experiment_by_name(experiment_name).experiment_id
+        experiment_path = Path(f"/Workspace/Users/{username}/Snuplasser/src/{experiment_id}")
+
+        client = MlflowClient()
+        runs = client.search_runs(
+            experiment_ids=[experiment_id],
+            order_by=["attributes.start_time DESC"],
+            max_results=100
+        )
+
+        filtered_runs = []
+        for run in runs:
+            experiment_folders = [f for f in experiment_path.iterdir() if f.is_dir()]
+            for folder in experiment_folders:
+                if run.info.run_id in folder.name:
+                    filtered_runs.append(run)
+
+        if filtered_runs:
+            newest = filtered_runs[0]
+        else:
+            raise ValueError("Fant ingen kjøringer i dette eksperimentet")
+
+        ckpt_path = f"/Workspace/Users/{username}/Snuplasser/src/{experiment_id}/{newest.info.run_id}/checkpoints/best.ckpt"
         trained = model.__class__.load_from_checkpoint(str(ckpt_path))
 
         # Kjør prediksjon

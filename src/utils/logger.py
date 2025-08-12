@@ -1,4 +1,3 @@
-
 from lightning.pytorch.loggers import MLFlowLogger  # MLFlowLogger er ennå ikke i lightning 
 import mlflow
 import os
@@ -11,17 +10,16 @@ spark = SparkSession.builder.getOrCreate()
 # Hjelpefunksjon som genererer et meningsfullt navn for hver MLflow-run
 # basert på modellnavn, treningsparametere, datasett og tidsstempel.
 def generate_run_name(model_name:str, config:dict)-> str:
-    training_cfg=config.get("training", {})
-    data_cfg=config.get("data", {})
+    model_cfg=config.get("model", {}).get(model_name, {})
 
-    lr=training_cfg.get("lr", "unklr")
-    bs=training_cfg.get("batch_size", "unkbs")
-    ep=training_cfg.get("max_epochs", "unkep")
-    ds=data_cfg.get("name","unkdata")
+    backbone=model_cfg.get("backbone", "unkbackone")
+    learning_rate=model_cfg.get("lr", "unklr")
+    batch_size=model_cfg.get("batch_size", "unkbs")
+    max_epochs=model_cfg.get("max_epochs", "unkep")
 
     time_str=datetime.now().strftime("%Y%m%d-%H%M")
 
-    return f"{model_name}-lr{lr}-bs{bs}-ep{ep}-ds{ds}-{time_str}"
+    return f"{model_name}-{backbone}-lr{learning_rate}-bs{batch_size}-ep{max_epochs}-{time_str}"
 
 
 def get_logger(model_name: str, config: dict) -> MLFlowLogger:

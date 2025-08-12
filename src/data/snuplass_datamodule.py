@@ -7,7 +7,7 @@ from lightning.pytorch import LightningDataModule
 from pyspark.sql import SparkSession
 from sklearn.model_selection import train_test_split
 
-from dataset import SnuplassDataset
+from data.dataset import SnuplassDataset
 from utils.transform import get_train_transforms, get_val_transforms
 from utils.get_from_overview import (
     get_file_list_from_overview,
