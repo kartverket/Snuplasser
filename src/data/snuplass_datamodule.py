@@ -26,10 +26,15 @@ class SnuplassDataModule(LightningDataModule):
 
         # modus: 'train' eller 'predict'
         self.mode = data_config.get("mode", "train")
-        section = data_config.get(self.mode, {})
+        section = data_config.get(self.mode)
+        print(section)
+        if not section:
+            section = data_config.get("train")
+            print(section)
+        print(section["overview_table"])
         self.overview_table = section["overview_table"]
         self.id_field       = section["id_field"]
-        self.require_mask   = (self.mode == "train")
+        self.require_mask   = (self.mode == ("train", "train_all"))
 
         # Spark for oversiktstabell
         self.spark = (
@@ -85,6 +90,30 @@ class SnuplassDataModule(LightningDataModule):
                 transform = self.val_transform
             )
 
+        elif self.mode == "train_all":
+            train_items, val_items, holdout_items = get_split_from_overview(
+                spark          = self.spark,
+                catalog        = self.catalog,
+                schema         = self.schema,
+                overview_table = self.overview_table,
+                id_field       = self.id_field,
+                val_size       = self.val_split,
+                holdout_size   = self.holdout_size,
+                require_mask   = True,
+                seed           = self.seed
+            )
+            all_items = train_items + val_items + holdout_items
+            all_list  = [(img, dom, mask) for (_, img, dom, mask) in all_items]
+
+            self.train_dataset = SnuplassDataset(
+                file_list = all_list,
+                transform = self.train_transform
+            )
+            # Ingen val/test i train_all
+            self.val_dataset  = None
+            self.test_dataset = None
+
+
         # PREDICT modus: bruk alle rader (uten mask)
         elif self.mode == "predict":
             # hent tuples (row_hash, image_path, dom_path, mask_path)
@@ -110,17 +139,20 @@ class SnuplassDataModule(LightningDataModule):
 
 
     def val_dataloader(self):
-        return DataLoader(self.val_dataset,   batch_size=self.batch_size,
+        if getattr(self, "val_dataset", None) is None:
+            return None
+        return DataLoader(self.val_dataset, batch_size=self.batch_size,
                           shuffle=False, num_workers=self.num_workers)
 
     def test_dataloader(self):
-        return DataLoader(self.test_dataset,  batch_size=self.batch_size,
+        if getattr(self, "test_dataset", None) is None:
+            return None
+        return DataLoader(self.test_dataset, batch_size=self.batch_size,
                           shuffle=False, num_workers=self.num_workers)
 
 
     def predict_dataloader(self):
-        return DataLoader(self.predict_dataset,
-                          batch_size=self.batch_size,
+        return DataLoader(self.predict_dataset, batch_size=self.batch_size,
                           shuffle=False, num_workers=self.num_workers)
 
 

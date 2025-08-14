@@ -14,7 +14,7 @@ class DeepLabV3Plus(LightningModule):
         self.save_hyperparameters(config)
 
         self.model = smp.DeepLabV3Plus(
-            encoder_name=config.get("backbone", "resnet101"),
+            encoder_name=config.get("backbone", "resnet50"),
             encoder_weights=None,
             in_channels=config.get("in_channels", 4),
             classes=1,
@@ -22,11 +22,11 @@ class DeepLabV3Plus(LightningModule):
 
         self.lr = config.get("lr", 1e-3)
 
-        maks_dir = config.get("data", {}).get("maks_dir")
-        if maks_dir:
-            dice_w, bce_w, pos_w = compute_loss_weights(maks_dir)
+        mask_dir = config.get("data", {}).get("mask_dir")
+        if mask_dir:
+            dice_w, bce_w, pos_w = compute_loss_weights(mask_dir)
         else:
-            dice_w, bce_w, pos_w = 0.5, 0.5, 1.0
+            dice_w, bce_w, pos_w = 0.7, 0.3, 1.0
 
         self.loss_fn = DiceBCELoss(
             dice_weight=dice_w, bce_weight=bce_w, pos_weight=pos_w

@@ -1,0 +1,66 @@
+model_names:
+  - deeplabv3plus
+
+model:
+  deeplabv3plus:
+    backbone: resnet50
+    in_channels: 4
+    num_classes: 1
+    batch_size: 4
+    lr: 0.0001
+
+data:
+  mask_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/storrelabel/
+  batch_size: 4
+  num_workers: 4
+  # Ingen validering/holdout i train_all
+  val_split: 0.0
+  holdout_size: 0
+  seed: 42
+
+  # Augmentering (brukes som i train)
+  use_augmentation: false
+  augmentation_ratio: 0.4
+  flip_p: 0.3
+  brightness_limit: 0.05
+  contrast_limit: 0.05
+  rotate_limit: 10
+  scale_limit: 0.05
+  gaussian_blur_p: 0.1
+  elastic_transform_p: 0.1
+
+  spark_catalog: land_topografisk-gdb_dev
+  spark_schema: ai2025
+
+  # Viktig: tren på *alle* data
+  mode: "train_all"
+  train:
+    id_field: row_hash
+    overview_table: train_silver  # polygons_status_overview
+
+training:
+  max_epochs: 100 
+  precision: 16-mixed
+  accelerator: gpu
+  devices: 1
+
+  # Skru av tidlig-stopping i train_all
+  early_stopping_patience: 0
+
+  # Checkpoint skal følge trenings-loss (ingen validering her)
+  monitor: train_loss
+  monitor_mode: min
+
+log_predictions_callback:
+  # Denne callbacken brukes typisk på validering; i train_all kjøres ingen validering,
+  # så den vil i praksis ikke logge noe. Behold gjerne for konsistens.
+  log_every_n_epochs: 2
+  artifact_dir: "val_predictions"
+  always_log_ids:
+    image_01be86867d17ad37bcec8d676206868cf204545d6cb707fbc9338addc0249166.png
+    image_017093e46b390f10013a37e1039906b3e069a87dafcb9959ded4438b26f1671d.png
+    image_014939e8c117b480092b755480377d8986331bb70068d686fb06de1f262a2b9c.png
+
+logging:
+  use_mlflow: true
+  tracking_uri: "databricks"
