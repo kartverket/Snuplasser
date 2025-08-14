@@ -1,4 +1,6 @@
 # 🛻 Snuplasser 🔄
+
+## 📌 Formål
 Dette prosjektet har som mål å identifisere og klassifisere snuplasser på skogsbilveier og private veier fra ortofoto.
 Snuplassens diameter vil gjennom forhåndsdefinerte kategorier bestemme hvilken type kjøretøy snuplassen passer for.
 Resultatet vil etter kjrøing av modellen automatisk genereres som en geopackage under */Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/geopackages/*.
@@ -40,7 +42,7 @@ Sett opp en treningsjobb i "Jobs & Pipelines" fra Databricks og lag to tasks med
 
 ## 📂 Innhold
 
-| 📁 Fil/Mappe    | 📖 Beskrivelse |
+| 📁 Fil/Mappe      | 📖 Beskrivelse |
 |--------------------|----------------|
 | `.env`             | Inneholder miljøvariabler, som i dette tilfellet skal være "GEONORGE_BRUKERID" og "GEONORGE_PASSORD". |
 | `.gitignore`       | Innholder mapper og filer som skal ignoreres av git. |
@@ -51,3 +53,5 @@ Sett opp en treningsjobb i "Jobs & Pipelines" fra Databricks og lag to tasks med
 
 ## 🛠️ Avhengigheter
 - Alt av avhengigheter finnes i prosjektets requirements.txt
+
+---
