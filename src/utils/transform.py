@@ -43,6 +43,7 @@ def get_train_transforms(cfg: dict, ratio: float | None = None):
     return base_transform
 
 
+# Denne brukes for alle andre datasett enn treningsdatasettet
 def get_val_transforms(cfg: dict):
     return A.Compose(
         [
