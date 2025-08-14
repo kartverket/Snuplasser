@@ -23,7 +23,7 @@ def run_experiment(model_name, config):
     print(f"Kjører {mode}-jobb for modell: {model_name}")
 
     # --- Data & modell ---
-    datamodule = get_datamodule(config.get("data", {}))
+    datamodule = get_datamodule(config, model_name)
     model_cfg = config.get("model", {}).get(model_name, {})
     model = get_model(model_name, model_cfg)
 

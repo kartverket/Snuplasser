@@ -9,11 +9,12 @@ spark = SparkSession.builder.getOrCreate()
 # Hjelpefunksjon som genererer et meningsfullt navn for hver kjøring
 def generate_run_name(model_name:str, config:dict)-> str:
     model_cfg=config.get("model", {}).get(model_name, {})
+    training_cfg=config.get("training", {})
 
     backbone=model_cfg.get("backbone", "unkbackone")
     learning_rate=model_cfg.get("lr", "unklr")
     batch_size=model_cfg.get("batch_size", "unkbs")
-    max_epochs=model_cfg.get("max_epochs", "unkep")
+    max_epochs=training_cfg.get("max_epochs", "unkep")
 
     time_str=datetime.now().strftime("%Y%m%d-%H%M")
 

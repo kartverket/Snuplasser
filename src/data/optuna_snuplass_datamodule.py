@@ -7,14 +7,18 @@ from src.data.dataset import SnuplassDataset
 class SnuplassDataModule(LightningDataModule):
     def __init__(
         self,
-        data_config: dict,
+        config: dict,
+        model_name: str,
         train_list: Optional[List[Tuple]] = None,
         val_list: Optional[List[Tuple]] = None,
         holdout_list: Optional[List[Tuple]] = None,
     ):
         super().__init__()
         # generelle innstillinger
-        self.batch_size = data_config["batch_size"]
+        data_config = config.get("data", {})
+        self.batch_size = (
+            config.get("model", {}).get(model_name, {}).get("batch_size", [])
+        )
         self.num_workers = data_config.get("num_workers", 4)
         self.seed = data_config.get("seed", 42)
 
