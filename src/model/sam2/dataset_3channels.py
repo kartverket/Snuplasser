@@ -1,13 +1,9 @@
 import os
-import random
 from pathlib import Path
 from torch.utils.data import Dataset
 from PIL import Image
 import numpy as np
 from sklearn.model_selection import train_test_split
-import torch
-import json
-from datetime import datetime
 
 
 class SnuplassDataset(Dataset):
@@ -18,9 +14,9 @@ class SnuplassDataset(Dataset):
         self.transform = transform
 
         if self.split == "train":
-            self.file_list = load_numpy_split_stack(image_dir=image_dir, mask_dir=mask_dir)[0]
+            self.file_list = load_numpy_split_stack(image_dir=image_dir)[0]
         else:
-            self.file_list = load_numpy_split_stack(image_dir=image_dir, mask_dir=mask_dir)[1]
+            self.file_list = load_numpy_split_stack(image_dir=image_dir)[1]
 
     def __len__(self):
         return len(self.file_list)
@@ -43,7 +39,7 @@ class SnuplassDataset(Dataset):
 
 
 def load_numpy_split_stack(
-    image_dir, mask_dir, holdout_size=5, test_size=0.2, seed=42
+    image_dir, holdout_size=5, test_size=0.2, seed=42
 ):
     """
     Laster inn hele datasettet som numpy-arrays, splitter i tren/val/test og returnerer stacks.

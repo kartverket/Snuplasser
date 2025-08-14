@@ -1,8 +1,14 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+# All rights reserved.
+
+# This source code is licensed under the license found in the
+# LICENSE file in the root directory of this source tree.
+
+
 import os
 import mlflow
 import tempfile
 import matplotlib.pyplot as plt
-import numpy as np
 import torch
 
 
@@ -10,8 +16,6 @@ def log_artifacts(
     image_name,
     masks,
     scores,
-    height,
-    width,
     image,
     target,
     channels

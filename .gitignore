@@ -170,7 +170,3 @@ mlruns/
 mlruns_v2/
 *.zip
 *.ckpt
-
-# Test filer 
-src/missing_files.txt
-src/test_kjøring.ipynb

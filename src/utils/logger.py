@@ -1,14 +1,12 @@
-from lightning.pytorch.loggers import MLFlowLogger  # MLFlowLogger er ennå ikke i lightning 
 import mlflow
-import os
 from datetime import datetime
+from lightning.pytorch.loggers import MLFlowLogger  # MLFlowLogger er ennå ikke i lightning 
 from pyspark.sql import SparkSession
 
 spark = SparkSession.builder.getOrCreate()
 
 
-# Hjelpefunksjon som genererer et meningsfullt navn for hver MLflow-run
-# basert på modellnavn, treningsparametere, datasett og tidsstempel.
+# Hjelpefunksjon som genererer et meningsfullt navn for hver kjøring
 def generate_run_name(model_name:str, config:dict)-> str:
     model_cfg=config.get("model", {}).get(model_name, {})
 

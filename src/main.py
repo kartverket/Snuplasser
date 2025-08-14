@@ -1,10 +1,8 @@
 import argparse
-import os
 import yaml
 import mlflow
 from mlflow.tracking import MlflowClient
 from pathlib import Path
-
 from lightning.pytorch import Trainer
 from utils.model_factory import get_model
 from utils.logger import get_logger

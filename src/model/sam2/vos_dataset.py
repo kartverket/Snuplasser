@@ -1,10 +1,12 @@
-import logging
-import random
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+# All rights reserved.
+
+# This source code is licensed under the license found in the
+# LICENSE file in the root directory of this source tree.
+
 from PIL import Image
-from torchvision.transforms import functional as F
 from dataclasses import dataclass
 from typing import List, Tuple, Union
-
 import torch
 from torchvision.datasets.vision import VisionDataset
 
@@ -37,7 +39,6 @@ class Frame:
 @dataclass
 class VideoDatapoint:
     """Refers to an image/video and all its annotations"""
-
     frames: List[Frame]
     video_id: int
     size: Tuple[int, int]

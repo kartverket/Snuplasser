@@ -1,11 +1,7 @@
-
-import os
-import random
-from typing import Optional, Tuple, List
+from typing import Optional
 from torch.utils.data import DataLoader
 from lightning.pytorch import LightningDataModule
 from pyspark.sql import SparkSession
-from sklearn.model_selection import train_test_split
 
 from data.dataset import SnuplassDataset
 from utils.transform import get_train_transforms, get_val_transforms
@@ -66,6 +62,7 @@ class SnuplassDataModule(LightningDataModule):
                 require_mask   = True,
                 seed           = self.seed
             )
+            
             # Fjern row_hash, behold bare paths
             train_list   = [(img, dom, mask) for (_, img, dom, mask) in train_items]
             val_list     = [(img, dom, mask) for (_, img, dom, mask) in val_items]

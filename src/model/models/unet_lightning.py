@@ -1,5 +1,4 @@
 import torch
-from torch import nn
 from lightning.pytorch import LightningModule
 import segmentation_models_pytorch as smp
 from torchmetrics.classification import BinaryJaccardIndex, BinaryAccuracy
@@ -44,7 +43,7 @@ class UNetLightning(LightningModule):
             x = x.float() / 255.0
         return self.model(x)
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch, _):
         x, y, _ = batch
         y = y.float()  # nødvendig for BCEWithLogits
         logits = self(x)
@@ -52,7 +51,7 @@ class UNetLightning(LightningModule):
         self.log("train_loss", loss, prog_bar=True)
         return loss
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch, _):
         x, y, _ = batch
         y = y.float()
         logits = self(x)

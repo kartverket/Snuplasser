@@ -1,6 +1,5 @@
 import torch
 from lightning.pytorch import LightningModule
-import torch.nn as nn
 import segmentation_models_pytorch as smp
 from torchmetrics.classification import BinaryJaccardIndex, BinaryAccuracy
 from torchmetrics.segmentation import DiceScore
@@ -41,7 +40,7 @@ class DeepLabV3Plus(LightningModule):
             x = x.float() / 255
         return self.model(x)
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch, _):
         x, y, _ = batch
         y = y.float()
         logts = self(x)
@@ -49,7 +48,7 @@ class DeepLabV3Plus(LightningModule):
         self.log("train_loss", loss, prog_bar=True)
         return loss
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch, _):
         with torch.no_grad():
             x, y, _ = batch
             y = y.float()
@@ -86,19 +85,14 @@ class DeepLabV3Plus(LightningModule):
 
     def predict_step(self, batch, batch_idx, dataloader_idx=0):
         # batch er nå (image_tensor, mask_tensor, filename)
-        x, _mask, filename = batch
+        x, _, filename = batch
 
         with torch.no_grad():
             logits = self(x)
-            probs  = torch.sigmoid(logits)
-            preds  = (probs > 0.5).float()
+            probs = torch.sigmoid(logits)
+            preds = (probs > 0.5).float()
 
-        return {
-            "filename": filename,
-            "mask":     preds,
-            "image":    x
-        }
-
+        return {"filename": filename, "mask": preds, "image": x}
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)

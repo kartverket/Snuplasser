@@ -1,8 +1,7 @@
+import random
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from sklearn.model_selection import train_test_split
-import random
-import numpy as np
 
 
 def get_file_list_from_overview(

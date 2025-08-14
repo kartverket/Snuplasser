@@ -1,6 +1,8 @@
 from pathlib import Path
 from PIL import Image
 import numpy as np
+import torch
+
 
 def compute_loss_weights(mask_dir: str):
     """

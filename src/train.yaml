@@ -9,11 +9,9 @@ model:
     batch_size: 4
     lr: 0.0001
 
-
 data:
-  batch_size: 4               # Default (overstyres av Optuna)
   num_workers: 4              # DataLoader workers
-  val_split: 0.2              # Valideringsandel (f.eks. 20%)
+  val_split: 0.2              # Valideringsandel
   holdout_size: 50
   seed: 42
   use_augmentation: false
@@ -52,7 +50,6 @@ log_predictions_callback:
     image_014939e8c117b480092b755480377d8986331bb70068d686fb06de1f262a2b9c.png
 
 logging:
-  use_mlflow: true
   tracking_uri: "databricks" # Slik at eksperimenter og modeller kan lagres og sammenlignes sentralt
 
 optuna:

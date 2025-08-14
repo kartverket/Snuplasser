@@ -1,6 +1,5 @@
 import torch
 from lightning.pytorch import LightningModule
-import torch.nn as nn
 import segmentation_models_pytorch as smp
 from torchmetrics.classification import BinaryJaccardIndex, BinaryAccuracy
 from torchmetrics.segmentation import DiceScore
@@ -44,7 +43,7 @@ class DeepLabV3Lightning(LightningModule):
             x = x.float() / 255.0
         return self.model(x)
     
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch, _):
         x, y, _ = batch
         y = y.float()  
         logits = self(x)
@@ -52,7 +51,7 @@ class DeepLabV3Lightning(LightningModule):
         self.log("train_loss", loss, prog_bar=True)
         return loss
     
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch, _):
         x, y, _ = batch
         y = y.float()
         logits = self(x)
