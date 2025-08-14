@@ -1,5 +1,6 @@
 # 📦 `model/` — Modellarkitekturer
 
+## 📌 Formål
 Denne mappen inneholder  implementasjon av modellarkitekturer som brukes til å segmentere snuplasser i flybilder.
 
 ---
