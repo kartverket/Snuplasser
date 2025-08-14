@@ -4,7 +4,7 @@ Dette er hovedmappen for kjøring av eksperimenter knyttet til deteksjon og klas
 
 ---
 
-## 🔧 Innhold
+## 📂 Innhold
 
 | Fil / Mappe              | Beskrivelse |
 |--------------------------|-------------|
@@ -15,17 +15,3 @@ Dette er hovedmappen for kjøring av eksperimenter knyttet til deteksjon og klas
 | `model/`                 | Inneholder modellene, bakgrunn for modellvalg, samt tapsfunksjonene og beregning av tapsvektene. |
 | `optuna/`                | Inneholder `main_optuna` som lar deg teste modellen med flere sett av hyperparametere parallelt. |
 | `utils/`                 | Inneholder transformasjonskode, callbacks, logging og koden som henter data fra tabellene. |
-
----
-
-## 🚀 Hvordan kjøre
-Sett opp en treningsjobb i "Jobs & Pipelines" fra Databricks og lag to tasks med det følgende:
-- Task name: Velg et passende navn for jobben den skal utføre (f. eks. train og predict)
-- Type: Python script
-- Source: Workspace
-- Path: .../Snuplasser/src/main.py
-- Compute: Velg clusteret du har tilgjengelig
-- Dependent libraries: Velg ".../Snuplasser/requirements.txt"
-- Parameters: 
-  - For trening: ["--config",".../Snuplasser/src/train.yaml"]
-  - For prediksjon: ["--config",".../Snuplasser/src/predict.yaml"]
