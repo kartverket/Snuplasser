@@ -1,4 +1,4 @@
-# 📁 Data – Nedlasting, behandling og forberedelse
+# 📁 `data/` – Nedlasting, behandling og forberedelse
 
 ## 📌 Formål
 `data/` inneholder moduler og notebooks for hele dataflyten knyttet til trenings-, validerings- og testdata for segmenteringsmodellen.  
@@ -16,7 +16,7 @@ Dette inkluderer:
 
 ## 📂 Mappestruktur og innhold
 
-| Fil / mappe                  | Beskrivelse |
+| 📁 Fil/mappe              | 📖 Beskrivelse |
 |------------------------------|-------------|
 | `dataset.py`                 | Definerer `SnuplassDataset` og funksjoner for datasplitt (inkl. støtte for tren/val/holdout). |
 | `snuplass_datamodule.py`     | PyTorch Lightning `DataModule` som klargjør data for trening og validering. |
