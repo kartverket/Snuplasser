@@ -14,7 +14,7 @@ data:
   spark_schema: ai2025
   mode: "predict"
   predict:
-    overview_table: nyendepunkt_status_overview
+    overview_table: endepunkt_status_overview
     id_field:       nodeid
 
 logging:
