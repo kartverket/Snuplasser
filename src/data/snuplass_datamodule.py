@@ -136,9 +136,13 @@ class SnuplassDataModule(LightningDataModule):
         )
 
 
-def get_datamodule(data_config: dict) -> LightningDataModule:
+def get_datamodule(config: dict, model_name: str) -> LightningDataModule:
     """
     Returnerer en datamodule basert på data_config.
+    Argumenter:
+        data_config: konfigurasjonsfil
+        model_name: navn på modell
+    Returnerer:
+        LightningDataModule: datamodul for dataloader
     """
-    mode = data_config.get("mode", "train")
-    return SnuplassDataModule(data_config)
+    return SnuplassDataModule(config, model_name)

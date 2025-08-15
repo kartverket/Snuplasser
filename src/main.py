@@ -4,7 +4,7 @@ import mlflow
 from mlflow.tracking import MlflowClient
 from pathlib import Path
 from lightning.pytorch import Trainer
-from utils.model_factory import get_model
+from model.model_factory import get_model
 from utils.logger import get_logger
 from utils.callbacks import (
     get_early_stopping,

@@ -28,7 +28,7 @@ def generate_run_name(model_name:str, config:dict)-> str:
     return f"{model_name}-{backbone}-lr{learning_rate}-bs{batch_size}-ep{max_epochs}-{time_str}"
 
 
-def get_logger(model_name: str, config: dict) -> MLFlowLogger:
+def get_logger(model_name: str, config: dict) -> "MLFlowLogger":
     """
     Hjelpefunksjon som returnerer en MLFlowLogger.
     Argumenter:

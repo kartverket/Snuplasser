@@ -4,8 +4,9 @@ import torch
 from pathlib import Path
 import numpy as np
 from PIL import Image
-from typing import List, Dict
-from lightning.pytorch.loggers import MLflowLogger
+from typing import List
+import mlflow
+from lightning.pytorch.loggers import MLFlowLogger
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint, Callback
 
@@ -173,8 +174,8 @@ class LogPredictionsCallback(Callback):
             ax.axis("off")
         axs[0].set_title("Input RGB")
         axs[1].set_title("Input DOM")
-        axs[2].set_title("Target mask")
-        axs[3].set_title("Predicted mask")
+        axs[2].set_title("Fasit")
+        axs[3].set_title("Prediksjon")
         plt.tight_layout()
         artifact_path = f"{self.artifact_dir}/{name}/epoch_{epoch}.png"
         trainer.logger.experiment.log_figure(
@@ -184,8 +185,8 @@ class LogPredictionsCallback(Callback):
 
 
 def log_predictions_from_preds(
-    preds: List[Dict[str, float, torch.Tensor]],
-    logger: MLflowLogger,
+    preds: List[dict[str, float | str | torch.Tensor]],
+    logger: "MLflowLogger",
     artifact_dir: str="predictions",
     local_save_dir: str="/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/predicted_masks",
     max_logs: int=20,
@@ -220,7 +221,7 @@ def log_predictions_from_preds(
 
 
 def _log_prediction_artifact(
-    rgb_tensor: torch.Tensor, dom_tensor: torch.Tensor, pred_tensor: torch.Tensor, fname: str, logger: MLflowLogger, artifact_dir: str, local_save_dir: str
+    rgb_tensor: torch.Tensor, dom_tensor: torch.Tensor, pred_tensor: torch.Tensor, fname: str, logger: "MLflowLogger", artifact_dir: str, local_save_dir: str
 ):
     """
     Logger en enkelt prediksjon til MLFlow og til en lokal mappe.
@@ -243,7 +244,7 @@ def _log_prediction_artifact(
     axs[1].imshow(dom_np, cmap="gray")
     axs[1].set_title("DOM")
     axs[2].imshow(pred_np, cmap="gray")
-    axs[2].set_title("Prediction")
+    axs[2].set_title("Prediksjon")
     for ax in axs:
         ax.axis("off")
     plt.tight_layout()

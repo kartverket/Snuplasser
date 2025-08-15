@@ -9,18 +9,12 @@ class SnuplassDataModule(LightningDataModule):
         self,
         config: dict,
         model_name: str,
-        train_list: Optional[List[Tuple]] = None,
-        val_list: Optional[List[Tuple]] = None,
-        holdout_list: Optional[List[Tuple]] = None,
     ):
         """
         Setter opp datasett og dataloader for alle splittene.
         Argumenter:
             config (dict): konfigurasjonsfil
             model_name (str): navn på modell
-            train_list (list): liste med train-paths
-            val_list (list): liste med val-paths
-            holdout_list (list): liste med holdout-paths
         """
         super().__init__()
         data_config = config.get("data", {})
@@ -32,9 +26,9 @@ class SnuplassDataModule(LightningDataModule):
         self.mode = data_config.get("mode", "train")
         self.train_transform = None
         self.val_transform = None
-        self.train_list = train_list or []
-        self.val_list = val_list or []
-        self.holdout_list = holdout_list or []
+        self.train_list = data_config.get("train_ids", [])
+        self.val_list = data_config.get("val_ids", [])
+        self.holdout_list = data_config.get("holdout_ids", [])
 
     def setup(self, stage):
         if self.mode == "train":
@@ -80,16 +74,13 @@ class SnuplassDataModule(LightningDataModule):
         )
 
 
-def get_datamodule(data_config: dict) -> LightningDataModule:
+def get_datamodule(config: dict, model_name: str) -> LightningDataModule:
     """
     Returnerer en datamodule basert på data_config.
+    Argumenter:
+        data_config: konfigurasjonsfil
+        model_name: navn på modell
+    Returnerer:
+        LightningDataModule: datamodul for dataloader
     """
-    train_list = data_config.get("train_ids", [])
-    val_list = data_config.get("val_ids", [])
-    holdout_list = data_config.get("holdout_ids", [])
-    return SnuplassDataModule(
-        data_config=data_config,
-        train_list=train_list,
-        val_list=val_list,
-        holdout_list=holdout_list,
-    )
+    return SnuplassDataModule(config, model_name)
