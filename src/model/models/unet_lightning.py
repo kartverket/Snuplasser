@@ -1,5 +1,4 @@
 import torch
-from torch import nn
 from lightning.pytorch import LightningModule
 import segmentation_models_pytorch as smp
 from torchmetrics.classification import BinaryJaccardIndex, BinaryAccuracy
@@ -9,6 +8,9 @@ from model.losses.loss_utils import compute_loss_weights
 
 
 class UNetLightning(LightningModule):
+    """
+    UNet med Pytorch Lightning wrapper.
+    """
     def __init__(self, config):
         super().__init__()
         self.save_hyperparameters(config)
@@ -44,15 +46,15 @@ class UNetLightning(LightningModule):
             x = x.float() / 255.0
         return self.model(x)
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch, _):
         x, y, _ = batch
-        y = y.float()  # nødvendig for BCEWithLogits
+        y = y.float()
         logits = self(x)
         loss = self.loss_fn(logits, y)
         self.log("train_loss", loss, prog_bar=True)
         return loss
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch, _):
         x, y, _ = batch
         y = y.float()
         logits = self(x)
@@ -75,4 +77,7 @@ class UNetLightning(LightningModule):
         return torch.optim.Adam(self.parameters(), lr=self.lr)
 
 def get_unet_lightning(config):
+    """
+    Returnerer en instans av UNet-modellen.
+    """
     return UNetLightning(config)

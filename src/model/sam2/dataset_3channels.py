@@ -1,16 +1,21 @@
 import os
-import random
 from pathlib import Path
 from torch.utils.data import Dataset
 from PIL import Image
 import numpy as np
 from sklearn.model_selection import train_test_split
-import torch
-import json
-from datetime import datetime
 
 
 class SnuplassDataset(Dataset):
+    """
+    Laster inn dataen til et datasett.
+    Argumenter:
+        image_dir: sti til mappen med bilder
+        mask_dir: sti til mappen med masker
+        split: hvilken del av datasettet skal brukes
+        transform: transformasjoner til å brukes på data
+    """
+
     def __init__(self, image_dir, mask_dir, split="train", transform=None):
         self.image_dir = image_dir
         self.mask_dir = mask_dir
@@ -18,9 +23,9 @@ class SnuplassDataset(Dataset):
         self.transform = transform
 
         if self.split == "train":
-            self.file_list = load_numpy_split_stack(image_dir=image_dir, mask_dir=mask_dir)[0]
+            self.file_list = load_numpy_split_stack(image_dir=image_dir)[0]
         else:
-            self.file_list = load_numpy_split_stack(image_dir=image_dir, mask_dir=mask_dir)[1]
+            self.file_list = load_numpy_split_stack(image_dir=image_dir)[1]
 
     def __len__(self):
         return len(self.file_list)
@@ -34,19 +39,28 @@ class SnuplassDataset(Dataset):
         mask = np.array(Image.open(mask_path).convert("L"))
 
         if self.transform:
-            image, mask = self.transform(image=np.array(image), mask=np.array(mask) // 255)
+            image, mask = self.transform(
+                image=np.array(image), mask=np.array(mask) // 255
+            )
 
         return image, mask
-    
+
     def __getfilename__(self, idx):
         return self.file_list[idx]
 
 
-def load_numpy_split_stack(
-    image_dir, mask_dir, holdout_size=5, test_size=0.2, seed=42
-):
+def load_numpy_split_stack(image_dir, holdout_size=5, val_size=0.2, seed=42):
     """
     Laster inn hele datasettet som numpy-arrays, splitter i tren/val/test og returnerer stacks.
+    Argumenter:
+        image_dir: sti til mappen med bilder
+        holdout_size: antall bilder som skal brukes til holdout
+        val_size: prosentandel av data som skal brukes til validering
+        seed: seed for randomisering
+    Returnerer:
+        train_ids: liste med filnavn til treningsbilder
+        val_ids: liste med filnavn til valideringsbilder
+        holdout_ids: liste med filnavn til holdout-bilder
     """
     np.random.seed(seed)
 
@@ -69,7 +83,7 @@ def load_numpy_split_stack(
     remaining_ids = file_ids[holdout_size:]
 
     train_ids, val_ids = train_test_split(
-        remaining_ids, test_size=test_size, random_state=seed
+        remaining_ids, test_size=val_size, random_state=seed
     )
 
     return train_ids, val_ids, holdout_ids

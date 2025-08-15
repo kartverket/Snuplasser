@@ -1,6 +1,5 @@
 import torch
 from lightning.pytorch import LightningModule
-import torch.nn as nn
 import segmentation_models_pytorch as smp
 from torchmetrics.classification import BinaryJaccardIndex, BinaryAccuracy
 from torchmetrics.segmentation import DiceScore
@@ -9,6 +8,9 @@ from model.losses.loss_utils import compute_loss_weights
     
 
 class DeepLabV3Lightning(LightningModule):
+    """
+    DeepLabV3 med Pytorch Lightning wrapper.
+    """
     def __init__(self,config):
         super().__init__()
         self.save_hyperparameters(config)
@@ -44,7 +46,7 @@ class DeepLabV3Lightning(LightningModule):
             x = x.float() / 255.0
         return self.model(x)
     
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch, _):
         x, y, _ = batch
         y = y.float()  
         logits = self(x)
@@ -52,7 +54,7 @@ class DeepLabV3Lightning(LightningModule):
         self.log("train_loss", loss, prog_bar=True)
         return loss
     
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch, _):
         x, y, _ = batch
         y = y.float()
         logits = self(x)
@@ -75,4 +77,7 @@ class DeepLabV3Lightning(LightningModule):
     
     
 def get_deeplabv3_lightning(config):
-        return DeepLabV3Lightning(config=config)
+    """
+    Returnerer en instans av DeepLabV3-modellen.
+    """
+    return DeepLabV3Lightning(config=config)

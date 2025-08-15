@@ -10,19 +10,13 @@ model:
     lr: 0.0005
 
 data:
-  batch_size:   4
   num_workers:  4
-
   spark_catalog: land_topografisk-gdb_dev
   spark_schema: ai2025
-  
   mode: "predict"
   predict:
     overview_table: endepunkt_status_overview
     id_field:       nodeid
-    
 
-# Valgfritt: om du fortsatt vil logge prediksjonene
 logging:
-  use_mlflow:     true
   tracking_uri:    "databricks"
