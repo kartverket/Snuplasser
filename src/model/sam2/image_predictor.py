@@ -1,7 +1,12 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+# All rights reserved.
+
+# This source code is licensed under the license found in the
+# LICENSE file in the root directory of this source tree.
+
+
 import logging
-
 from typing import List, Optional, Tuple, Union
-
 import numpy as np
 import torch
 from PIL.Image import Image
@@ -12,9 +17,6 @@ class SAM2ImagePredictor:
         self,
         sam_model,
         mask_threshold=0.0,
-        max_hole_area=0.0,
-        max_sprinkle_area=0.0,
-        **kwargs,
     ) -> None:
         """
         Uses SAM-2 to calculate the image embedding for an image, and then
@@ -79,7 +81,7 @@ class SAM2ImagePredictor:
             self._orig_hw = [(H, W)]
         else:
             raise NotImplementedError("Image format not supported")
-  
+
         input_image = image[None, ...].to(self.device)
 
         assert (
@@ -88,7 +90,7 @@ class SAM2ImagePredictor:
         logging.info("Computing image embeddings for the provided image...")
         backbone_out = self.model.forward_image(input_image)
         _, vision_feats, _, _ = self.model._prepare_backbone_features(backbone_out)
-     
+
         for lvl, feat in enumerate(vision_feats):
             print(f"  vision_feats[{lvl}].shape = {tuple(feat.shape)}")
 
@@ -279,7 +281,6 @@ class SAM2ImagePredictor:
     def _prep_prompts(
         self, point_coords, point_labels, box, mask_logits, normalize_coords, img_idx=-1
     ):
-
         labels, mask_input = None, None
         if point_coords is not None:
             assert (

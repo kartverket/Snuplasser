@@ -1,19 +1,15 @@
-import logging
-from pathlib import Path
-from typing import Callable, List, Tuple, Dict, Mapping, Sequence
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.jit._script import RecursiveScriptModule
-import os
-
-
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # All rights reserved.
 
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
+
+import logging
+from typing import Callable, List, Tuple, Dict, Mapping, Sequence
+import torch
+import torch.nn as nn
+from torch.jit._script import RecursiveScriptModule
 import contextlib
 import fnmatch
 import logging
@@ -29,7 +25,6 @@ from typing import (
     Tuple,
     Union,
 )
-
 import numpy as np
 import torch
 import torch.nn as nn

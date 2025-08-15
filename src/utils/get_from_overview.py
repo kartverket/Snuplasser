@@ -1,8 +1,7 @@
+import random
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from sklearn.model_selection import train_test_split
-import random
-import numpy as np
 
 
 def get_file_list_from_overview(
@@ -14,9 +13,16 @@ def get_file_list_from_overview(
     require_mask: bool = True
 ) -> list[str]:
     """
-    Henter liste av ID-er (row_hash eller nodeid) fra en ferdiglaget overview-tabell:
-      - alltid image_status=DOWNLOADED AND dom_status=DOWNLOADED
-      - hvis require_mask=True, også mask_status=GENERATED
+    Henter liste av ID-er (row_hash eller nodeid) fra en ferdiglaget overview-tabell.
+    Argumenter:
+        spark (SparkSession): SparkSession som brukes til å lese data
+        catalog (str): Navnet på catalog
+        schema (str): Navnet på schema
+        overview_table (str): Navnet på oversiktstabellen
+        id_field (str): Navnet på feltet som brukes som ID
+        require_mask (bool): Om masken må være generert for alle filene
+    Returnerer:
+        list[str]: Liste av ID-er
     """
     qualified = f"`{catalog}`.{schema}.{overview_table}"
     df = spark.table(qualified)
@@ -55,9 +61,19 @@ def get_split_from_overview(
     list[tuple[str, str, str, str]]
 ]:
     """
-    Henter alle (row_hash, image_path, dom_path, mask_path), så splitt i:
-      - holdout  (første N rader)
-      - train/val (resten, delt med sklearn.train_test_split)
+    Henter data fra en ferdiglaget overview-tabell og splitter den i train, val og holdout.
+    Argumenter:
+        spark (SparkSession): SparkSession som brukes til å lese data
+        catalog (str): Navnet på catalog
+        schema (str): Navnet på schema
+        overview_table (str): Navnet på oversiktstabellen
+        id_field (str): Navnet på feltet som brukes som ID
+        val_size (float): Prosentandel av data som skal brukes til validering
+        holdout_size (int): Antall elementer som skal brukes til holdout
+        require_mask (bool): Om masken må være generert for alle filene
+        seed (int): Seed for tilfeldige valg
+    Returnerer:
+        tuple: Tuple med tre lister med ID-er for train, val og holdout
     """
     all_items = get_file_list_from_overview(
             spark, catalog, schema, overview_table, id_field, require_mask

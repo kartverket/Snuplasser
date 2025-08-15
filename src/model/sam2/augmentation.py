@@ -1,6 +1,9 @@
 import albumentations as A
 
 class Augmentation:
+    """
+    Returnerer albumentations transformasjonene som skal brukes på bildene.
+    """
     def __init__(self, channels):
         self.augmentation = self.get_augmentation(channels)
     
@@ -10,7 +13,7 @@ class Augmentation:
     
     def get_augmentation(self, channels):
         transforms = [
-            # Spatial transforms
+            # Romlige transformasjoner
             A.HorizontalFlip(p=0.5),
             A.VerticalFlip(p=0.5),
             A.RandomRotate90(p=0.5),
@@ -43,7 +46,6 @@ class Augmentation:
                     A.RGBShift(r_shift_limit=10, g_shift_limit=10, b_shift_limit=10, p=0.5),
                 ], p=0.5))
             transforms.append(
-                # Noise and blur
                 A.OneOf([
                     A.GaussNoise(var_limit=(10.0, 50.0), p=0.5),
                     A.GaussianBlur(blur_limit=(3, 5), p=0.5),

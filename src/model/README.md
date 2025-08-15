@@ -1,23 +1,18 @@
-# 📦 `model/` — Modellarkitekturer
+# 📊 `model/` — Modellarkitekturer og tapsfunksjoner
 
-Denne mappen inneholder implementasjoner av modellarkitekturer som brukes til å segmentere snuplasser i flybilder.
-
----
-
-## Struktur
-
-Hver modell defineres i en egen fil, for eksempel:
-
-- `unet.py`: U-Net-basert segmenteringsmodell
-- ...
-
-Alle modellene forventes å følge et felles grensesnitt, slik at de enkelt kan brukes via `model_factory.py`.
+## 📌 Formål
+Denne mappen inneholder tapsfunksjoner og utregning av tapsvekter, og implementasjon av modellarkitekturer som brukes til å segmentere snuplasser i flybilder.
 
 ---
 
-## Eksempel: Grensesnitt
+## 📂 Innhold
 
-Hver modell bør kunne initialiseres slik:
+| 📁 Fil/Mappe               | 📖 Beskrivelse |
+|-----------------------------|----------------|
+| `model_factory.py`          | Setter opp modell basert på konfigurasjonen. |
+| `model_investigation.ipynb` | Forklarer bakgrunnen for valg av modell. |
+| `losses/`                   | Inneholder tapsfunksjonene og beregning av tapsvektene. |
+| `models/`                   | Inneholder modellarkitekturer for segmenteringsmodeller. |
+| `sam2/`                     | Inneholder alt som trengs for å kjøre modellen SAM2 med både 3 og 4 input-kanaler. |
 
-```python
-model = UNet(**model_config)
+---
