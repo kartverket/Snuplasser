@@ -3,11 +3,10 @@ model_names:
 
 model:
   deeplabv3plus:
-    backbone: resnet101
+    backbone: resnet50
     in_channels: 4
     num_classes: 1
     batch_size: 4
-    lr: 0.0005
 
 data:
   num_workers:  4

@@ -3,13 +3,14 @@ model_names:
 
 model:
   deeplabv3plus:
-    backbone: resnet101
+    backbone: resnet50
     in_channels: 4
     num_classes: 1
     batch_size: 4
     lr: 0.0001
 
 data:
+  mask_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/storrelabel/
   num_workers: 4 # Antall arbeidere på clusteret
   val_split: 0.2 # Valideringsandel
   holdout_size: 50
@@ -36,7 +37,7 @@ training:
   accelerator: gpu # cpu hvis det kjøres lokalt
   devices: 1 # GPU-ressurser
   log_every_n_steps: 10
-  early_stopping_patience: 15  # Stopper tidlig om valideringstap ikke forbedres
+  early_stopping_patience: 10  # Stopper tidlig om valideringstap ikke forbedres
   monitor: val_loss  # Kan bruke val_iou, må logges av modellen og oppdateres i utils.callbacks
   monitor_mode: min  # max ved IoU
 

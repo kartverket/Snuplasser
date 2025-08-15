@@ -28,7 +28,7 @@ class DeepLabV3Lightning(LightningModule):
         if mask_dir:
             dice_w, bce_w, pos_w = compute_loss_weights(mask_dir)
         else:
-            dice_w, bce_w, pos_w = 0.5, 0.5, 1.0
+            dice_w, bce_w, pos_w = 0.7, 0.3, 1.0
 
         self.loss_fn = DiceBCELoss(
             dice_weight=dice_w,
@@ -72,6 +72,14 @@ class DeepLabV3Lightning(LightningModule):
         self.log("val_dice", dice, prog_bar=True)
         self.log("val_acc", acc, prog_bar=True)
     
+    def predict_step(self, batch, batch_idx, dataloader_idx=0):
+        x, _mask, filename = batch
+        with torch.no_grad():
+            logits = self(x)
+            probs  = torch.sigmoid(logits)
+            preds  = (probs > 0.5).float()
+        return {"filename": filename, "mask": preds, "image": x}
+
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.lr)
     
