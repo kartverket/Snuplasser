@@ -8,6 +8,9 @@ from model.losses.loss_utils import compute_loss_weights
 
 
 class UNetLightning(LightningModule):
+    """
+    UNet med Pytorch Lightning wrapper.
+    """
     def __init__(self, config):
         super().__init__()
         self.save_hyperparameters(config)
@@ -45,7 +48,7 @@ class UNetLightning(LightningModule):
 
     def training_step(self, batch, _):
         x, y, _ = batch
-        y = y.float()  # nødvendig for BCEWithLogits
+        y = y.float()
         logits = self(x)
         loss = self.loss_fn(logits, y)
         self.log("train_loss", loss, prog_bar=True)
@@ -74,4 +77,7 @@ class UNetLightning(LightningModule):
         return torch.optim.Adam(self.parameters(), lr=self.lr)
 
 def get_unet_lightning(config):
+    """
+    Returnerer en instans av UNet-modellen.
+    """
     return UNetLightning(config)

@@ -13,8 +13,13 @@ from utils.get_from_overview import (
 
 class SnuplassDataModule(LightningDataModule):
     def __init__(self, config: dict, model_name: str):
+        """
+        Setter opp datasett og dataloader for alle splittene.
+        Argumenter:
+            config (dict): konfigurasjonsfil
+            model_name (str): navn på modell
+        """
         super().__init__()
-        # generelle innstillinger
         data_config = config.get("data", {})
         self.batch_size = (
             config.get("model", {}).get(model_name, {}).get("batch_size", [])
@@ -23,8 +28,6 @@ class SnuplassDataModule(LightningDataModule):
         self.val_split = data_config.get("val_split", 0.2)
         self.holdout_size = data_config.get("holdout_size", 50)
         self.seed = data_config.get("seed", 42)
-
-        # modus: 'train' eller 'predict'
         self.mode = data_config.get("mode", "train")
         section = data_config.get(self.mode, {})
         self.overview_table = section["overview_table"]
@@ -37,11 +40,10 @@ class SnuplassDataModule(LightningDataModule):
             .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
             .getOrCreate()
         )
-        # sett katalog og schema om nødvendig
         self.catalog = data_config.get("spark_catalog")
         self.schema = data_config.get("spark_schema")
 
-        # transformasjoner
+        # Transformasjoner
         use_aug = data_config.get("use_augmentation", False)
         aug_ratio = data_config.get("augmentation_ratio", None)
         if use_aug:
@@ -52,8 +54,7 @@ class SnuplassDataModule(LightningDataModule):
             self.train_transform = get_train_transforms(cfg=data_config, ratio=None)
         self.val_transform = get_val_transforms(cfg=data_config)
 
-    def setup(self, stage: Optional[str] = None):
-        # TRAIN modus: split med holdout + val
+    def setup(self, stage):
         if self.mode == "train":
             # hent tuples: (row_hash, image_path, dom_path, mask_path)
             train_items, val_items, holdout_items = get_split_from_overview(
@@ -73,7 +74,6 @@ class SnuplassDataModule(LightningDataModule):
             val_list = [(img, dom, mask) for (_, img, dom, mask) in val_items]
             holdout_list = [(img, dom, mask) for (_, img, dom, mask) in holdout_items]
 
-            # dataset-instansiering
             self.train_dataset = SnuplassDataset(
                 file_list=train_list, transform=self.train_transform
             )
@@ -84,9 +84,8 @@ class SnuplassDataModule(LightningDataModule):
                 file_list=holdout_list, transform=self.val_transform
             )
 
-        # PREDICT modus: bruk alle rader (uten mask)
         elif self.mode == "predict":
-            # hent tuples (row_hash, image_path, dom_path, mask_path)
+            # hent tuples (row_hash, image_path, dom_path)
             items = get_file_list_from_overview(
                 spark=self.spark,
                 catalog=self.catalog,
@@ -138,4 +137,8 @@ class SnuplassDataModule(LightningDataModule):
 
 
 def get_datamodule(data_config: dict) -> LightningDataModule:
+    """
+    Returnerer en datamodule basert på data_config.
+    """
+    mode = data_config.get("mode", "train")
     return SnuplassDataModule(data_config)

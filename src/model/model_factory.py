@@ -15,18 +15,16 @@ def get_model(
 ) -> LightningModule:
     """
     Returnerer modell instansiert fra config, og eventuelt lastet fra checkpoint.
-
-    Args:
-        model_name (str): Navn på modellen (f.eks. 'unet').
-        config (dict): Modellkonfigurasjon fra YAML.
-        checkpoint_path (str, optional): Sti til checkpoint-fil.
-
-    Returns:
+    Argumenter:
+        model_name (str): Navn på modellen.
+        config (dict): Modellkonfigurasjon.
+        checkpoint_path (str): Sti til checkpoint-fil.
+    Returnerer:
         LightningModule: Modell klar til trening eller inferens.
     """
     model_name = model_name.lower()
     if model_name not in model_registry:
-        raise ValueError(f"Model '{model_name}' not found in registry.")
+        raise ValueError(f"Modell '{model_name}' finnes ikke i model_registry.")
 
     model = model_registry[model_name](config)
 

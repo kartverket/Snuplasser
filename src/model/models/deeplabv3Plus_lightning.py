@@ -8,6 +8,9 @@ from model.losses.loss_utils import compute_loss_weights
 
 
 class DeepLabV3Plus(LightningModule):
+    """
+    DeepLabV3+ med Pytorch Lightning wrapper.
+    """
     def __init__(self, config):
         super().__init__()
         self.save_hyperparameters(config)
@@ -84,7 +87,7 @@ class DeepLabV3Plus(LightningModule):
             self.log("test_dice", dice, prog_bar=True)
 
     def predict_step(self, batch, batch_idx, dataloader_idx=0):
-        # batch er nå (image_tensor, mask_tensor, filename)
+        # Batch er (image_tensor, mask_tensor, filename)
         x, _, filename = batch
 
         with torch.no_grad():
@@ -100,4 +103,7 @@ class DeepLabV3Plus(LightningModule):
 
 
 def get_deeplabv3plus_lightning_model(config):
+    """
+    Returnerer en instans av DeepLabV3Plus-modellen.
+    """
     return DeepLabV3Plus(config=config)

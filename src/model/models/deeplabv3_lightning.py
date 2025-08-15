@@ -8,6 +8,9 @@ from model.losses.loss_utils import compute_loss_weights
     
 
 class DeepLabV3Lightning(LightningModule):
+    """
+    DeepLabV3 med Pytorch Lightning wrapper.
+    """
     def __init__(self,config):
         super().__init__()
         self.save_hyperparameters(config)
@@ -74,4 +77,7 @@ class DeepLabV3Lightning(LightningModule):
     
     
 def get_deeplabv3_lightning(config):
-        return DeepLabV3Lightning(config=config)
+    """
+    Returnerer en instans av DeepLabV3-modellen.
+    """
+    return DeepLabV3Lightning(config=config)

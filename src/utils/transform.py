@@ -2,7 +2,15 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
 
-def get_train_transforms(cfg: dict, ratio: float | None = None):
+def get_train_transforms(cfg: dict, ratio: float = None) -> A.Compose:
+    """
+    Albumentations transformasjonene som skal brukes på treningsbildene.
+    Argumenter:
+        cfg (dict): konfigurasjonsfilen
+        ratio (float): sannsynlighet for å bruke transformasjoner
+    Returnerer:
+        A.Compose: Albumentations transformasjonene
+    """
     if ratio is None:
         return A.Compose(
             [
@@ -11,7 +19,7 @@ def get_train_transforms(cfg: dict, ratio: float | None = None):
         )
 
     if ratio < 0 or ratio > 1:
-        raise ValueError(f"Ratio must be between 0 and 1. Received: {ratio}")
+        raise ValueError(f"Ratio må være mellom 0 og 1, men mottok: {ratio}")
 
     base_transform = A.Compose(
         [
@@ -42,7 +50,14 @@ def get_train_transforms(cfg: dict, ratio: float | None = None):
     return base_transform
 
 
-def get_val_transforms(cfg: dict):
+def get_val_transforms(cfg: dict) -> A.Compose:
+    """
+    Albumentations transformasjonene som skal brukes på validasjonsbildene.
+    Argumenter:
+        cfg (dict): konfigurasjonsfilen
+    Returnerer:
+        A.Compose: Albumentations transformasjonene
+    """
     return A.Compose(
         [
             ToTensorV2(),

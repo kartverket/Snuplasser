@@ -1,13 +1,20 @@
 import mlflow
 from datetime import datetime
-from lightning.pytorch.loggers import MLFlowLogger  # MLFlowLogger er ennå ikke i lightning 
+from lightning.pytorch.loggers import MLFlowLogger
 from pyspark.sql import SparkSession
 
 spark = SparkSession.builder.getOrCreate()
 
 
-# Hjelpefunksjon som genererer et meningsfullt navn for hver kjøring
 def generate_run_name(model_name:str, config:dict)-> str:
+    """
+    Hjelpefunksjon som genererer et meningsfullt navn for hver kjøring.
+    Argumenter:
+        model_name: navnet på modellen
+        config: konfigurasjonsfilen
+    Returnerer:
+        navnet på kjøringen
+    """
     model_cfg=config.get("model", {}).get(model_name, {})
     training_cfg=config.get("training", {})
 
@@ -22,6 +29,14 @@ def generate_run_name(model_name:str, config:dict)-> str:
 
 
 def get_logger(model_name: str, config: dict) -> MLFlowLogger:
+    """
+    Hjelpefunksjon som returnerer en MLFlowLogger.
+    Argumenter:
+        model_name: navnet på modellen
+        config: konfigurasjonsfilen
+    Returnerer:
+        MLFlowLogger objekt med riktig experiment og run_name
+    """
     username = spark.sql("SELECT current_user()").collect()[0][0]
     experiment_name = f"/Users/{username}/{model_name}"
     run_name = generate_run_name(model_name, config)

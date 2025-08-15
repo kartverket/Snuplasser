@@ -18,17 +18,22 @@ from pyspark.sql import SparkSession
 spark = SparkSession.builder.getOrCreate()
 
 
-def run_experiment(model_name, config):
+def run_experiment(model_name: str, config: dict):
+    """
+    Kjører et MLflow-eksperiment med en gitt modell og konfigurasjon.
+    Argumenter:
+        model_name: navnet på modellen som skal brukes.
+        config: konfigurasjonen for modellen og eksperimentet.
+    """
     mode = config.get("data", {}).get("mode", "train")
     print(f"Kjører {mode}-jobb for modell: {model_name}")
 
-    # --- Data & modell ---
+    # Data & modell
     datamodule = get_datamodule(config, model_name)
     model_cfg = config.get("model", {}).get(model_name, {})
     model = get_model(model_name, model_cfg)
 
-    
-    # --- Logger & callbacks ---
+    # Logger & callbacks
     logger = get_logger(model_name, config)
     es_cb = get_early_stopping(config.get("training", {}))
     ckpt_cb = get_model_checkpoint(config.get("training", {}))
@@ -47,26 +52,28 @@ def run_experiment(model_name, config):
     )
 
     if mode == "train":
-        # 1) Tren + test
+        # Tren & test
         trainer.fit(model, datamodule=datamodule)
         trainer.test(model, datamodule=datamodule)
 
-        # 2) Last inn beste checkpoint og logg til MLflow
+        # Last inn beste checkpoint og logg til MLflow
         best_ckpt = ckpt_cb.best_model_path
         mlflow.set_registry_uri(config.get("logging", {}).get("tracking_uri", ""))
         with mlflow.start_run(run_id=trainer.logger.run_id):
             trained = model.__class__.load_from_checkpoint(
                 str(best_ckpt), config=model_cfg
             )
-            # valider igjen for å få metrics
+            # Valider igjen for å få metrikker i MLflow
             trainer.validate(trained, datamodule=datamodule)
             metrics = trainer.callback_metrics
-            mlflow.log_metrics({
-                #"val_acc":  metrics["val_acc"].item(),
-                "val_dice": metrics["val_dice"].item(),
-                "val_iou":  metrics["val_iou"].item(),
-                "val_loss": metrics["val_loss"].item(),
-            })
+            mlflow.log_metrics(
+                {
+                    # "val_acc":  metrics["val_acc"].item(),
+                    "val_dice": metrics["val_dice"].item(),
+                    "val_iou": metrics["val_iou"].item(),
+                    "val_loss": metrics["val_loss"].item(),
+                }
+            )
             mlflow.log_artifact(str(best_ckpt), artifact_path="best_checkpoint")
             mlflow.pytorch.log_model(
                 pytorch_model=trained,
@@ -79,13 +86,15 @@ def run_experiment(model_name, config):
         username = spark.sql("SELECT current_user()").collect()[0][0]
         experiment_name = f"/Users/{username}/{model_name}"
         experiment_id = mlflow.get_experiment_by_name(experiment_name).experiment_id
-        experiment_path = Path(f"/Workspace/Users/{username}/Snuplasser/src/{experiment_id}")
+        experiment_path = Path(
+            f"/Workspace/Users/{username}/Snuplasser/src/{experiment_id}"
+        )
 
         client = MlflowClient()
         runs = client.search_runs(
             experiment_ids=[experiment_id],
             order_by=["attributes.start_time DESC"],
-            max_results=100
+            max_results=100,
         )
 
         filtered_runs = []
@@ -108,10 +117,15 @@ def run_experiment(model_name, config):
         log_predictions_from_preds(preds, logger)
 
     else:
-        raise ValueError(f"Ukjent mode: {mode}")
+        raise ValueError(f"Ukjent modus: {mode}")
 
 
-def main(config_path):
+def main(config_path: str):
+    """
+    Hovedfunksjonen for å kjøre MLflow-eksperimentene.
+    Argumenter:
+        config_path: sti til YAML-konfigurasjonen.
+    """
     with open(config_path, "r") as f:
         config = yaml.safe_load(f)
     print("Konfig-innhold:", config.keys())
@@ -123,7 +137,7 @@ def main(config_path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--config", type=str, required=True, help="Path til YAML-konfigurasjon"
+        "--config", type=str, required=True, help="Sti til YAML-konfigurasjon"
     )
     args = parser.parse_args()
     main(args.config)

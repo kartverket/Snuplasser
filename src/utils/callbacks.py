@@ -4,11 +4,20 @@ import torch
 from pathlib import Path
 import numpy as np
 from PIL import Image
+from typing import List, Dict
+from lightning.pytorch.loggers import MLflowLogger
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint, Callback
 
 
-def get_early_stopping(config):
+def get_early_stopping(config: str) -> EarlyStopping:
+    """
+    Returnerer et EarlyStopping objekt som overvåker en metrikk.
+    Argumenter:
+        config: Konfigurasjonsfilen
+    Returnerer:
+        EarlyStopping objekt
+    """
     return EarlyStopping(
         monitor=config.get("monitor", "val_loss"),  # val_IoU
         mode=config.get("monitor_mode", "min"),  # "max" for IoU
@@ -17,7 +26,14 @@ def get_early_stopping(config):
     )
 
 
-def get_model_checkpoint(config):
+def get_model_checkpoint(config: dict) -> ModelCheckpoint:
+    """
+    Lagrer checkpoint av modellen.
+    Argumenter:
+        config: Konfigurasjonsfilen
+    Returnerer:
+        ModelCheckpoint objekt
+    """
     metric_name = config.get("monitor", "val_loss")  # val_IoU
     filename = "best"
     return ModelCheckpoint(
@@ -30,6 +46,9 @@ def get_model_checkpoint(config):
 
 
 class LogPredictionsCallback(Callback):
+    """
+    Logger prediksjoner til MLFlow.
+    """
     def __init__(
         self,
         log_every_n_epochs=1,
@@ -140,7 +159,6 @@ class LogPredictionsCallback(Callback):
 
     def _log_prediction(self, x, y, pred, name, epoch, trainer):
         img, dom = x[:3], x[3:]
-        # Sørg for 2D-tensorer til visning
         img_np = img.permute(1, 2, 0).cpu().numpy()
         img_np = img_np / 255.0
         dom_np = dom.squeeze().cpu().numpy()
@@ -166,14 +184,23 @@ class LogPredictionsCallback(Callback):
 
 
 def log_predictions_from_preds(
-    preds,
-    logger,
-    artifact_dir="predictions",
-    local_save_dir="/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/predicted_masks",
-    max_logs=20,
+    preds: List[Dict[str, float, torch.Tensor]],
+    logger: MLflowLogger,
+    artifact_dir: str="predictions",
+    local_save_dir: str="/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/predicted_masks",
+    max_logs: int=20,
 ):
+    """
+    Logger prediksjoner både til MLFlow og til en lokal mappe.
+    Argumenter:
+        preds (List): en liste med prediksjoner
+        logger (MLflowLogger): MLFlowLogger som skal brukes for logging
+        artifact_dir (str): hvor prediksjoner skal logges til MLFlow
+        local_save_dir (str): hvor prediksjoner skal lagres lokalt
+        max_logs (int): maksimalt antall prediksjoner som skal logges til MLFlow
+    """
     if not hasattr(logger, "run_id") or logger.run_id is None:
-        raise RuntimeError("MLFlowLogger must have an active run_id to log artifacts.")
+        raise RuntimeError("MLFlowLogger må ha en aktiv kjøring for å logge.")
     for batch in preds:
         filenames = batch.get("filename")
         masks = batch.get("mask")
@@ -193,8 +220,19 @@ def log_predictions_from_preds(
 
 
 def _log_prediction_artifact(
-    rgb_tensor, dom_tensor, pred_tensor, fname, logger, artifact_dir, local_save_dir
+    rgb_tensor: torch.Tensor, dom_tensor: torch.Tensor, pred_tensor: torch.Tensor, fname: str, logger: MLflowLogger, artifact_dir: str, local_save_dir: str
 ):
+    """
+    Logger en enkelt prediksjon til MLFlow og til en lokal mappe.
+    Argumenter:
+        rgb_tensor (torch.Tensor): en tensor med RGB-bilder
+        dom_tensor (torch.Tensor): en tensor med DOM-bilder
+        pred_tensor (torch.Tensor): en tensor med prediksjoner
+        fname (str): filnavnet på bildet
+        logger (MLflowLogger): MLFlowLogger som skal brukes for logging
+        artifact_dir (str): hvor prediksjoner skal logges til MLFlow
+        local_save_dir (str): hvor prediksjoner skal lagres lokalt
+    """
     rgb_np = rgb_tensor.permute(1, 2, 0).cpu().numpy()
     rgb_np = rgb_np / 255.0 
     dom_np = dom_tensor.cpu().numpy()
@@ -214,7 +252,7 @@ def _log_prediction_artifact(
         run_id=logger.run_id, figure=fig, artifact_file=artifact_path
     )
     plt.close(fig)
-    # Lagrer bare prediksjonen lokalt
+    # Lagrer bare prediksjonen lokalt, ikke RGB og DOM
     fig_pred, ax_pred = plt.subplots()
     ax_pred.imshow(pred_np, cmap="gray")
     ax_pred.axis("off")

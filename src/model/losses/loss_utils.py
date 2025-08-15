@@ -4,12 +4,12 @@ import numpy as np
 import torch
 
 
-def compute_loss_weights(mask_dir: str):
+def compute_loss_weights(mask_dir: str) -> tuple[float, float, torch.Tensor]:
     """
     Beregner vekter for Dice + BCE loss basert på fordelingen av svarte og hvite piksler i maskene.
-    Args:
+    Argumenter:
         mask_dir (str): Katalog som inneholder maskebilder (binære PNG-filer).
-    Returns:
+    Returnerer:
         tuple: (dice_weight, bce_weight, pos_weight)
     """
     black_pixels = 0
@@ -26,7 +26,7 @@ def compute_loss_weights(mask_dir: str):
     dice_weight = black_pixels / total_pixels
     bce_weight = white_pixels / total_pixels
 
-    # pos_weight til nn.BCEWithLogitsLoss
+    # pos_weight til BCEWithLogitsLoss
     pos_weight = torch.tensor(black_pixels / white_pixels)
 
     return dice_weight, bce_weight, pos_weight

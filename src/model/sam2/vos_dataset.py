@@ -58,7 +58,6 @@ class VOSDataset(VisionDataset):
 
         self.repeat_factors = torch.ones(len(self.video_dataset), dtype=torch.float32)
         self.repeat_factors *= multiplier
-        print(f"Raw dataset length = {len(self.video_dataset)}")
 
         self.curr_epoch = 0  # Used in case data loader behavior changes across epochs
         self.always_target = always_target
