@@ -1,23 +1,18 @@
 # 🛠 `utils/` — Hjelpefunksjoner og verktøy
 
+
+## 📌 Formål
 Denne mappen inneholder generelle verktøy som brukes på tvers av prosjektet, for eksempel logging og callbacks.
 
 ---
 
-## Innhold
+## 📂 Innhold
 
-| Fil | Beskrivelse |
-|-----|-------------|
-| `logger.py` | Setter opp MLflowLogger for sporing av eksperimenter. |
-| `callbacks.py` | Oppretter `ModelCheckpoint` og `EarlyStopping` callbacks for PyTorch Lightning. |
+| 📁 Fil                | 📖 Beskrivelse |
+|------------------------|----------------|
+| `callbacks.py`         | Inneholder funskjoner for EarlyStopping, samt lagring av modellartifakter og prediksjoner. |
+| `get_from_overview.py` | Henter data fra tabeller og splitter den opp i trening-, validering-, test-, og prediksjonsett. |
+| `logger.py`            | Setter opp MLflowLogger som overvåker eksperimenter og genererer navn på kjøringer. |
+| `transform.py`         | Inneholder transformasjoner for treningsdata og all annen data. |
 
 ---
-
-## Bruk
-
-### Logger:
-
-```python
-from utils.logger import get_logger
-
-logger = get_logger(model_name, config)

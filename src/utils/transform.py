@@ -53,11 +53,13 @@ def get_train_transforms(cfg: dict, ratio: float = None) -> A.Compose:
 def get_val_transforms(cfg: dict) -> A.Compose:
     """
     Albumentations transformasjonene som skal brukes på validasjonsbildene.
+    Denne brukes for alle andre datasett enn treningsdatasettet.
     Argumenter:
         cfg (dict): konfigurasjonsfilen
     Returnerer:
         A.Compose: Albumentations transformasjonene
     """
+def get_val_transforms(cfg: dict):
     return A.Compose(
         [
             ToTensorV2(),
