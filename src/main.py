@@ -40,11 +40,6 @@ def run_experiment(model_name: str, config: dict):
     log_pred_cfg = config.get("log_predictions_callback", {})
     log_pred_cb = LogPredictionsCallback(**log_pred_cfg)
 
-    callbacks = [c for c in [ckpt_cb, es_cb, log_pred_cb] if c is not None]
-
-    if mode == "train_all" and config.get("training", {}).get("early_stopping_patience", 0) > 0:
-        callbacks = [c for c in callbacks if c is not es_cb]
-
     trainer = Trainer(
         logger=logger,
         max_epochs=config.get("training", {}).get("max_epochs", 1),
@@ -85,32 +80,6 @@ def run_experiment(model_name: str, config: dict):
                 artifact_path="model",
                 registered_model_name=model_name,
             )
-
-    
-    elif mode == "train_all":
-        trainer.fit(model, datamodule=datamodule)
-        
-        best_ckpt = ckpt_cb.best_model_path
-        mlflow.set_registry_uri(config.get("logging", {}).get("tracking_uri", ""))
-        with mlflow.start_run(run_id=trainer.logger.run_id):
-            trained = model.__class__.load_from_checkpoint(
-                str(best_ckpt), config=model_cfg
-            )
-
-        trainer.validate(trained, datamodule=datamodule)
-        metrics = trainer.callback_metrics
-        mlflow.log_metrics({
-            "val_dice": metrics["val_dice"].item(),
-            "val_iou":  metrics["val_iou"].item(),
-            "val_loss": metrics["val_loss"].item(),
-        })
-        mlflow.log_artifact(str(best_ckpt), artifact_path="best_checkpoint")
-        mlflow.pytorch.log_model(
-            pytorch_model=trained,
-            artifact_path="model",
-            registered_model_name=model_name,
-        )
-
 
     elif mode == "predict":
         # Last inn checkpoint for prediksjon
