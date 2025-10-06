@@ -15,7 +15,7 @@ data:
   mode: "predict"
   predict:
     overview_table: endepunkt_status_overview
-    id_field:       nodeid
+    id_field: nodeid
 
 logging:
-  tracking_uri:    "databricks"
+  tracking_uri: "databricks"
