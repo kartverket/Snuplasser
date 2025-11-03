@@ -13,9 +13,9 @@ scratch:
   weight_decay: 0.01
 
 dataset:
-  image_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/images/
-  mask_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/labels/
-  dom_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/doms/
+  image_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/storreimage/
+  mask_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/storrelabel/
+  dom_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/storredom/
   batch_size: 8
   num_workers: 4
   val_split: 0.2
@@ -210,7 +210,7 @@ trainer:
     param_group_modifiers:
       - _target_: training.optimizer.layer_decay_param_modifier
         _partial_: True
-        layer_decay_value: 0.9
+        layer_decay_value: 0.9 # 0 to freeze the image encoder
         apply_to: 'image_encoder.trunk'
         overrides:
           - pattern: '*pos_embed*'
