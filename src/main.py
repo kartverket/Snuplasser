@@ -113,8 +113,9 @@ def run_experiment(model_name: str, config: dict):
         trained = model.__class__.load_from_checkpoint(str(ckpt_path))
 
         # Kjør prediksjon
+        id_field = config.get("data", {}).get("predict", {})
         preds = trainer.predict(trained, datamodule=datamodule)
-        log_predictions_from_preds(preds, logger)
+        log_predictions_from_preds(preds, logger, id_field)
 
     else:
         raise ValueError(f"Ukjent modus: {mode}")
