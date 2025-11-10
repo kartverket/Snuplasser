@@ -3,7 +3,7 @@ from torch.utils.data import DataLoader
 from lightning.pytorch import LightningDataModule
 from pyspark.sql import SparkSession
 
-from data.dataset import SnuplassDataset
+from data.dataset import SnuplassDataset, HelicopterDataset
 from utils.transform import get_train_transforms, get_val_transforms
 from utils.get_from_overview import (
     get_file_list_from_overview,
@@ -70,19 +70,34 @@ class SnuplassDataModule(LightningDataModule):
             )
 
             # Fjern row_hash, behold bare paths
-            train_list = [(img, dom, mask) for (_, img, dom, mask) in train_items]
-            val_list = [(img, dom, mask) for (_, img, dom, mask) in val_items]
-            holdout_list = [(img, dom, mask) for (_, img, dom, mask) in holdout_items]
+            if self.id_field == "lokalid":
+                train_list = [(img, mask) for (_, img, mask) in train_items]
+                val_list = [(img, mask) for (_, img, mask) in val_items]
+                holdout_list = [(img, mask) for (_, img, mask) in holdout_items]
 
-            self.train_dataset = SnuplassDataset(
-                file_list=train_list, transform=self.train_transform
-            )
-            self.val_dataset = SnuplassDataset(
-                file_list=val_list, transform=self.val_transform
-            )
-            self.test_dataset = SnuplassDataset(
-                file_list=holdout_list, transform=self.val_transform
-            )
+                self.train_dataset = HelicopterDataset(
+                    file_list=train_list, transform=self.train_transform
+                )
+                self.val_dataset = HelicopterDataset(
+                    file_list=val_list, transform=self.val_transform
+                )
+                self.test_dataset = HelicopterDataset(
+                    file_list=holdout_list, transform=self.val_transform
+                )
+            else:
+                train_list = [(img, dom, mask) for (_, img, dom, mask) in train_items]
+                val_list = [(img, dom, mask) for (_, img, dom, mask) in val_items]
+                holdout_list = [(img, dom, mask) for (_, img, dom, mask) in holdout_items]
+
+                self.train_dataset = SnuplassDataset(
+                    file_list=train_list, transform=self.train_transform
+                )
+                self.val_dataset = SnuplassDataset(
+                    file_list=val_list, transform=self.val_transform
+                )
+                self.test_dataset = SnuplassDataset(
+                    file_list=holdout_list, transform=self.val_transform
+                )
 
         elif self.mode == "predict":
             # hent tuples (row_hash, image_path, dom_path)
@@ -95,13 +110,20 @@ class SnuplassDataModule(LightningDataModule):
                 require_mask=False,
             )
 
-            predict_list = [
-                (image_path, dom_path) for (_, image_path, dom_path) in items
-            ]
-
-            self.predict_dataset = SnuplassDataset(
-                file_list=predict_list, transform=self.val_transform
-            )
+            if self.id_field == "lokalid":
+                predict_list = [
+                    (image_path) for (_, image_path) in items
+                ]
+                self.predict_dataset = HelicopterDataset(
+                    file_list=predict_list, transform=self.val_transform
+                )
+            else:
+                predict_list = [
+                    (image_path, dom_path) for (_, image_path, dom_path) in items
+                ]
+                self.predict_dataset = SnuplassDataset(
+                    file_list=predict_list, transform=self.val_transform
+                )
 
     def train_dataloader(self):
         return DataLoader(

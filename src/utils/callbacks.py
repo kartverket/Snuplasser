@@ -54,6 +54,7 @@ class LogPredictionsCallback(Callback):
         self,
         log_every_n_epochs=1,
         artifact_dir="val_predictions",
+        target="snuplass",
         always_log_ids=None,
         max_random_logs=10,
     ):
@@ -61,11 +62,12 @@ class LogPredictionsCallback(Callback):
         self.artifact_dir = artifact_dir
         self.always_log_ids = set(always_log_ids or [])
         self.max_random_logs = max_random_logs
+        self.target = target
         self.all_true = []
         self.all_pred = []
         self.val_true = []
         self.val_pred = []
-        self.display_labels = ["annet", "snuplass"]
+        self.display_labels = ["annet", target]
 
     def on_validation_epoch_start(self, trainer, pl_module):
         self.val_true.clear()
@@ -159,23 +161,34 @@ class LogPredictionsCallback(Callback):
         plt.close(fig)
 
     def _log_prediction(self, x, y, pred, name, epoch, trainer):
-        img, dom = x[:3], x[3:]
-        img_np = img.permute(1, 2, 0).cpu().numpy()
-        img_np = img_np / 255.0
-        dom_np = dom.squeeze().cpu().numpy()
         y_np = y.squeeze().cpu().numpy()
         pred_np = pred.squeeze().cpu().numpy()
-        fig, axs = plt.subplots(1, 4, figsize=(12, 3))
-        axs[0].imshow(img_np)
-        axs[1].imshow(dom_np, cmap="gray")
-        axs[2].imshow(y_np, cmap="gray")
-        axs[3].imshow(pred_np, cmap="gray")
+        if self.target == "snuplass":
+            rgb, dom = x[:3], x[3:]
+            rgb_np = rgb.permute(1, 2, 0).cpu().numpy()
+            rgb_np = rgb_np / 255.0
+            dom_np = dom.squeeze().cpu().numpy()
+            fig, axs = plt.subplots(1, 4, figsize=(12, 3))
+            axs[0].imshow(img_np)
+            axs[0].set_title("Input RGB")
+            axs[1].imshow(dom_np, cmap="gray")
+            axs[1].set_title("Input DOM")
+            axs[2].imshow(y_np, cmap="gray")
+            axs[2].set_title("Fasit")
+            axs[3].imshow(pred_np, cmap="gray")
+            axs[3].set_title("Prediksjon")
+        else:
+            rgb_np = x.permute(1, 2, 0).cpu().numpy()
+            rgb_np = rgb_np / 255.0
+            fig, axs = plt.subplots(1, 3, figsize=(12, 3))
+            axs[0].imshow(rgb_np)
+            axs[0].set_title("Input RGB")
+            axs[1].imshow(y_np, cmap="gray")
+            axs[1].set_title("Fasit")
+            axs[2].imshow(pred_np, cmap="gray")
+            axs[2].set_title("Prediksjon")
         for ax in axs:
-            ax.axis("off")
-        axs[0].set_title("Input RGB")
-        axs[1].set_title("Input DOM")
-        axs[2].set_title("Fasit")
-        axs[3].set_title("Prediksjon")
+             ax.axis("off")
         plt.tight_layout()
         artifact_path = f"{self.artifact_dir}/{name}/epoch_{epoch}.png"
         trainer.logger.experiment.log_figure(
@@ -187,6 +200,7 @@ class LogPredictionsCallback(Callback):
 def log_predictions_from_preds(
     preds: List[dict[str, float | str | torch.Tensor]],
     logger: "MLflowLogger",
+    id_field: str,
     artifact_dir: str="predictions",
     local_save_dir: str="/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/predicted_masks",
     max_logs: int=20,
@@ -207,8 +221,12 @@ def log_predictions_from_preds(
         masks = batch.get("mask")
         images = batch.get("image")
         for i in range(len(filenames)):
-            rgb_tensor = images[i, :3] if images is not None else None
-            dom_tensor = images[i, 3] if images is not None else None
+            if id_field == "row_hash":
+                rgb_tensor = images[i, :3] if images is not None else None
+                dom_tensor = images[i, 3] if images is not None else None
+            else:
+                rgb_tensor = images[i] if images is not None else None
+                dom_tensor = None
             _log_prediction_artifact(
                 rgb_tensor=rgb_tensor,
                 dom_tensor=dom_tensor,
@@ -217,11 +235,12 @@ def log_predictions_from_preds(
                 logger=logger,
                 artifact_dir=artifact_dir,
                 local_save_dir=local_save_dir,
+                id_field=id_field,
             )
 
 
 def _log_prediction_artifact(
-    rgb_tensor: torch.Tensor, dom_tensor: torch.Tensor, pred_tensor: torch.Tensor, fname: str, logger: "MLflowLogger", artifact_dir: str, local_save_dir: str
+    rgb_tensor: torch.Tensor, dom_tensor: torch.Tensor, pred_tensor: torch.Tensor, fname: str, logger: "MLflowLogger", artifact_dir: str, local_save_dir: str, id_field: str
 ):
     """
     Logger en enkelt prediksjon til MLFlow og til en lokal mappe.
@@ -234,17 +253,26 @@ def _log_prediction_artifact(
         artifact_dir (str): hvor prediksjoner skal logges til MLFlow
         local_save_dir (str): hvor prediksjoner skal lagres lokalt
     """
-    rgb_np = rgb_tensor.permute(1, 2, 0).cpu().numpy()
-    rgb_np = rgb_np / 255.0 
-    dom_np = dom_tensor.cpu().numpy()
     pred_np = pred_tensor.squeeze().cpu().numpy()
-    fig, axs = plt.subplots(1, 3, figsize=(9, 3))
-    axs[0].imshow(rgb_np)
-    axs[0].set_title("RGB")
-    axs[1].imshow(dom_np, cmap="gray")
-    axs[1].set_title("DOM")
-    axs[2].imshow(pred_np, cmap="gray")
-    axs[2].set_title("Prediksjon")
+    if id_field == "row_hash":
+        rgb_np = rgb_tensor.permute(1, 2, 0).cpu().numpy()
+        rgb_np = rgb_np / 255.0 
+        dom_np = dom_tensor.cpu().numpy()
+        fig, axs = plt.subplots(1, 3, figsize=(9, 3))
+        axs[0].imshow(rgb_np)
+        axs[0].set_title("RGB")
+        axs[1].imshow(dom_np, cmap="gray")
+        axs[1].set_title("DOM")
+        axs[2].imshow(pred_np, cmap="gray")
+        axs[2].set_title("Prediksjon")
+    else:
+        rgb_np = rgb_tensor.permute(1, 2, 0).cpu().numpy()
+        rgb_np = rgb_np / 255.0 
+        fig, axs = plt.subplots(1, 2, figsize=(9, 4))
+        axs[0].imshow(rgb_np)
+        axs[0].set_title("RGB")
+        axs[1].imshow(pred_np, cmap="gray")
+        axs[1].set_title("Prediksjon")
     for ax in axs:
         ax.axis("off")
     plt.tight_layout()

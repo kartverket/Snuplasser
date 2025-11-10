@@ -27,23 +27,33 @@ def get_file_list_from_overview(
     qualified = f"`{catalog}`.{schema}.{overview_table}"
     df = spark.table(qualified)
 
-    filt = (
-        (F.col("image_status") == "DOWNLOADED") &
-        (F.col("dom_status")   == "DOWNLOADED")
-    )
+    if "dom_status" in df.columns:
+        filt = (
+            (F.col("image_status") == "DOWNLOADED") &
+            (F.col("dom_status")   == "DOWNLOADED")
+        )
+        cols = [id_field, "image_path", "dom_path"]
+    else:
+        filt = (F.col("image_status") == "DOWNLOADED")
+        cols = [id_field, "image_path"]
     if require_mask:
         filt &= (F.col("mask_status") == "GENERATED")
     
-    cols = [id_field, "image_path", "dom_path"]
     if require_mask:
         cols.append("mask_path")
 
     picked = df.filter(filt).select(*cols).distinct()
     
-    if require_mask:
-        return picked.rdd.map(lambda r: (r[id_field], r.image_path, r.dom_path, r.mask_path)).collect()
+    rows = picked.collect()
+
+    if require_mask and "dom_path" in df.columns:
+        return [(r[id_field], r["image_path"], r["dom_path"], r["mask_path"]) for r in rows]
+    elif "dom_path" in df.columns:
+        return [(r[id_field], r["image_path"], r["dom_path"]) for r in rows]
+    elif require_mask:
+        return [(r[id_field], r["image_path"], r["mask_path"]) for r in rows]
     else:
-        return picked.rdd.map(lambda r: (r[id_field], r.image_path, r.dom_path)).collect()
+        return [(r[id_field], r["image_path"]) for r in rows]
 
 def get_split_from_overview(
     spark: SparkSession,
