@@ -12,7 +12,7 @@ from utils.callbacks import (
     LogPredictionsCallback,
     log_predictions_from_preds,
 )
-from data.snuplass_datamodule import get_datamodule
+from data.datamodule import get_datamodule
 from pyspark.sql import SparkSession
 
 spark = SparkSession.builder.getOrCreate()
