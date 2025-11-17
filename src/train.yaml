@@ -4,13 +4,13 @@ model_names:
 model:
   deeplabv3plus:
     backbone: resnet50
-    in_channels: 4
+    in_channels: 3
     num_classes: 1
     batch_size: 4
     lr: 0.0001
 
 data:
-  mask_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/storrelabel/
+  mask_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/helipad_labels/
   num_workers: 4 # Antall arbeidere på clusteret
   val_split: 0.2 # Valideringsandel
   holdout_size: 50
@@ -28,13 +28,13 @@ data:
   spark_schema: ai2025
   mode: "train"
   train:
-    id_field: row_hash
-    overview_table: train_silver # polygons_status_overview for å trene kun på snuplasser
+    id_field: lokalid
+    overview_table: helipads_status_overview # polygons_status_overview for å trene kun på snuplasser
 
 training:
-  max_epochs: 100 # Antall epoker per kjøring
-  precision: 16-mixed # Mixed precision (16 eller 32)
-  accelerator: gpu # cpu hvis det kjøres lokalt
+  max_epochs: 10 # Antall epoker per kjøring
+  precision: 32 # Mixed precision (16 eller 32)
+  accelerator: cpu # cpu hvis det kjøres lokalt
   devices: 1 # GPU-ressurser
   log_every_n_steps: 10
   early_stopping_patience: 10  # Stopper tidlig om valideringstap ikke forbedres
@@ -44,6 +44,7 @@ training:
 log_predictions_callback:
   log_every_n_epochs: 2 # Logger prediksjonene etter annenhver epoch
   artifact_dir: "val_predictions"
+  target: "helikopterplass"
 
 logging:
   tracking_uri: "databricks" # Slik at eksperimenter og modeller kan lagres og sammenlignes sentralt

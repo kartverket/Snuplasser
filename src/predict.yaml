@@ -4,7 +4,7 @@ model_names:
 model:
   deeplabv3plus:
     backbone: resnet50
-    in_channels: 4
+    in_channels: 3
     num_classes: 1
     batch_size: 4
 
@@ -14,8 +14,9 @@ data:
   spark_schema: ai2025
   mode: "predict"
   predict:
-    overview_table: endepunkt_status_overview
-    id_field: nodeid
+    id_field: lokalid
+    overview_table: hospitals_status_overview
+    local_save_dir: predicted_helipads
 
 logging:
   tracking_uri: "databricks"
