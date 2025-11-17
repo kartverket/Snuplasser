@@ -201,8 +201,8 @@ def log_predictions_from_preds(
     preds: List[dict[str, float | str | torch.Tensor]],
     logger: "MLflowLogger",
     id_field: str,
+    local_save_dir: str,
     artifact_dir: str="predictions",
-    local_save_dir: str="/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/predicted_masks",
     max_logs: int=20,
 ):
     """
@@ -285,7 +285,7 @@ def _log_prediction_artifact(
     fig_pred, ax_pred = plt.subplots()
     ax_pred.imshow(pred_np, cmap="gray")
     ax_pred.axis("off")
-    os.makedirs(local_save_dir, exist_ok=True)
-    local_path = os.path.join(local_save_dir, f"pred_{Path(fname).stem}.png")
+    os.makedirs(f"/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/{local_save_dir}", exist_ok=True)
+    local_path = os.path.join(f"/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/{local_save_dir}", f"pred_{Path(fname).stem}.png")
     fig_pred.savefig(local_path, bbox_inches="tight", pad_inches=0)
     plt.close(fig_pred)

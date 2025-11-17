@@ -10,7 +10,7 @@ model:
     lr: 0.0001
 
 data:
-  mask_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/helicopter_labels/
+  mask_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/helipad_labels/
   num_workers: 4 # Antall arbeidere på clusteret
   val_split: 0.2 # Valideringsandel
   holdout_size: 50
@@ -29,7 +29,7 @@ data:
   mode: "train"
   train:
     id_field: lokalid
-    overview_table: helicopters_status_overview # polygons_status_overview for å trene kun på snuplasser
+    overview_table: helipads_status_overview # polygons_status_overview for å trene kun på snuplasser
 
 training:
   max_epochs: 10 # Antall epoker per kjøring

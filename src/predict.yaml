@@ -16,6 +16,7 @@ data:
   predict:
     id_field: lokalid
     overview_table: hospitals_status_overview
+    local_save_dir: predicted_helipads
 
 logging:
   tracking_uri: "databricks"
