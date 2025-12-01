@@ -1,8 +1,8 @@
 model_names:
-  - deeplabv3plus
+  - unet
 
 model:
-  deeplabv3plus:
+  unet:
     backbone: resnet50
     in_channels: 3
     num_classes: 1
@@ -13,9 +13,9 @@ data:
   mask_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/helipad_labels/
   num_workers: 4 # Antall arbeidere på clusteret
   val_split: 0.2 # Valideringsandel
-  holdout_size: 50
+  holdout_size: 20
   seed: 42
-  use_augmentation: false
+  use_augmentation: true
   augmentation_ratio: 0.4
   flip_p: 0.3
   brightness_limit: 0.05
@@ -29,10 +29,11 @@ data:
   mode: "train"
   train:
     id_field: lokalid
-    overview_table: helipads_status_overview # polygons_status_overview for å trene kun på snuplasser
+    overview_table: mix_helipads_status_overview # polygons_status_overview for å trene kun på snuplasser
+    target: helipads
 
 training:
-  max_epochs: 10 # Antall epoker per kjøring
+  max_epochs: 20 # Antall epoker per kjøring
   precision: 32 # Mixed precision (16 eller 32)
   accelerator: cpu # cpu hvis det kjøres lokalt
   devices: 1 # GPU-ressurser

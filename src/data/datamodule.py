@@ -11,7 +11,7 @@ from utils.get_from_overview import (
 )
 
 
-class SnuplassDataModule(LightningDataModule):
+class DataModule(LightningDataModule):
     def __init__(self, config: dict, model_name: str):
         """
         Setter opp datasett og dataloader for alle splittene.
@@ -33,6 +33,7 @@ class SnuplassDataModule(LightningDataModule):
         self.overview_table = section["overview_table"]
         self.id_field = section["id_field"]
         self.require_mask = self.mode == "train"
+        self.target = section["target"]
 
         # Spark for oversiktstabell
         self.spark = (
@@ -70,7 +71,7 @@ class SnuplassDataModule(LightningDataModule):
             )
 
             # Fjern row_hash, behold bare paths
-            if self.id_field == "lokalid":
+            if self.target == "helipads":
                 train_list = [(img, mask) for (_, img, mask) in train_items]
                 val_list = [(img, mask) for (_, img, mask) in val_items]
                 holdout_list = [(img, mask) for (_, img, mask) in holdout_items]
@@ -110,7 +111,7 @@ class SnuplassDataModule(LightningDataModule):
                 require_mask=False,
             )
 
-            if self.id_field == "lokalid":
+            if self.target == "helipads":
                 predict_list = [
                     (image_path) for (_, image_path) in items
                 ]
@@ -167,4 +168,4 @@ def get_datamodule(config: dict, model_name: str) -> LightningDataModule:
     Returnerer:
         LightningDataModule: datamodul for dataloader
     """
-    return SnuplassDataModule(config, model_name)
+    return DataModule(config, model_name)

@@ -38,8 +38,8 @@ class UNetLightning(LightningModule):
         )
 
         self.iou_metric = BinaryJaccardIndex()
-        self.dice = DiceScore(num_classes=2)
-        self.accuracy = BinaryAccuracy()
+        self.dice_metric = DiceScore(num_classes=1)
+        self.accuracy_metric = BinaryAccuracy()
 
     def forward(self, x):
         if x.dtype == torch.uint8:
@@ -65,13 +65,45 @@ class UNetLightning(LightningModule):
         pred_bin = (preds > 0.5).float()
 
         iou = self.iou_metric(preds, y)
-        dice = self.dice(preds, y)
-        acc = self.accuracy(pred_bin, y)
+        dice = self.dice_metric(preds, y)
+        acc = self.accuracy_metric(pred_bin, y)
 
         self.log("val_iou", iou, prog_bar=True)
         self.log("val_dice", dice, prog_bar=True)
         self.log("val_acc", acc, prog_bar=True)
-        
+
+    def forward(self, x):
+        if x.dtype == torch.uint8:
+            x = x.float() / 255
+        return self.model(x)
+
+    def test_step(self, batch, batch_idx):
+        with torch.no_grad():
+            x, y, _ = batch
+            y = y.float()
+            logts = self(x)
+            loss = self.loss_fn(logts, y)
+            self.log("test_loss", loss, prog_bar=True)
+
+            preds = torch.sigmoid(logts)
+            pred_bin = (preds > 0.5).float()
+            iou = self.iou_metric(pred_bin, y)
+            dice = self.dice_metric(pred_bin, y)
+            acc = self.accuracy_metric(pred_bin, y)
+
+            self.log("test_iou", iou, prog_bar=True)
+            self.log("test_dice", dice, prog_bar=True)
+
+    def predict_step(self, batch, batch_idx, dataloader_idx=0):
+        # Batch er (image_tensor, mask_tensor, filename)
+        x, _, filename = batch
+
+        with torch.no_grad():
+            logits = self(x)
+            probs = torch.sigmoid(logits)
+            preds = (probs > 0.5).float()
+
+        return {"filename": filename, "mask": preds, "image": x}
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.lr)

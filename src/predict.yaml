@@ -1,8 +1,8 @@
 model_names:
-  - deeplabv3plus
+  - unet
 
 model:
-  deeplabv3plus:
+  unet:
     backbone: resnet50
     in_channels: 3
     num_classes: 1
@@ -17,6 +17,7 @@ data:
     id_field: lokalid
     overview_table: hospitals_status_overview
     local_save_dir: predicted_helipads
+    target: helipads
 
 logging:
   tracking_uri: "databricks"
