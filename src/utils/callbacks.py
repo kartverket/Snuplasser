@@ -221,7 +221,8 @@ def log_predictions_from_preds(
         masks = batch.get("mask")
         images = batch.get("image")
         for i in range(len(filenames)):
-            if id_field == "row_hash":
+            channels = images.shape[1]
+            if channels > 3:
                 rgb_tensor = images[i, :3] if images is not None else None
                 dom_tensor = images[i, 3] if images is not None else None
             else:
@@ -254,7 +255,7 @@ def _log_prediction_artifact(
         local_save_dir (str): hvor prediksjoner skal lagres lokalt
     """
     pred_np = pred_tensor.squeeze().cpu().numpy()
-    if id_field == "row_hash":
+    if dom_tensor is not None:
         rgb_np = rgb_tensor.permute(1, 2, 0).cpu().numpy()
         rgb_np = rgb_np / 255.0 
         dom_np = dom_tensor.cpu().numpy()

@@ -36,10 +36,9 @@ def get_file_list_from_overview(
     else:
         filt = (F.col("image_status") == "DOWNLOADED")
         cols = [id_field, "image_path"]
-    if require_mask:
-        filt &= (F.col("mask_status") == "GENERATED")
     
     if require_mask:
+        filt &= (F.col("mask_status") == "GENERATED")
         cols.append("mask_path")
 
     picked = df.filter(filt).select(*cols).distinct()
