@@ -14,7 +14,7 @@ data:
   spark_schema: ai2025
   mode: "predict"
   predict:
-    id_field: lokalid
+    id_field: row_hash
     overview_table: hospitals_status_overview
     local_save_dir: predicted_helipads
     target: helipads

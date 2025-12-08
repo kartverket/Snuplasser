@@ -53,7 +53,7 @@ class DataModule(LightningDataModule):
             )
         else:
             self.train_transform = get_train_transforms(cfg=data_config, ratio=None)
-        self.val_transform = get_val_transforms(cfg=data_config)
+        self.val_transform = get_val_transforms()
 
     def setup(self, stage):
         if self.mode == "train":
@@ -88,7 +88,9 @@ class DataModule(LightningDataModule):
             else:
                 train_list = [(img, dom, mask) for (_, img, dom, mask) in train_items]
                 val_list = [(img, dom, mask) for (_, img, dom, mask) in val_items]
-                holdout_list = [(img, dom, mask) for (_, img, dom, mask) in holdout_items]
+                holdout_list = [
+                    (img, dom, mask) for (_, img, dom, mask) in holdout_items
+                ]
 
                 self.train_dataset = SnuplassDataset(
                     file_list=train_list, transform=self.train_transform
@@ -112,9 +114,7 @@ class DataModule(LightningDataModule):
             )
 
             if self.target == "helipads":
-                predict_list = [
-                    (image_path) for (_, image_path) in items
-                ]
+                predict_list = [(image_path) for (_, image_path) in items]
                 self.predict_dataset = HelicopterDataset(
                     file_list=predict_list, transform=self.val_transform
                 )

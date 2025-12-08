@@ -12,35 +12,35 @@ model:
 data:
   mask_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/helipad_labels/
   num_workers: 4 # Antall arbeidere på clusteret
-  val_split: 0.2 # Valideringsandel
-  holdout_size: 20
+  val_split: 0.15 # Valideringsandel
+  holdout_size: 15
   seed: 42
   use_augmentation: true
-  augmentation_ratio: 0.4
-  flip_p: 0.3
-  brightness_limit: 0.05
-  contrast_limit: 0.05
-  rotate_limit: 10
-  scale_limit: 0.05
-  gaussian_blur_p: 0.1
-  elastic_transform_p: 0.1
+  # augmentation_ratio: 0.4
+  # flip_p: 0.3
+  # brightness_limit: 0.05
+  # contrast_limit: 0.05
+  # rotate_limit: 10
+  # scale_limit: 0.05
+  # gaussian_blur_p: 0.1
+  # elastic_transform_p: 0.1
   spark_catalog: land_topografisk-gdb_dev
   spark_schema: ai2025
   mode: "train"
   train:
-    id_field: lokalid
-    overview_table: mix_helipads_status_overview # polygons_status_overview for å trene kun på snuplasser
+    id_field: row_hash
+    overview_table: helipads_status_overview # polygons_status_overview for å trene kun på snuplasser
     target: helipads
 
 training:
-  max_epochs: 20 # Antall epoker per kjøring
+  max_epochs: 100 # Antall epoker per kjøring
   precision: 32 # Mixed precision (16 eller 32)
   accelerator: cpu # cpu hvis det kjøres lokalt
   devices: 1 # GPU-ressurser
-  log_every_n_steps: 10
+  log_every_n_steps: 2
   early_stopping_patience: 10  # Stopper tidlig om valideringstap ikke forbedres
-  monitor: val_loss  # Kan bruke val_iou, må logges av modellen og oppdateres i utils.callbacks
-  monitor_mode: min  # max ved IoU
+  monitor: val_dice  # Kan bruke val_loss, val_iou eller val_dice
+  monitor_mode: max  # min ved loss, max ved IoU og Dice
 
 log_predictions_callback:
   log_every_n_epochs: 2 # Logger prediksjonene etter annenhver epoch

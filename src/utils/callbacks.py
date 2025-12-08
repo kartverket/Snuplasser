@@ -50,6 +50,7 @@ class LogPredictionsCallback(Callback):
     """
     Logger prediksjoner til MLFlow.
     """
+
     def __init__(
         self,
         log_every_n_epochs=1,
@@ -73,12 +74,14 @@ class LogPredictionsCallback(Callback):
         self.val_true.clear()
         self.val_pred.clear()
 
-    def on_validation_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx=0):
+    def on_validation_batch_end(
+        self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx=0
+    ):
         x, y, _ = batch
         device = pl_module.device
         y = y.to(device).long()
-        preds = (torch.sigmoid(pl_module(x.to(device))) > 0.5).long()
-        for y_img, p_img in zip(y.cpu(), preds.cpu()):
+        probs = torch.sigmoid(pl_module(x.to(device)))
+        for y_img, p_img in zip(y.cpu(), probs.cpu()):
             self.val_true.append(y_img)
             self.val_pred.append(p_img)
 
@@ -88,22 +91,50 @@ class LogPredictionsCallback(Callback):
         epoch = trainer.current_epoch
         logged = set()
 
-        y_true = [int((m.numpy() == 1).any()) for m in self.val_true]
-        y_pred = [int((p.numpy() == 1).any()) for p in self.val_pred]
-        cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
-        disp = ConfusionMatrixDisplay(
-            confusion_matrix=cm,
-            display_labels=self.display_labels
-        )
-        fig, ax = plt.subplots(figsize=(6,6))
-        disp.plot(ax=ax, cmap="Blues", colorbar=False)
-        ax.set_title(f"Val_confusion matrix (epoch {trainer.current_epoch})")
-        plt.tight_layout()
-        run_id = trainer.logger.run_id
+        from sklearn.metrics import roc_curve, auc
+
+        # Flatten all masks into 1D arrays
+        y_true_pixels = np.concatenate([m.numpy().ravel() for m in self.val_true])
+        y_score_pixels = np.concatenate(
+            [p.numpy().ravel() for p in self.val_pred]
+        )  # probabilities, not thresholded
+
+        fpr, tpr, thresholds = roc_curve(y_true_pixels, y_score_pixels)
+        roc_auc = auc(fpr, tpr)
+
+        # Plot ROC
+        fig, ax = plt.subplots()
+        ax.plot(fpr, tpr, label=f"AUC = {roc_auc:.3f}")
+        ax.plot([0, 1], [0, 1], linestyle="--", color="gray")
+        ax.set_xlabel("False Positive Rate")
+        ax.set_ylabel("True Positive Rate")
+        ax.set_title(f"Pixel‑level ROC (epoch {trainer.current_epoch})")
+        ax.legend(loc="lower right")
         trainer.logger.experiment.log_figure(
-            run_id=run_id,
+            run_id=trainer.logger.run_id,
             figure=fig,
-            artifact_file=f"val_confusion_matrix_epoch_{trainer.current_epoch}.png"
+            artifact_file=f"roc_epoch_{trainer.current_epoch}.png",
+        )
+        plt.close(fig)
+
+        y_true_images = [int(m.numpy().max() > 0) for m in self.val_true]
+        y_pred_images = [
+            int((p.numpy() > 0.5).any()) for p in self.val_pred
+        ]  # thresholded
+
+        cm = confusion_matrix(y_true_images, y_pred_images, labels=[0, 1])
+        disp = ConfusionMatrixDisplay(
+            confusion_matrix=cm, display_labels=self.display_labels
+        )
+
+        fig, ax = plt.subplots(figsize=(6, 6))
+        disp.plot(ax=ax, cmap="Blues", colorbar=False)
+        ax.set_title(f"Image‑level confusion matrix (epoch {trainer.current_epoch})")
+        plt.tight_layout()
+        trainer.logger.experiment.log_figure(
+            run_id=trainer.logger.run_id,
+            figure=fig,
+            artifact_file=f"confusion_matrix_epoch_{trainer.current_epoch}.png",
         )
         plt.close(fig)
 
@@ -131,7 +162,9 @@ class LogPredictionsCallback(Callback):
         self.all_true.clear()
         self.all_pred.clear()
 
-    def on_test_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx=0):
+    def on_test_batch_end(
+        self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx=0
+    ):
         x, y, _ = batch
         device = pl_module.device
         y = y.to(device).long()
@@ -145,10 +178,9 @@ class LogPredictionsCallback(Callback):
         y_pred = [int((p.numpy() == 1).any()) for p in self.all_pred]
         cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
         disp = ConfusionMatrixDisplay(
-            confusion_matrix=cm,
-            display_labels=self.display_labels
+            confusion_matrix=cm, display_labels=self.display_labels
         )
-        fig, ax = plt.subplots(figsize=(6,6))
+        fig, ax = plt.subplots(figsize=(6, 6))
         disp.plot(ax=ax, cmap="Blues", colorbar=False)
         ax.set_title(f"Confusion matrix (epoch {trainer.current_epoch})")
         plt.tight_layout()
@@ -156,7 +188,7 @@ class LogPredictionsCallback(Callback):
         trainer.logger.experiment.log_figure(
             run_id=run_id,
             figure=fig,
-            artifact_file=f"confusion_matrix_epoch_{trainer.current_epoch}.png"
+            artifact_file=f"confusion_matrix_epoch_{trainer.current_epoch}.png",
         )
         plt.close(fig)
 
@@ -169,7 +201,7 @@ class LogPredictionsCallback(Callback):
             rgb_np = rgb_np / 255.0
             dom_np = dom.squeeze().cpu().numpy()
             fig, axs = plt.subplots(1, 4, figsize=(12, 3))
-            axs[0].imshow(img_np)
+            axs[0].imshow(rgb_np)
             axs[0].set_title("Input RGB")
             axs[1].imshow(dom_np, cmap="gray")
             axs[1].set_title("Input DOM")
@@ -188,7 +220,7 @@ class LogPredictionsCallback(Callback):
             axs[2].imshow(pred_np, cmap="gray")
             axs[2].set_title("Prediksjon")
         for ax in axs:
-             ax.axis("off")
+            ax.axis("off")
         plt.tight_layout()
         artifact_path = f"{self.artifact_dir}/{name}/epoch_{epoch}.png"
         trainer.logger.experiment.log_figure(
@@ -202,8 +234,8 @@ def log_predictions_from_preds(
     logger: "MLflowLogger",
     id_field: str,
     local_save_dir: str,
-    artifact_dir: str="predictions",
-    max_logs: int=20,
+    artifact_dir: str = "predictions",
+    max_logs: int = 20,
 ):
     """
     Logger prediksjoner både til MLFlow og til en lokal mappe.
@@ -241,7 +273,14 @@ def log_predictions_from_preds(
 
 
 def _log_prediction_artifact(
-    rgb_tensor: torch.Tensor, dom_tensor: torch.Tensor, pred_tensor: torch.Tensor, fname: str, logger: "MLflowLogger", artifact_dir: str, local_save_dir: str, id_field: str
+    rgb_tensor: torch.Tensor,
+    dom_tensor: torch.Tensor,
+    pred_tensor: torch.Tensor,
+    fname: str,
+    logger: "MLflowLogger",
+    artifact_dir: str,
+    local_save_dir: str,
+    id_field: str,
 ):
     """
     Logger en enkelt prediksjon til MLFlow og til en lokal mappe.
@@ -257,7 +296,7 @@ def _log_prediction_artifact(
     pred_np = pred_tensor.squeeze().cpu().numpy()
     if dom_tensor is not None:
         rgb_np = rgb_tensor.permute(1, 2, 0).cpu().numpy()
-        rgb_np = rgb_np / 255.0 
+        rgb_np = rgb_np / 255.0
         dom_np = dom_tensor.cpu().numpy()
         fig, axs = plt.subplots(1, 3, figsize=(9, 3))
         axs[0].imshow(rgb_np)
@@ -268,7 +307,7 @@ def _log_prediction_artifact(
         axs[2].set_title("Prediksjon")
     else:
         rgb_np = rgb_tensor.permute(1, 2, 0).cpu().numpy()
-        rgb_np = rgb_np / 255.0 
+        rgb_np = rgb_np / 255.0
         fig, axs = plt.subplots(1, 2, figsize=(9, 4))
         axs[0].imshow(rgb_np)
         axs[0].set_title("RGB")
@@ -286,7 +325,13 @@ def _log_prediction_artifact(
     fig_pred, ax_pred = plt.subplots()
     ax_pred.imshow(pred_np, cmap="gray")
     ax_pred.axis("off")
-    os.makedirs(f"/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/{local_save_dir}", exist_ok=True)
-    local_path = os.path.join(f"/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/{local_save_dir}", f"pred_{Path(fname).stem}.png")
+    os.makedirs(
+        f"/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/{local_save_dir}",
+        exist_ok=True,
+    )
+    local_path = os.path.join(
+        f"/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/{local_save_dir}",
+        f"pred_{Path(fname).stem}.png",
+    )
     fig_pred.savefig(local_path, bbox_inches="tight", pad_inches=0)
     plt.close(fig_pred)

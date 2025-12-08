@@ -1,8 +1,11 @@
 import torch
 from lightning.pytorch import LightningModule
 import segmentation_models_pytorch as smp
-from torchmetrics.classification import BinaryJaccardIndex, BinaryAccuracy
-from torchmetrics.segmentation import DiceScore
+from torchmetrics.classification import (
+    BinaryJaccardIndex,
+    BinaryAccuracy,
+    BinaryF1Score,
+)
 from model.losses.losses import DiceBCELoss
 from model.losses.loss_utils import compute_loss_weights
 
@@ -11,6 +14,7 @@ class UNetLightning(LightningModule):
     """
     UNet med Pytorch Lightning wrapper.
     """
+
     def __init__(self, config):
         super().__init__()
         self.save_hyperparameters(config)
@@ -24,7 +28,7 @@ class UNetLightning(LightningModule):
 
         self.lr = config.get("lr", 1e-3)
 
-        mask_dir = config.get("data", {}).get("mask_dir") 
+        mask_dir = config.get("data", {}).get("mask_dir")
 
         if mask_dir:
             dice_w, bce_w, pos_w = compute_loss_weights(mask_dir)
@@ -38,7 +42,7 @@ class UNetLightning(LightningModule):
         )
 
         self.iou_metric = BinaryJaccardIndex()
-        self.dice_metric = DiceScore(num_classes=1)
+        self.dice_metric = BinaryF1Score()
         self.accuracy_metric = BinaryAccuracy()
 
     def forward(self, x):
@@ -90,9 +94,9 @@ class UNetLightning(LightningModule):
             iou = self.iou_metric(pred_bin, y)
             dice = self.dice_metric(pred_bin, y)
             acc = self.accuracy_metric(pred_bin, y)
-
             self.log("test_iou", iou, prog_bar=True)
             self.log("test_dice", dice, prog_bar=True)
+            self.log("test_acc", acc, prog_bar=True)
 
     def predict_step(self, batch, batch_idx, dataloader_idx=0):
         # Batch er (image_tensor, mask_tensor, filename)
@@ -107,6 +111,7 @@ class UNetLightning(LightningModule):
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.lr)
+
 
 def get_unet_lightning(config):
     """
