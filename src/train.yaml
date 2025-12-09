@@ -6,12 +6,13 @@ model:
     backbone: resnet50
     in_channels: 3
     num_classes: 1
-    batch_size: 4
+    batch_size: 8
     lr: 0.0001
+    wd: 0.0001
 
 data:
   mask_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/helipad_labels/
-  num_workers: 4 # Antall arbeidere på clusteret
+  num_workers: 0 # Antall arbeidere på clusteret
   val_split: 0.15 # Valideringsandel
   holdout_size: 15
   seed: 42
@@ -30,7 +31,7 @@ data:
   train:
     id_field: row_hash
     overview_table: helipads_status_overview # polygons_status_overview for å trene kun på snuplasser
-    target: helipads
+    target: helipads # snuplasser eller helipads
 
 training:
   max_epochs: 100 # Antall epoker per kjøring
@@ -45,13 +46,14 @@ training:
 log_predictions_callback:
   log_every_n_epochs: 2 # Logger prediksjonene etter annenhver epoch
   artifact_dir: "val_predictions"
-  target: "helikopterplass"
+  target: "helikopterplass" # snuplass eller helikopterplass
+  threshold: 0.6 # Grensen for om en piksel markeres som hvit eller svart
 
 logging:
   tracking_uri: "databricks" # Slik at eksperimenter og modeller kan lagres og sammenlignes sentralt
 
 optuna:
   direction: maximize # Hvilken vei metrikken skal optimaliseres
-  metric_name: val_iou # Navn på metrikken som returneres fra validate()
-  n_trials: 50 # Antall eksperimenter
-  n_jobs: 8 # Skal matche antall workers på clusteret
+  metric_name: val_dice # Navn på metrikken som returneres fra validate()
+  n_trials: 30 # Antall eksperimenter
+  n_jobs: 2 # Skal matche antall workers på clusteret

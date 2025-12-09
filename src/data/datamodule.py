@@ -22,7 +22,7 @@ class DataModule(LightningDataModule):
         super().__init__()
         data_config = config.get("data", {})
         self.batch_size = (
-            config.get("model", {}).get(model_name, {}).get("batch_size", [])
+            config.get("model", {}).get(model_name, {}).get("batch_size", 4)
         )
         self.num_workers = data_config.get("num_workers", 4)
         self.val_split = data_config.get("val_split", 0.2)
