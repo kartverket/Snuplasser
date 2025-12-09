@@ -11,10 +11,10 @@ model:
     wd: 0.0001
 
 data:
-  mask_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/helipad_labels/
+  mask_dir: /Volumes/land_auto-gen-kart_dev/external_dev/static_data/DL_bildesegmentering/helipad_labels/
   num_workers: 0 # Antall arbeidere på clusteret
   val_split: 0.15 # Valideringsandel
-  holdout_size: 15
+  holdout_size: 10
   seed: 42
   use_augmentation: true
   # augmentation_ratio: 0.4
