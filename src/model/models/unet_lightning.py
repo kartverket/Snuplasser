@@ -1,16 +1,20 @@
 import torch
 from lightning.pytorch import LightningModule
 import segmentation_models_pytorch as smp
-from torchmetrics.classification import BinaryJaccardIndex, BinaryAccuracy
-from torchmetrics.segmentation import DiceScore
-from model.losses.losses import DiceBCELoss
-from model.losses.loss_utils import compute_loss_weights
+from torchmetrics.classification import (
+    BinaryJaccardIndex,
+    BinaryAccuracy,
+    BinaryF1Score,
+)
+from ..losses.losses import DiceBCELoss
+from ..losses.loss_utils import compute_loss_weights
 
 
 class UNetLightning(LightningModule):
     """
     UNet med Pytorch Lightning wrapper.
     """
+
     def __init__(self, config):
         super().__init__()
         self.save_hyperparameters(config)
@@ -23,8 +27,9 @@ class UNetLightning(LightningModule):
         )
 
         self.lr = config.get("lr", 1e-3)
+        self.wd = config.get("wd", 1e-5)
 
-        mask_dir = config.get("data", {}).get("mask_dir") 
+        mask_dir = config.get("data", {}).get("mask_dir")
 
         if mask_dir:
             dice_w, bce_w, pos_w = compute_loss_weights(mask_dir)
@@ -38,7 +43,7 @@ class UNetLightning(LightningModule):
         )
 
         self.iou_metric = BinaryJaccardIndex()
-        self.dice_metric = DiceScore(num_classes=1)
+        self.dice_metric = BinaryF1Score()
         self.accuracy_metric = BinaryAccuracy()
 
     def forward(self, x):
@@ -51,7 +56,7 @@ class UNetLightning(LightningModule):
         y = y.float()
         logits = self(x)
         loss = self.loss_fn(logits, y)
-        self.log("train_loss", loss, prog_bar=True)
+        self.log("train_loss", loss, prog_bar=True, batch_size=x.shape[0])
         return loss
 
     def validation_step(self, batch, _):
@@ -59,7 +64,7 @@ class UNetLightning(LightningModule):
         y = y.float()
         logits = self(x)
         loss = self.loss_fn(logits, y)
-        self.log("val_loss", loss, prog_bar=True)
+        self.log("val_loss", loss, prog_bar=True, batch_size=x.shape[0])
 
         preds = torch.sigmoid(logits)
         pred_bin = (preds > 0.5).float()
@@ -68,9 +73,8 @@ class UNetLightning(LightningModule):
         dice = self.dice_metric(preds, y)
         acc = self.accuracy_metric(pred_bin, y)
 
-        self.log("val_iou", iou, prog_bar=True)
-        self.log("val_dice", dice, prog_bar=True)
-        self.log("val_acc", acc, prog_bar=True)
+        self.log("val_iou", iou, prog_bar=True, batch_size=x.shape[0])
+        self.log("val_dice", dice, prog_bar=True, batch_size=x.shape[0])
 
     def forward(self, x):
         if x.dtype == torch.uint8:
@@ -83,16 +87,15 @@ class UNetLightning(LightningModule):
             y = y.float()
             logts = self(x)
             loss = self.loss_fn(logts, y)
-            self.log("test_loss", loss, prog_bar=True)
+            self.log("test_loss", loss, prog_bar=True, batch_size=x.shape[0])
 
             preds = torch.sigmoid(logts)
             pred_bin = (preds > 0.5).float()
             iou = self.iou_metric(pred_bin, y)
             dice = self.dice_metric(pred_bin, y)
             acc = self.accuracy_metric(pred_bin, y)
-
-            self.log("test_iou", iou, prog_bar=True)
-            self.log("test_dice", dice, prog_bar=True)
+            self.log("test_iou", iou, prog_bar=True, batch_size=x.shape[0])
+            self.log("test_dice", dice, prog_bar=True, batch_size=x.shape[0])
 
     def predict_step(self, batch, batch_idx, dataloader_idx=0):
         # Batch er (image_tensor, mask_tensor, filename)
@@ -106,7 +109,8 @@ class UNetLightning(LightningModule):
         return {"filename": filename, "mask": preds, "image": x}
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=self.lr)
+        return torch.optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.wd)
+
 
 def get_unet_lightning(config):
     """
