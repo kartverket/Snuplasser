@@ -36,10 +36,10 @@ class DiceBCELoss(nn.Module):
         Returnerer:
             Tensor: Dice loss-verdi.
         """
-        preds = torch.sigmoid(preds)
-        preds = preds.view(-1)
-        targets = targets.view(-1)
-        intersection = (preds * targets).sum()
-        return 1 - (2.0 * intersection + epsilon) / (
-            preds.sum() + targets.sum() + epsilon
+        preds = torch.sigmoid(preds).view(preds.size(0), -1)
+        targets = targets.view(targets.size(0), -1)
+        intersection = (preds * targets).sum(dim=1)
+        dice = 1 - (2 * intersection + epsilon) / (
+            preds.sum(dim=1) + targets.sum(dim=1) + epsilon
         )
+        return dice.mean()

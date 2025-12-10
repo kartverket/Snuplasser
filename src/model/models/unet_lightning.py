@@ -19,17 +19,27 @@ class UNetLightning(LightningModule):
         super().__init__()
         self.save_hyperparameters(config)
 
+        model_name = config.get("model_names", [])[0]
+        model_cfg = config.get("model", {}).get(model_name, {})
+
         self.model = smp.Unet(
-            encoder_name=config.get("encoder", "resnet18"),
-            encoder_weights=None,
-            in_channels=config.get("in_channels", 4),
+            encoder_name=model_cfg.get("encoder_name", "resnet18"),
+            encoder_weights=model_cfg.get("encoder_weights", "imagenet"),
+            in_channels=model_cfg.get("in_channels", 4),
             classes=1,
         )
 
-        self.lr = config.get("lr", 1e-3)
-        self.wd = config.get("wd", 1e-5)
+        self.lr = model_cfg.get("lr", 1e-3)
+        self.wd = model_cfg.get("wd", 1e-5)
 
         mask_dir = config.get("data", {}).get("mask_dir")
+
+        log_pred_cfg = config.get("log_predictions_callback", {})
+        self.threshold = log_pred_cfg.get("threshold", 0.6)
+
+        training_cfg = config.get("training", {})
+        self.scheduler_factor = training_cfg.get("scheduler_factor", 0.1)
+        self.scheduler_patience = training_cfg.get("scheduler_patience", 5)
 
         if mask_dir:
             dice_w, bce_w, pos_w = compute_loss_weights(mask_dir)
@@ -67,7 +77,7 @@ class UNetLightning(LightningModule):
         self.log("val_loss", loss, prog_bar=True, batch_size=x.shape[0])
 
         preds = torch.sigmoid(logits)
-        pred_bin = (preds > 0.5).float()
+        pred_bin = (preds > self.threshold).float()
 
         iou = self.iou_metric(preds, y)
         dice = self.dice_metric(preds, y)
@@ -75,11 +85,6 @@ class UNetLightning(LightningModule):
 
         self.log("val_iou", iou, prog_bar=True, batch_size=x.shape[0])
         self.log("val_dice", dice, prog_bar=True, batch_size=x.shape[0])
-
-    def forward(self, x):
-        if x.dtype == torch.uint8:
-            x = x.float() / 255
-        return self.model(x)
 
     def test_step(self, batch, batch_idx):
         with torch.no_grad():
@@ -90,7 +95,7 @@ class UNetLightning(LightningModule):
             self.log("test_loss", loss, prog_bar=True, batch_size=x.shape[0])
 
             preds = torch.sigmoid(logts)
-            pred_bin = (preds > 0.5).float()
+            pred_bin = (preds > self.threshold).float()
             iou = self.iou_metric(pred_bin, y)
             dice = self.dice_metric(pred_bin, y)
             acc = self.accuracy_metric(pred_bin, y)
@@ -104,12 +109,32 @@ class UNetLightning(LightningModule):
         with torch.no_grad():
             logits = self(x)
             probs = torch.sigmoid(logits)
-            preds = (probs > 0.5).float()
+            preds = (probs > self.threshold).float()
 
         return {"filename": filename, "mask": preds, "image": x}
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.wd)
+        optimizer = torch.optim.Adam(
+            self.parameters(), lr=self.lr, weight_decay=self.wd
+        )
+
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer,
+            mode=self.hparams.get("monitor_mode", "max"),
+            factor=self.scheduler_factor,
+            patience=self.scheduler_patience,
+            min_lr=1e-6,
+        )
+
+        return {
+            "optimizer": optimizer,
+            "lr_scheduler": {
+                "scheduler": scheduler,
+                "monitor": self.hparams.get("monitor", "val_dice"),
+                "interval": "epoch",
+                "frequency": 1,
+            },
+        }
 
 
 def get_unet_lightning(config):
