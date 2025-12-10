@@ -3,7 +3,8 @@ model_names:
 
 model:
   unet:
-    backbone: resnet50
+    encoder_name: resnet18
+    encoder_weights: imagenet
     in_channels: 3
     num_classes: 1
     batch_size: 8
@@ -11,10 +12,10 @@ model:
     wd: 0.0001
 
 data:
-  mask_dir: /Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/helipad_labels/
+  mask_dir: /Volumes/land_auto-gen-kart_dev/external_dev/static_data/DL_bildesegmentering/helipad_labels/
   num_workers: 0 # Antall arbeidere på clusteret
-  val_split: 0.15 # Valideringsandel
-  holdout_size: 15
+  val_split: 0.20 # Valideringsandel
+  holdout_size: 10
   seed: 42
   use_augmentation: true
   # augmentation_ratio: 0.4
@@ -42,6 +43,8 @@ training:
   early_stopping_patience: 10  # Stopper tidlig om valideringstap ikke forbedres
   monitor: val_dice  # Kan bruke val_loss, val_iou eller val_dice
   monitor_mode: max  # min ved loss, max ved IoU og Dice
+  scheduler_factor: 0.1
+  scheduler_patience: 3
 
 log_predictions_callback:
   log_every_n_epochs: 2 # Logger prediksjonene etter annenhver epoch

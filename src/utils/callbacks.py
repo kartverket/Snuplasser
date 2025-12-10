@@ -7,7 +7,12 @@ from PIL import Image
 from typing import List
 import mlflow
 from lightning.pytorch.loggers import MLFlowLogger
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import (
+    confusion_matrix,
+    ConfusionMatrixDisplay,
+    roc_curve,
+    auc,
+)
 from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint, Callback
 
 
@@ -56,6 +61,7 @@ class LogPredictionsCallback(Callback):
         log_every_n_epochs=1,
         artifact_dir="val_predictions",
         target="snuplass",
+        threshold=0.5,
         always_log_ids=None,
         max_random_logs=10,
     ):
@@ -64,6 +70,7 @@ class LogPredictionsCallback(Callback):
         self.always_log_ids = set(always_log_ids or [])
         self.max_random_logs = max_random_logs
         self.target = target
+        self.threshold = threshold
         self.all_true = []
         self.all_pred = []
         self.val_true = []
@@ -91,18 +98,12 @@ class LogPredictionsCallback(Callback):
         epoch = trainer.current_epoch
         logged = set()
 
-        from sklearn.metrics import roc_curve, auc
-
-        # Flatten all masks into 1D arrays
         y_true_pixels = np.concatenate([m.numpy().ravel() for m in self.val_true])
-        y_score_pixels = np.concatenate(
-            [p.numpy().ravel() for p in self.val_pred]
-        )  # probabilities, not thresholded
+        y_score_pixels = np.concatenate([p.numpy().ravel() for p in self.val_pred])
 
         fpr, tpr, thresholds = roc_curve(y_true_pixels, y_score_pixels)
         roc_auc = auc(fpr, tpr)
 
-        # Plot ROC
         fig, ax = plt.subplots()
         ax.plot(fpr, tpr, label=f"AUC = {roc_auc:.3f}")
         ax.plot([0, 1], [0, 1], linestyle="--", color="gray")
@@ -118,9 +119,7 @@ class LogPredictionsCallback(Callback):
         plt.close(fig)
 
         y_true_images = [int(m.numpy().max() > 0) for m in self.val_true]
-        y_pred_images = [
-            int((p.numpy() > 0.5).any()) for p in self.val_pred
-        ]  # thresholded
+        y_pred_images = [int((p.numpy() > self.threshold).any()) for p in self.val_pred]
 
         cm = confusion_matrix(y_true_images, y_pred_images, labels=[0, 1])
         disp = ConfusionMatrixDisplay(
@@ -143,7 +142,7 @@ class LogPredictionsCallback(Callback):
                 continue
             x, y, fnames = batch
             x, y = x.to(device), y.to(device)
-            preds = torch.sigmoid(pl_module(x)) > 0.5
+            preds = torch.sigmoid(pl_module(x)) > self.threshold
             for i, fname in enumerate(fnames):
                 name = Path(fname).name
                 log_this = name in self.always_log_ids or (
@@ -168,7 +167,7 @@ class LogPredictionsCallback(Callback):
         x, y, _ = batch
         device = pl_module.device
         y = y.to(device).long()
-        preds = (torch.sigmoid(pl_module(x.to(device))) > 0.5).long()
+        preds = (torch.sigmoid(pl_module(x.to(device))) > self.threshold).long()
         for y_img, p_img in zip(y.cpu(), preds.cpu()):
             self.all_true.append(y_img)
             self.all_pred.append(p_img)

@@ -30,8 +30,7 @@ def run_experiment(model_name: str, config: dict):
 
     # Data & modell
     datamodule = get_datamodule(config, model_name)
-    model_cfg = config.get("model", {}).get(model_name, {})
-    model = get_model(model_name, model_cfg)
+    model = get_model(model_name, config)
 
     # Logger & callbacks
     logger = get_logger(model_name, config)
@@ -61,7 +60,7 @@ def run_experiment(model_name: str, config: dict):
         mlflow.set_registry_uri(config.get("logging", {}).get("tracking_uri", ""))
         with mlflow.start_run(run_id=trainer.logger.run_id):
             trained = model.__class__.load_from_checkpoint(
-                str(best_ckpt), config=model_cfg
+                str(best_ckpt), config=config.get("model", {}).get(model_name, {})
             )
             # Valider igjen for å få metrikker i MLflow
             trainer.validate(trained, datamodule=datamodule)
@@ -113,9 +112,14 @@ def run_experiment(model_name: str, config: dict):
         trained = model.__class__.load_from_checkpoint(str(ckpt_path))
 
         # Kjør prediksjon
-        id_field = config.get("data", {}).get("predict", {})
+        id_field = config.get("data", {}).get("predict", {}).get("id_field", "row_hash")
+        local_save_dir = (
+            config.get("data", {})
+            .get("predict", {})
+            .get("local_save_dir", "predicted_snuplasser")
+        )
         preds = trainer.predict(trained, datamodule=datamodule)
-        log_predictions_from_preds(preds, logger, id_field)
+        log_predictions_from_preds(preds, logger, id_field, local_save_dir)
 
     else:
         raise ValueError(f"Ukjent modus: {mode}")
