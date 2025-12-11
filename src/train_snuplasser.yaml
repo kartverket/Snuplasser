@@ -1,21 +1,21 @@
 model_names:
-  - unet
+  - deeplabv3plus
 
 model:
-  unet:
-    encoder_name: resnet18
-    encoder_weights: imagenet
-    in_channels: 3
+  deeplabv3plus:
+    encoder_name: resnet50
+    encoder_weights: None
+    in_channels: 4
     num_classes: 1
     batch_size: 8
     lr: 0.0001
     wd: 0.0001
 
 data:
-  mask_dir: /Volumes/land_auto-gen-kart_dev/external_dev/static_data/DL_bildesegmentering/helipad_labels/
+  mask_dir: /Volumes/land_auto-gen-kart_dev/external_dev/static_data/DL_bildesegmentering/storrelabel/
   num_workers: 0 # Antall arbeidere på clusteret
   val_split: 0.20 # Valideringsandel
-  holdout_size: 10
+  holdout_size: 50
   seed: 42
   use_augmentation: true
   # augmentation_ratio: 0.4
@@ -26,17 +26,17 @@ data:
   # scale_limit: 0.05
   # gaussian_blur_p: 0.1
   # elastic_transform_p: 0.1
-  spark_catalog: land_topografisk-gdb_dev
-  spark_schema: ai2025
+  spark_catalog: land_auto-gen-kart_dev
+  spark_schema: dl_bildesegmentering
   mode: "train"
   train:
     id_field: row_hash
-    overview_table: helipads_status_overview # polygons_status_overview for å trene kun på snuplasser
-    target: helipads # snuplasser eller helipads
+    overview_table: train_silver # polygons_status_overview for å trene kun på snuplasser
+    target: snuplasser # snuplasser eller helipads
 
 training:
   max_epochs: 100 # Antall epoker per kjøring
-  precision: 32 # Mixed precision (16 eller 32)
+  precision: 16 # Mixed precision (16 eller 32)
   accelerator: cpu # cpu hvis det kjøres lokalt
   devices: 1 # GPU-ressurser
   log_every_n_steps: 2
@@ -49,7 +49,7 @@ training:
 log_predictions_callback:
   log_every_n_epochs: 2 # Logger prediksjonene etter annenhver epoch
   artifact_dir: "val_predictions"
-  target: "helikopterplass" # snuplass eller helikopterplass
+  target: "snuplass" # snuplass eller helikopterplass
   threshold: 0.6 # Grensen for om en piksel markeres som hvit eller svart
 
 logging:
