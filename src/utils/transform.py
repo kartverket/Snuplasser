@@ -2,64 +2,23 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
 
-def get_train_transforms(cfg: dict, ratio: float = None) -> A.Compose:
-    """
-    Albumentations transformasjonene som skal brukes på treningsbildene.
-    Argumenter:
-        cfg (dict): konfigurasjonsfilen
-        ratio (float): sannsynlighet for å bruke transformasjoner
-    Returnerer:
-        A.Compose: Albumentations transformasjonene
-    """
-    if ratio is None:
-        return A.Compose(
-            [
-                ToTensorV2(),
-            ]
-        )
-
-    if ratio < 0 or ratio > 1:
-        raise ValueError(f"Ratio må være mellom 0 og 1, men mottok: {ratio}")
-
-    base_transform = A.Compose(
+def get_train_transforms(cfg: dict = None, ratio: float = None) -> A.Compose:
+    return A.Compose(
         [
-            # A.HorizontalFlip(p=cfg.get("flip_p", 0.5)),
-            # A.VerticalFlip(p=0.2),
-            # A.RandomRotate90(p=0.5),  # Sannsynlighet for å rotere bildet 90 grader
-            A.ShiftScaleRotate(
-                shift_limit=0.05,
-                scale_limit=cfg.get("scale_limit", 0.1),
-                rotate_limit=cfg.get("rotate_limit", 15),
-                p=0.5,
-            ),  # Endringer i posisjon
-            A.RandomBrightnessContrast(
-                brightness_limit=cfg.get("brightness_limit", 0.2),
-                contrast_limit=cfg.get("contrast_limit", 0.2),
-                p=0.5,
-            ),  # Endringer i solforhold, årstid, skygge eller skytetthet
-            A.GaussianBlur(blur_limit=(3, 5), p=cfg.get("gaussian_blur_p", 0.2)),
-            # A.ElasticTransform(
-            #     alpha=1,
-            #     sigma=50,
-            #     alpha_affine=30,
-            #     p=cfg.get("elastic_transform_p", 0.3),
-            # ),
+            A.HorizontalFlip(p=0.5),
+            A.VerticalFlip(p=0.2),
+            A.RandomRotate90(p=0.5),
+            A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.5),
+            A.HueSaturationValue(
+                hue_shift_limit=10, sat_shift_limit=15, val_shift_limit=10, p=0.3
+            ),
+            A.GaussianBlur(blur_limit=(3, 5), p=0.2),
             ToTensorV2(),
         ]
     )
-    return base_transform
 
 
-def get_val_transforms(cfg: dict) -> A.Compose:
-    """
-    Albumentations transformasjonene som skal brukes på validasjonsbildene.
-    Denne brukes for alle andre datasett enn treningsdatasettet.
-    Argumenter:
-        cfg (dict): konfigurasjonsfilen
-    Returnerer:
-        A.Compose: Albumentations transformasjonene
-    """
-def get_val_transforms(cfg: dict):
+def get_val_transforms() -> A.Compose:
     return A.Compose(
         [
             ToTensorV2(),
