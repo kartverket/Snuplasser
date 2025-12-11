@@ -36,7 +36,7 @@ data:
 
 training:
   max_epochs: 100 # Antall epoker per kjøring
-  precision: 16 # Mixed precision (16 eller 32)
+  precision: 32 # Mixed precision (16 eller 32)
   accelerator: cpu # cpu hvis det kjøres lokalt
   devices: 1 # GPU-ressurser
   log_every_n_steps: 2
