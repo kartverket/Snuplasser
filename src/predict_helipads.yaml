@@ -3,15 +3,15 @@ model_names:
 
 model:
   unet:
-    backbone: resnet50
+    backbone: resnet18
     in_channels: 3
     num_classes: 1
-    batch_size: 4
+    batch_size: 8
 
 data:
-  num_workers:  4
-  spark_catalog: land_topografisk-gdb_dev
-  spark_schema: ai2025
+  num_workers:  0
+  spark_catalog: land_auto-gen-kart_dev
+  spark_schema: dl_bildesegmentering
   mode: "predict"
   predict:
     id_field: row_hash

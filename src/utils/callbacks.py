@@ -325,11 +325,11 @@ def _log_prediction_artifact(
     ax_pred.imshow(pred_np, cmap="gray")
     ax_pred.axis("off")
     os.makedirs(
-        f"/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/{local_save_dir}",
+        f"/Volumes/land_auto-gen-kart_dev/external_dev/static_data/DL_bildesegmentering/{local_save_dir}",
         exist_ok=True,
     )
     local_path = os.path.join(
-        f"/Volumes/land_topografisk-gdb_dev/external_dev/static_data/DL_SNUPLASSER/{local_save_dir}",
+        f"/Volumes/land_auto-gen-kart_dev/external_dev/static_data/DL_bildesegmentering/{local_save_dir}",
         f"pred_{Path(fname).stem}.png",
     )
     fig_pred.savefig(local_path, bbox_inches="tight", pad_inches=0)
