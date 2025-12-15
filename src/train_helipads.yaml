@@ -3,13 +3,13 @@ model_names:
 
 model:
   unet:
-    encoder_name: resnet18
+    encoder_name: resnet50
     encoder_weights: imagenet
     in_channels: 3
     num_classes: 1
     batch_size: 8
-    lr: 0.0001
-    wd: 0.0001
+    lr: 0.00005
+    wd: 0.00005
 
 data:
   mask_dir: /Volumes/land_auto-gen-kart_dev/external_dev/static_data/DL_bildesegmentering/helipad_labels/
@@ -26,12 +26,12 @@ data:
   # scale_limit: 0.05
   # gaussian_blur_p: 0.1
   # elastic_transform_p: 0.1
-  spark_catalog: land_topografisk-gdb_dev
-  spark_schema: ai2025
+  spark_catalog: land_auto-gen-kart_dev
+  spark_schema: dl_bildesegmentering
   mode: "train"
   train:
     id_field: row_hash
-    overview_table: helipads_status_overview # polygons_status_overview for å trene kun på snuplasser
+    overview_table: mix_helipads_status_overview # helipads_status_overview for å trene kun på snuplasser
     target: helipads # snuplasser eller helipads
 
 training:

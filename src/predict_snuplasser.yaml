@@ -1,0 +1,23 @@
+model_names:
+  - deeplabv3plus
+
+model:
+  deeplabv3plus:
+    backbone: resnet50
+    in_channels: 4
+    num_classes: 1
+    batch_size: 8
+
+data:
+  num_workers:  0
+  spark_catalog: land_auto-gen-kart_dev
+  spark_schema: dl_bildesegmentering
+  mode: "predict"
+  predict:
+    id_field: row_hash
+    overview_table: train_silver
+    local_save_dir: predicted_snuplasser
+    target: snuplasser
+
+logging:
+  tracking_uri: "databricks"
