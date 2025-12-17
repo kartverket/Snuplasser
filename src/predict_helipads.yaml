@@ -3,7 +3,7 @@ model_names:
 
 model:
   unet:
-    backbone: resnet18
+    backbone: resnet50
     in_channels: 3
     num_classes: 1
     batch_size: 8
