@@ -3,7 +3,7 @@ from torch.utils.data import DataLoader
 from lightning.pytorch import LightningDataModule
 from pyspark.sql import SparkSession
 
-from data.dataset import SnuplassDataset, HelicopterDataset
+from data.dataset import FourChannelDataset, ThreeChannelDataset
 from utils.transform import get_train_transforms, get_val_transforms
 from utils.get_from_overview import (
     get_file_list_from_overview,
@@ -33,7 +33,9 @@ class DataModule(LightningDataModule):
         self.overview_table = section["overview_table"]
         self.id_field = section["id_field"]
         self.require_mask = self.mode == "train"
-        self.target = section["target"]
+        self.image_size = (
+            config.get("model", {}).get(model_name, {}).get("image_size", 512)
+        )
 
         # Spark for oversiktstabell
         self.spark = (
@@ -49,10 +51,18 @@ class DataModule(LightningDataModule):
         aug_ratio = data_config.get("augmentation_ratio", None)
         if use_aug:
             self.train_transform = get_train_transforms(
-                cfg=data_config, ratio=aug_ratio
+                cfg=data_config,
+                ratio=aug_ratio,
+                width=self.image_size,
+                height=self.image_size,
             )
         else:
-            self.train_transform = get_train_transforms(cfg=data_config, ratio=None)
+            self.train_transform = get_train_transforms(
+                cfg=data_config,
+                ratio=None,
+                width=self.image_size,
+                height=self.image_size,
+            )
         self.val_transform = get_val_transforms()
 
     def setup(self, stage):
@@ -71,18 +81,18 @@ class DataModule(LightningDataModule):
             )
 
             # Fjern row_hash, behold bare paths
-            if self.target == "helipads":
+            if len(train_items[0]) == 3:
                 train_list = [(img, mask) for (_, img, mask) in train_items]
                 val_list = [(img, mask) for (_, img, mask) in val_items]
                 holdout_list = [(img, mask) for (_, img, mask) in holdout_items]
 
-                self.train_dataset = HelicopterDataset(
+                self.train_dataset = ThreeChannelDataset(
                     file_list=train_list, transform=self.train_transform
                 )
-                self.val_dataset = HelicopterDataset(
+                self.val_dataset = ThreeChannelDataset(
                     file_list=val_list, transform=self.val_transform
                 )
-                self.test_dataset = HelicopterDataset(
+                self.test_dataset = ThreeChannelDataset(
                     file_list=holdout_list, transform=self.val_transform
                 )
             else:
@@ -92,13 +102,13 @@ class DataModule(LightningDataModule):
                     (img, dom, mask) for (_, img, dom, mask) in holdout_items
                 ]
 
-                self.train_dataset = SnuplassDataset(
+                self.train_dataset = FourChannelDataset(
                     file_list=train_list, transform=self.train_transform
                 )
-                self.val_dataset = SnuplassDataset(
+                self.val_dataset = FourChannelDataset(
                     file_list=val_list, transform=self.val_transform
                 )
-                self.test_dataset = SnuplassDataset(
+                self.test_dataset = FourChannelDataset(
                     file_list=holdout_list, transform=self.val_transform
                 )
 
@@ -113,16 +123,16 @@ class DataModule(LightningDataModule):
                 require_mask=False,
             )
 
-            if self.target == "helipads":
+            if len(items[0]) == 2:
                 predict_list = [(image_path) for (_, image_path) in items]
-                self.predict_dataset = HelicopterDataset(
+                self.predict_dataset = ThreeChannelDataset(
                     file_list=predict_list, transform=self.val_transform
                 )
             else:
                 predict_list = [
                     (image_path, dom_path) for (_, image_path, dom_path) in items
                 ]
-                self.predict_dataset = SnuplassDataset(
+                self.predict_dataset = FourChannelDataset(
                     file_list=predict_list, transform=self.val_transform
                 )
 

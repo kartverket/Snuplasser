@@ -1,0 +1,63 @@
+model_names:
+  - unet
+
+model:
+  unet:
+    encoder_name: resnet50
+    encoder_weights: imagenet
+    in_channels: 3
+    num_classes: 1
+    batch_size: 4
+    lr: 0.00005
+    wd: 0.00005
+    image_size: 512
+
+data:
+  mask_dir: /Volumes/land_auto-gen-kart_dev/external_dev/static_data/DL_bildesegmentering/blokkmark_labels_small/
+  num_workers: 0 # Antall arbeidere på clusteret
+  val_split: 0.20 # Valideringsandel
+  holdout_size: 50
+  seed: 42
+  use_augmentation: true
+  # augmentation_ratio: 0.4
+  # flip_p: 0.3
+  # brightness_limit: 0.05
+  # contrast_limit: 0.05
+  # rotate_limit: 10
+  # scale_limit: 0.05
+  # gaussian_blur_p: 0.1
+  # elastic_transform_p: 0.1
+  spark_catalog: land_auto-gen-kart_dev
+  spark_schema: dl_bildesegmentering
+  mode: "train"
+  train:
+    id_field: row_hash
+    overview_table: blokkmark_overview # helipads_status_overview for å trene kun på snuplasser
+    target: "blokkmark" # snuplass, helikopterplass eller blokkmark
+
+training:
+  max_epochs: 100 # Antall epoker per kjøring
+  precision: 32 # Mixed precision (16 eller 32)
+  accelerator: cpu # cpu hvis det kjøres lokalt
+  devices: 1 # GPU-ressurser
+  log_every_n_steps: 2
+  early_stopping_patience: 10  # Stopper tidlig om valideringstap ikke forbedres
+  monitor: val_dice  # Kan bruke val_loss, val_iou eller val_dice
+  monitor_mode: max  # min ved loss, max ved IoU og Dice
+  scheduler_factor: 0.1
+  scheduler_patience: 3
+
+log_predictions_callback:
+  log_every_n_epochs: 2 # Logger prediksjonene etter annenhver epoch
+  artifact_dir: "val_predictions"
+  target: "blokkmark" # snuplass, helikopterplass eller blokkmark
+  threshold: 0.5 # Grensen for om en piksel markeres som hvit eller svart
+
+logging:
+  tracking_uri: "databricks" # Slik at eksperimenter og modeller kan lagres og sammenlignes sentralt
+
+optuna:
+  direction: maximize # Hvilken vei metrikken skal optimaliseres
+  metric_name: val_dice # Navn på metrikken som returneres fra validate()
+  n_trials: 30 # Antall eksperimenter
+  n_jobs: 2 # Skal matche antall workers på clusteret

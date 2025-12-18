@@ -5,7 +5,7 @@ import numpy as np
 import torch
 
 
-class SnuplassDataset(Dataset):
+class FourChannelDataset(Dataset):
     """
     Laster inn dataen til et datasett.
     Argumenter:
@@ -66,7 +66,7 @@ class SnuplassDataset(Dataset):
 
         return image_tensor, mask_tensor, filename
     
-class HelicopterDataset(Dataset):
+class ThreeChannelDataset(Dataset):
     """
     Laster inn dataen til et datasett.
     Argumenter:
